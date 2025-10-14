@@ -1,0 +1,87 @@
+services:# Terraform configuration for cloud deployment (optional)
+
+  - type: web# This is a sample configuration for deploying to AWS/GCP/Azure
+
+    name: crm-backend
+
+    runtime: node# Example Render.com YAML configuration
+
+    plan: starterservices:
+
+    region: oregon  - type: web
+
+    buildCommand: npm install && npm run build    name: crm-backend
+
+    startCommand: npm run start:prod    runtime: node
+
+    rootDir: backend    buildCommand: npm install && npm run build
+
+    envVars:    startCommand: npm run start:prod
+
+      - key: NODE_ENV    plan: starter
+
+        value: production    healthCheckPath: /health
+
+      - key: DATABASE_URL    envVars:
+
+        fromDatabase:      - key: NODE_ENV
+
+          name: crm-database        value: production
+
+          property: connectionString      - key: DATABASE_URL
+
+      - key: REDIS_URL        fromDatabase:
+
+        fromService:          name: crm-postgres
+
+          type: redis          property: connectionString
+
+          name: crm-cache      - key: REDIS_URL
+
+          property: connectionString        fromService:
+
+      - key: JWT_SECRET          type: redis
+
+        generateValue: true          name: crm-redis
+
+      - key: FRONTEND_URL          property: connectionString
+
+        fromService:      - key: JWT_SECRET
+
+          type: web        generateValue: true
+
+          name: crm-frontend
+
+          property: url  - type: redis
+
+    name: crm-redis
+
+  - type: web    plan: starter
+
+    name: crm-frontend
+
+    runtime: staticdatabases:
+
+    plan: starter  - name: crm-postgres
+
+    region: oregon    plan: starter
+    buildCommand: npm install && npm run build
+    staticPublishPath: out
+    rootDir: frontend
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: crm-backend
+          property: url
+
+databases:
+  - name: crm-database
+    plan: starter
+    region: oregon
+
+services:
+  - type: redis
+    name: crm-cache
+    plan: starter
+    region: oregon
