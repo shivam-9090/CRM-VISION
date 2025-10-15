@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,7 +19,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, name, companyId, role } = registerDto;
+    const { email, password, name, role, companyName, industry } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -29,41 +33,77 @@ export class AuthService {
     // Hash password with 12 rounds
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-        companyId,
-        role: role || Role.EMPLOYEE,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        companyId: true,
-        createdAt: true,
-      },
+    // Create user and company in a transaction
+    const result = await this.prisma.$transaction(async (prisma) => {
+      // Create company first
+      const company = await prisma.company.create({
+        data: {
+          name: companyName,
+          industry,
+          size: 'SMALL', // Default size
+        },
+      });
+
+      // Create user with company
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          role: role || Role.ADMIN,
+          companyId: company.id,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          companyId: true,
+          createdAt: true,
+          updatedAt: true,
+          company: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      return { user, company };
     });
 
-    const payload = { id: user.id, role: user.role, companyId: user.companyId };
-    const accessToken = this.jwtService.sign(payload);
+    const payload = { id: result.user.id, role: result.user.role };
+    const access_token = this.jwtService.sign(payload);
 
     return {
-      user,
-      accessToken,
+      access_token,
+      user: result.user,
     };
   }
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find user with password
+    // Find user with company information
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { company: true },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        role: true,
+        companyId: true,
+        createdAt: true,
+        updatedAt: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -76,10 +116,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { id: user.id, role: user.role, companyId: user.companyId };
-    const accessToken = this.jwtService.sign(payload);
+    const payload = { id: user.id, role: user.role };
+    const access_token = this.jwtService.sign(payload);
 
     return {
+      access_token,
       user: {
         id: user.id,
         email: user.email,
@@ -87,12 +128,13 @@ export class AuthService {
         role: user.role,
         companyId: user.companyId,
         company: user.company,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
-      accessToken,
     };
   }
 
-  async generateInviteToken(inviteDto: InviteDto) {
+  generateInviteToken(inviteDto: InviteDto) {
     const { email, companyId, role } = inviteDto;
 
     const payload = {
@@ -105,14 +147,14 @@ export class AuthService {
     return this.jwtService.sign(payload, { expiresIn: '24h' });
   }
 
-  async validateInviteToken(token: string) {
+  validateInviteToken(token: string) {
     try {
-      const payload = this.jwtService.verify(token);
+      const payload = this.jwtService.verify(token) as any;
       if (payload.type !== 'invite') {
         throw new UnauthorizedException('Invalid invite token');
       }
       return payload;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired invite token');
     }
   }
@@ -120,7 +162,14 @@ export class AuthService {
   async validateUser(payload: any) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.id },
-      include: { company: true },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -134,6 +183,8 @@ export class AuthService {
       role: user.role,
       companyId: user.companyId,
       company: user.company,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 }

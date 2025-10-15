@@ -14,26 +14,34 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  name      String?
-  role      Role     @default(EMPLOYEE)
-  companyId Int
-  company   Company  @relation(fields: [companyId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name      String
+  role       Role       @default(EMPLOYEE)
+  companyId  String?
+  company    Company?   @relation(fields: [companyId], references: [id])
+  deals      Deal[]     @relation("DealOwner")
+  activities Activity[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@map("users")
 }
 
 model Company {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(cuid())
   name        String
-  description String?
+  industry    String
+  size        String
+  website     String?
+  phone       String?
+  email       String?
+  address     String?
   users       User[]
   contacts    Contact[]
   deals       Deal[]
+  activities  Activity[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -41,31 +49,39 @@ model Company {
 }
 
 model Contact {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   firstName String
   lastName  String
   email     String?
   phone     String?
-  companyId Int
-  company   Company  @relation(fields: [companyId], references: [id])
-  deals     Deal[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  position  String?
+  companyId  String
+  company    Company    @relation(fields: [companyId], references: [id])
+  deals      Deal[]
+  activities Activity[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@map("contacts")
 }
 
 model Deal {
-  id        Int        @id @default(autoincrement())
-  title     String
-  value     Decimal?
-  stage     DealStage  @default(LEAD)
-  contactId Int
-  contact   Contact    @relation(fields: [contactId], references: [id])
-  companyId Int
-  company   Company    @relation(fields: [companyId], references: [id])
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id                String    @id @default(cuid())
+  title             String
+  value             Decimal   @default(0)
+  stage             DealStage @default(LEAD)
+  probability       Int       @default(50)
+  expectedCloseDate DateTime
+  description       String?
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId         String?
+  contact           Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  ownerId           String
+  owner             User      @relation("DealOwner", fields: [ownerId], references: [id])
+  activities        Activity[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@map("deals")
 }
@@ -82,4 +98,39 @@ enum DealStage {
   NEGOTIATION
   CLOSED_WON
   CLOSED_LOST
+}
+
+model Activity {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  type          ActivityType
+  status        ActivityStatus
+  scheduledDate DateTime
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  contactId     String?
+  contact       Contact?       @relation(fields: [contactId], references: [id])
+  dealId        String?
+  deal          Deal?          @relation(fields: [dealId], references: [id])
+  companyId     String?
+  company       Company?       @relation(fields: [companyId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("activities")
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  NOTE
+  TASK
+}
+
+enum ActivityStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
 }

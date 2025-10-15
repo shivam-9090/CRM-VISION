@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsInt, IsEnum } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 import { Role } from '@prisma/client';
 
 export class RegisterDto {
@@ -10,13 +16,15 @@ export class RegisterDto {
   password: string;
 
   @IsString()
-  @IsOptional()
-  name?: string;
+  name: string;
 
-  @IsInt()
-  companyId: number;
+  @IsString()
+  companyName: string;
+
+  @IsString()
+  industry: string;
 
   @IsEnum(Role)
   @IsOptional()
-  role?: Role;
+  role?: Role = Role.ADMIN; // Company owner is admin by default
 }

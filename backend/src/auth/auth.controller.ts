@@ -21,6 +21,12 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @UseGuards(AuthGuard)
+  @Get('verify')
+  async verify(@Request() req) {
+    return { user: req.user };
+  }
+
   @Post('invite')
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions('user:invite')
