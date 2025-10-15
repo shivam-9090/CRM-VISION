@@ -14,13 +14,13 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  name      String?
+  name      String
   role      Role     @default(EMPLOYEE)
-  companyId Int
-  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -28,7 +28,7 @@ model User {
 }
 
 model Company {
-  id          Int       @id @default(autoincrement())
+  id          String    @id @default(cuid())
   name        String
   description String?
   users       User[]
@@ -41,12 +41,12 @@ model Company {
 }
 
 model Contact {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   firstName String
   lastName  String
   email     String?
   phone     String?
-  companyId Int
+  companyId String
   company   Company  @relation(fields: [companyId], references: [id])
   deals     Deal[]
   createdAt DateTime @default(now())
@@ -56,13 +56,13 @@ model Contact {
 }
 
 model Deal {
-  id        Int        @id @default(autoincrement())
+  id        String     @id @default(cuid())
   title     String
   value     Decimal?
   stage     DealStage  @default(LEAD)
-  contactId Int
+  contactId String
   contact   Contact    @relation(fields: [contactId], references: [id])
-  companyId Int
+  companyId String
   company   Company    @relation(fields: [companyId], references: [id])
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt

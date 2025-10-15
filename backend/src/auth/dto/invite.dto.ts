@@ -1,12 +1,12 @@
-import { IsEmail, IsInt, IsEnum } from 'class-validator';
+import { IsEmail, IsString, IsEnum } from 'class-validator';
 import { Role } from '@prisma/client';
 
 export class InviteDto {
   @IsEmail()
   email: string;
 
-  @IsInt()
-  companyId: number;
+  @IsString()
+  companyId: string;
 
   @IsEnum(Role)
   role: Role;
