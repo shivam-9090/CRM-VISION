@@ -33,10 +33,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const port = configService.get('PORT') || 3001;
-  // Listen on all interfaces for cross-platform access
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Backend running on: http://0.0.0.0:${port}`);
-  console.log(`📡 API available at: http://0.0.0.0:${port}/api`);
-  console.log(`🌐 Cross-platform ready - Use your workspace IP to connect from other devices`);
+  console.log(`Backend server running on port ${port}`);
 }
 bootstrap();
+  

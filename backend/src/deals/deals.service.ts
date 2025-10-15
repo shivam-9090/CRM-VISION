@@ -7,22 +7,12 @@ import { UpdateDealDto } from './dto/update-deal.dto';
 export class DealsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createDealDto: CreateDealDto, ownerId: string) {
+  async create(createDealDto: CreateDealDto, userId: string) {
     return this.prisma.deal.create({
-      data: {
-        ...createDealDto,
-        ownerId,
-      },
+      data: createDealDto,
       include: {
         company: true,
         contact: true,
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
       },
     });
   }
@@ -32,13 +22,6 @@ export class DealsService {
       include: {
         company: true,
         contact: true,
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -52,13 +35,6 @@ export class DealsService {
       include: {
         company: true,
         contact: true,
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
       },
     });
 
@@ -77,13 +53,6 @@ export class DealsService {
         include: {
           company: true,
           contact: true,
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
         },
       });
     } catch {

@@ -19,7 +19,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, name, role, companyName, industry } = registerDto;
+    const { email, password, name, role, companyId } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -35,14 +35,18 @@ export class AuthService {
 
     // Create user and company in a transaction
     const result = await this.prisma.$transaction(async (prisma) => {
-      // Create company first
-      const company = await prisma.company.create({
-        data: {
-          name: companyName,
-          industry,
-          size: 'SMALL', // Default size
-        },
-      });
+      let userCompanyId = companyId;
+
+      // If no company ID provided, create a new company
+      if (!userCompanyId) {
+        const company = await prisma.company.create({
+          data: {
+            name: `${name}'s Company`,
+            description: 'Auto-created company',
+          },
+        });
+        userCompanyId = company.id;
+      }
 
       // Create user with company
       const user = await prisma.user.create({
@@ -51,7 +55,7 @@ export class AuthService {
           password: hashedPassword,
           name,
           role: role || Role.ADMIN,
-          companyId: company.id,
+          companyId: userCompanyId,
         },
         select: {
           id: true,
@@ -70,7 +74,7 @@ export class AuthService {
         },
       });
 
-      return { user, company };
+      return { user };
     });
 
     const payload = { id: result.user.id, role: result.user.role };

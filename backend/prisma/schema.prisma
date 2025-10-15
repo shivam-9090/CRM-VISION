@@ -18,32 +18,25 @@ model User {
   email     String   @unique
   password  String
   name      String
-  role       Role       @default(EMPLOYEE)
-  companyId  String?
-  company    Company?   @relation(fields: [companyId], references: [id])
-  deals      Deal[]     @relation("DealOwner")
-  activities Activity[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  role      Role     @default(EMPLOYEE)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
 
 model Company {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
-  industry    String
-  size        String
-  website     String?
-  phone       String?
-  email       String?
-  address     String?
+  description String?
   users       User[]
   contacts    Contact[]
   deals       Deal[]
   activities  Activity[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("companies")
 }
@@ -54,36 +47,43 @@ model Contact {
   lastName  String
   email     String?
   phone     String?
-  position  String?
-  companyId  String
-  company    Company    @relation(fields: [companyId], references: [id])
-  deals      Deal[]
-  activities Activity[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  deals     Deal[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("contacts")
 }
 
 model Deal {
-  id                String    @id @default(cuid())
-  title             String
-  value             Decimal   @default(0)
-  stage             DealStage @default(LEAD)
-  probability       Int       @default(50)
-  expectedCloseDate DateTime
-  description       String?
-  companyId         String
-  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contactId         String?
-  contact           Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  ownerId           String
-  owner             User      @relation("DealOwner", fields: [ownerId], references: [id])
-  activities        Activity[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id        String     @id @default(cuid())
+  title     String
+  value     Decimal?
+  stage     DealStage  @default(LEAD)
+  contactId String
+  contact   Contact    @relation(fields: [contactId], references: [id])
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   @@map("deals")
+}
+
+model Activity {
+  id            String         @id @default(cuid())
+  title         String
+  type          ActivityType   @default(TASK)
+  status        ActivityStatus @default(SCHEDULED)
+  description   String?
+  scheduledDate DateTime
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("activities")
 }
 
 enum Role {
@@ -100,33 +100,12 @@ enum DealStage {
   CLOSED_LOST
 }
 
-model Activity {
-  id            String         @id @default(cuid())
-  title         String
-  description   String?
-  type          ActivityType
-  status        ActivityStatus
-  scheduledDate DateTime
-  userId        String
-  user          User           @relation(fields: [userId], references: [id])
-  contactId     String?
-  contact       Contact?       @relation(fields: [contactId], references: [id])
-  dealId        String?
-  deal          Deal?          @relation(fields: [dealId], references: [id])
-  companyId     String?
-  company       Company?       @relation(fields: [companyId], references: [id])
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  @@map("activities")
-}
-
 enum ActivityType {
-  CALL
-  EMAIL
-  MEETING
-  NOTE
   TASK
+  CALL
+  MEETING
+  EMAIL
+  NOTE
 }
 
 enum ActivityStatus {

@@ -6,7 +6,31 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting seed...');
 
-  // Create admin user
+  // Create test companies first
+  const companies = await Promise.all([
+    prisma.company.create({
+      data: {
+        name: 'Tech Solutions Inc.',
+        description: 'Leading technology solutions provider',
+      },
+    }),
+    prisma.company.create({
+      data: {
+        name: 'Global Manufacturing Corp',
+        description: 'International manufacturing company',
+      },
+    }),
+    prisma.company.create({
+      data: {
+        name: 'Healthcare Partners',
+        description: 'Healthcare technology and services',
+      },
+    }),
+  ]);
+
+  console.log('🏢 Created companies:', companies.map(c => c.name));
+
+  // Create admin user with first company
   const hashedPassword = await bcrypt.hash('password123', 12);
   
   const adminUser = await prisma.user.create({
@@ -15,49 +39,11 @@ async function main() {
       password: hashedPassword,
       name: 'Admin User',
       role: 'ADMIN',
+      companyId: companies[0].id,
     },
   });
 
   console.log('👤 Created admin user:', adminUser.email);
-
-  // Create test companies
-  const companies = await Promise.all([
-    prisma.company.create({
-      data: {
-        name: 'Tech Solutions Inc.',
-        industry: 'Technology',
-        size: '100-500',
-        website: 'https://techsolutions.com',
-        email: 'info@techsolutions.com',
-        phone: '+1-555-0123',
-        address: '123 Tech Street, Silicon Valley, CA',
-      },
-    }),
-    prisma.company.create({
-      data: {
-        name: 'Global Manufacturing Corp',
-        industry: 'Manufacturing',
-        size: '1000+',
-        website: 'https://globalmanufacturing.com',
-        email: 'contact@globalmanufacturing.com',
-        phone: '+1-555-0456',
-        address: '456 Factory Lane, Detroit, MI',
-      },
-    }),
-    prisma.company.create({
-      data: {
-        name: 'Healthcare Partners',
-        industry: 'Healthcare',
-        size: '50-100',
-        website: 'https://healthcarepartners.com',
-        email: 'info@healthcarepartners.com',
-        phone: '+1-555-0789',
-        address: '789 Medical Center Dr, Boston, MA',
-      },
-    }),
-  ]);
-
-  console.log('🏢 Created companies:', companies.map(c => c.name));
 
   // Create test contacts
   const contacts = await Promise.all([
@@ -67,7 +53,6 @@ async function main() {
         lastName: 'Smith',
         email: 'john.smith@techsolutions.com',
         phone: '+1-555-0124',
-        position: 'CTO',
         companyId: companies[0].id,
       },
     }),
@@ -77,7 +62,6 @@ async function main() {
         lastName: 'Johnson',
         email: 'sarah.johnson@globalmanufacturing.com',
         phone: '+1-555-0457',
-        position: 'VP of Operations',
         companyId: companies[1].id,
       },
     }),
@@ -87,7 +71,6 @@ async function main() {
         lastName: 'Brown',
         email: 'michael.brown@healthcarepartners.com',
         phone: '+1-555-0790',
-        position: 'Director of IT',
         companyId: companies[2].id,
       },
     }),
@@ -102,12 +85,8 @@ async function main() {
         title: 'Enterprise Software License',
         value: 85000,
         stage: 'NEGOTIATION',
-        probability: 75,
-        expectedCloseDate: new Date('2024-03-15'),
-        description: 'Annual enterprise software license for 100 users',
         companyId: companies[0].id,
         contactId: contacts[0].id,
-        ownerId: adminUser.id,
       },
     }),
     prisma.deal.create({
@@ -115,12 +94,8 @@ async function main() {
         title: 'Manufacturing Equipment Deal',
         value: 250000,
         stage: 'PROPOSAL',
-        probability: 60,
-        expectedCloseDate: new Date('2024-04-30'),
-        description: 'Custom manufacturing equipment and installation',
         companyId: companies[1].id,
         contactId: contacts[1].id,
-        ownerId: adminUser.id,
       },
     }),
     prisma.deal.create({
@@ -128,17 +103,37 @@ async function main() {
         title: 'Healthcare Consulting Services',
         value: 45000,
         stage: 'QUALIFIED',
-        probability: 40,
-        expectedCloseDate: new Date('2024-05-15'),
-        description: '6-month healthcare consulting engagement',
         companyId: companies[2].id,
         contactId: contacts[2].id,
-        ownerId: adminUser.id,
       },
     }),
   ]);
 
   console.log('💰 Created deals:', deals.map(d => d.title));
+
+  // Create sample activities
+  const activities = await Promise.all([
+    prisma.activity.create({
+      data: {
+        title: 'Follow up call with John',
+        type: 'CALL',
+        status: 'SCHEDULED',
+        scheduledDate: new Date('2024-12-10'),
+        companyId: companies[0].id,
+      },
+    }),
+    prisma.activity.create({
+      data: {
+        title: 'Prepare proposal presentation',
+        type: 'TASK',
+        status: 'SCHEDULED',
+        scheduledDate: new Date('2024-12-08'),
+        companyId: companies[1].id,
+      },
+    }),
+  ]);
+
+  console.log('📝 Created activities:', activities.map(a => a.title));
 
   console.log('✅ Seed completed successfully!');
   console.log('📋 Login credentials: admin@crm.com / password123');

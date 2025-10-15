@@ -7,35 +7,14 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createActivityDto: CreateActivityDto, userId: string) {
+  async create(createActivityDto: CreateActivityDto, companyId: string) {
     return this.prisma.activity.create({
       data: {
         ...createActivityDto,
         scheduledDate: new Date(createActivityDto.scheduledDate),
-        userId,
+        companyId,
       },
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        contact: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        deal: {
-          select: {
-            id: true,
-            title: true,
-            value: true,
-          },
-        },
         company: {
           select: {
             id: true,
@@ -50,10 +29,7 @@ export class ActivitiesService {
     const where: any = {};
     
     if (companyId) {
-      where.OR = [
-        { companyId },
-        { user: { companyId } },
-      ];
+      where.companyId = companyId;
     }
     
     if (type) {
@@ -63,27 +39,6 @@ export class ActivitiesService {
     return this.prisma.activity.findMany({
       where,
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        contact: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        deal: {
-          select: {
-            id: true,
-            title: true,
-            value: true,
-          },
-        },
         company: {
           select: {
             id: true,
@@ -101,36 +56,12 @@ export class ActivitiesService {
     const where: any = { id };
     
     if (companyId) {
-      where.OR = [
-        { companyId },
-        { user: { companyId } },
-      ];
+      where.companyId = companyId;
     }
 
     const activity = await this.prisma.activity.findFirst({
       where,
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        contact: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        deal: {
-          select: {
-            id: true,
-            title: true,
-            value: true,
-          },
-        },
         company: {
           select: {
             id: true,
@@ -151,10 +82,7 @@ export class ActivitiesService {
     const where: any = { id };
     
     if (companyId) {
-      where.OR = [
-        { companyId },
-        { user: { companyId } },
-      ];
+      where.companyId = companyId;
     }
 
     const activity = await this.prisma.activity.findFirst({ where });
@@ -172,27 +100,6 @@ export class ActivitiesService {
       where: { id },
       data: updateData,
       include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        contact: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        deal: {
-          select: {
-            id: true,
-            title: true,
-            value: true,
-          },
-        },
         company: {
           select: {
             id: true,
@@ -207,10 +114,7 @@ export class ActivitiesService {
     const where: any = { id };
     
     if (companyId) {
-      where.OR = [
-        { companyId },
-        { user: { companyId } },
-      ];
+      where.companyId = companyId;
     }
 
     const activity = await this.prisma.activity.findFirst({ where });
