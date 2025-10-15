@@ -7,10 +7,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Enable CORS
+  // Enable CORS for cross-platform development
   app.enableCors({
-    origin: configService.get('FRONTEND_URL') || 'http://localhost:3000',
+    origin: [
+      configService.get('FRONTEND_URL') || 'http://localhost:3000',
+      /^http:\/\/192\.168\.[0-9]+\.[0-9]+:3000$/,  // Local network
+      /^http:\/\/10\.[0-9]+\.[0-9]+\.[0-9]+:3000$/,   // Corporate network
+      /^http:\/\/172\.[0-9]+\.[0-9]+\.[0-9]+:3000$/,  // Docker network
+    ],
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // Enable global validation
@@ -26,7 +33,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const port = configService.get('PORT') || 3001;
-  await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
+  // Listen on all interfaces for cross-platform access
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Backend running on: http://0.0.0.0:${port}`);
+  console.log(`📡 API available at: http://0.0.0.0:${port}/api`);
+  console.log(`🌐 Cross-platform ready - Use your workspace IP to connect from other devices`);
 }
 bootstrap();

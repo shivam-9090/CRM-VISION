@@ -15,13 +15,19 @@
 
 ## 🚀 Development Environment Status
 
-### ✅ SERVERS ALREADY RUNNING IN BACKGROUND
+### ✅ CROSS-PLATFORM CONFIGURATION
 
-- **Backend Server**: `npm run start:dev` (Port 3001) - ACTIVE
-- **Frontend Server**: `npm run dev` (Port 3000) - ACTIVE
-- **Database**: PostgreSQL Docker container - ACTIVE
+- **Backend Server**: Running on workspace (Port 3001) - ACTIVE on all interfaces (0.0.0.0)
+- **Frontend**: Can run on PC or any device (Port 3000)
+- **Database**: PostgreSQL Docker container on workspace - ACTIVE
 
-**IMPORTANT**: Do not suggest starting servers with npm commands. They are permanently running in background CMD terminals.
+**CROSS-PLATFORM SETUP**:
+
+- Backend (Workspace): `npm run start:dev` - RUNNING in background
+- Frontend (Your PC): Connect via workspace IP address
+- CORS configured for local network access (192.168.x.x, 10.x.x.x)
+
+**IMPORTANT**: Backend runs on workspace, frontend can run anywhere on network.
 
 ## 📁 Project Structure Context
 
@@ -59,9 +65,11 @@ lib/
 
 ### API Endpoints
 
-- **Base URL**: `http://localhost:3001/api`
+- **Local Base URL**: `http://localhost:3001/api` (same machine)
+- **Cross-Platform URL**: `http://[WORKSPACE_IP]:3001/api` (from other devices)
 - **Authentication**: Bearer JWT tokens required
 - **All endpoints**: Require `/api` prefix
+- **CORS**: Configured for cross-network access
 
 ### Key Patterns:
 
@@ -125,10 +133,18 @@ const [formData, setFormData] = useState<CreateActivityDto>({
 
 ## 🚫 DO NOT Suggest
 
-- Starting development servers (already running)
-- Installing dependencies (already installed)
+- Starting backend server (already running on workspace)
+- Installing backend dependencies (already installed)
 - Setting up Docker (already configured)
 - Basic project structure changes (architecture is set)
+- Changing CORS configuration (already set for cross-platform)
+
+## ✅ DO Suggest
+
+- Frontend development on PC with proper API URLs
+- Environment configuration for cross-platform access
+- Network troubleshooting for cross-device connections
+- Using workspace IP address in frontend configuration
 
 ---
 
