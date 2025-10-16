@@ -7,17 +7,26 @@ import { UpdateContactDto } from './dto/update-contact.dto';
 export class ContactsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createContactDto: CreateContactDto) {
+  async create(createContactDto: CreateContactDto, companyId: string) {
+    // Ensure contact is created under the user's company
+    const contactData = {
+      ...createContactDto,
+      companyId, // Force company ID from authenticated user
+    };
+
     return this.prisma.contact.create({
-      data: createContactDto,
+      data: contactData,
       include: {
         company: true,
       },
     });
   }
 
-  async findAll() {
+  async findAll(companyId: string) {
     return this.prisma.contact.findMany({
+      where: {
+        companyId, // Filter by company
+      },
       include: {
         company: true,
       },
@@ -27,12 +36,18 @@ export class ContactsService {
     });
   }
 
-  async findOne(id: string) {
-    const contact = await this.prisma.contact.findUnique({
-      where: { id },
+  async findOne(id: string, companyId: string) {
+    const contact = await this.prisma.contact.findFirst({
+      where: {
+        id,
+        companyId, // Ensure contact belongs to user's company
+      },
       include: {
         company: true,
         deals: {
+          where: {
+            companyId, // Also filter deals by company
+          },
           include: {
             company: true,
           },
@@ -47,8 +62,17 @@ export class ContactsService {
     return contact;
   }
 
-  async update(id: string, updateContactDto: UpdateContactDto) {
+  async update(id: string, updateContactDto: UpdateContactDto, companyId: string) {
     try {
+      // First verify the contact belongs to the company
+      const existingContact = await this.prisma.contact.findFirst({
+        where: { id, companyId },
+      });
+
+      if (!existingContact) {
+        throw new NotFoundException(`Contact with ID ${id} not found`);
+      }
+
       return await this.prisma.contact.update({
         where: { id },
         data: updateContactDto,
@@ -56,17 +80,32 @@ export class ContactsService {
           company: true,
         },
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string, companyId: string) {
     try {
+      // First verify the contact belongs to the company
+      const existingContact = await this.prisma.contact.findFirst({
+        where: { id, companyId },
+      });
+
+      if (!existingContact) {
+        throw new NotFoundException(`Contact with ID ${id} not found`);
+      }
+
       return await this.prisma.contact.delete({
         where: { id },
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
   }

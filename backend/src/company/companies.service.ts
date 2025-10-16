@@ -21,6 +21,30 @@ export class CompaniesService {
     });
   }
 
+  async findUserCompany(companyId: string) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      include: {
+        contacts: true,
+        deals: true,
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!company) {
+      throw new NotFoundException(`Company not found`);
+    }
+
+    return [company]; // Return as array to match findAll format
+  }
+
   async findOne(id: string) {
     const company = await this.prisma.company.findUnique({
       where: { id },

@@ -10,27 +10,27 @@ export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 
   @Post()
-  create(@Body() createContactDto: CreateContactDto) {
-    return this.contactsService.create(createContactDto);
+  create(@Body() createContactDto: CreateContactDto, @Request() req: any) {
+    return this.contactsService.create(createContactDto, req.user.companyId);
   }
 
   @Get()
-  findAll() {
-    return this.contactsService.findAll();
+  findAll(@Request() req: any) {
+    return this.contactsService.findAll(req.user.companyId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contactsService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    return this.contactsService.findOne(id, req.user.companyId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateContactDto: UpdateContactDto) {
-    return this.contactsService.update(id, updateContactDto);
+  update(@Param('id') id: string, @Body() updateContactDto: UpdateContactDto, @Request() req: any) {
+    return this.contactsService.update(id, updateContactDto, req.user.companyId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.contactsService.remove(id);
+  remove(@Param('id') id: string, @Request() req: any) {
+    return this.contactsService.remove(id, req.user.companyId);
   }
 }

@@ -11,26 +11,26 @@ export class DealsController {
 
   @Post()
   async create(@Body() createDealDto: CreateDealDto, @Request() req: any) {
-    return this.dealsService.create(createDealDto, req.user.id);
+    return this.dealsService.create(createDealDto, req.user);
   }
 
   @Get()
-  async findAll() {
-    return this.dealsService.findAll();
+  async findAll(@Request() req: any) {
+    return this.dealsService.findAll(req.user.companyId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.dealsService.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    return this.dealsService.findOne(id, req.user.companyId);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateDealDto: UpdateDealDto) {
-    return this.dealsService.update(id, updateDealDto);
+  async update(@Param('id') id: string, @Body() updateDealDto: UpdateDealDto, @Request() req: any) {
+    return this.dealsService.update(id, updateDealDto, req.user.companyId);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.dealsService.remove(id);
+  async remove(@Param('id') id: string, @Request() req: any) {
+    return this.dealsService.remove(id, req.user.companyId);
   }
 }

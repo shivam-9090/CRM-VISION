@@ -4,9 +4,12 @@ import {
   IsEnum,
   IsOptional,
   IsDateString,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { DealStage } from '@prisma/client';
+import { DealStage, LeadSource, Priority } from '@prisma/client';
 
 export class UpdateDealDto {
   @IsOptional()
@@ -25,19 +28,38 @@ export class UpdateDealDto {
   stage?: DealStage;
 
   @IsOptional()
-  @IsNumber()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? parseInt(value, 10) : Number(value),
-  )
-  probability?: number;
+  @IsEnum(LeadSource)
+  leadSource?: LeadSource;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  leadScore?: number;
+
+  @IsOptional()
+  @IsEnum(Priority)
+  priority?: Priority;
 
   @IsOptional()
   @IsDateString()
   expectedCloseDate?: string;
 
   @IsOptional()
+  @IsDateString()
+  closedAt?: string;
+
+  @IsOptional()
   @IsString()
-  description?: string;
+  assignedToId?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsDateString()
+  lastContactDate?: string;
 
   @IsOptional()
   @IsString()
