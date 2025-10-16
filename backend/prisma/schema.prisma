@@ -14,28 +14,30 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(EMPLOYEE)
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String
+  role         Role     @default(EMPLOYEE)
+  companyId    String?
+  company      Company? @relation(fields: [companyId], references: [id])
+  assignedDeals Deal[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@map("users")
 }
 
 model Company {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   description String?
   users       User[]
   contacts    Contact[]
   deals       Deal[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  activities  Activity[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("companies")
 }
@@ -56,18 +58,42 @@ model Contact {
 }
 
 model Deal {
-  id        String     @id @default(cuid())
-  title     String
-  value     Decimal?
-  stage     DealStage  @default(LEAD)
-  contactId String
-  contact   Contact    @relation(fields: [contactId], references: [id])
-  companyId String
-  company   Company    @relation(fields: [companyId], references: [id])
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  title            String
+  value            Decimal?
+  stage            DealStage  @default(LEAD)
+  leadSource       LeadSource @default(WEBSITE)
+  leadScore        Int        @default(0)
+  priority         Priority   @default(MEDIUM)
+  expectedCloseDate DateTime?
+  closedAt         DateTime?
+  assignedToId     String?
+  assignedTo       User?      @relation(fields: [assignedToId], references: [id])
+  contactId        String
+  contact          Contact    @relation(fields: [contactId], references: [id])
+  companyId        String
+  company          Company    @relation(fields: [companyId], references: [id])
+  notes            String?
+  lastContactDate  DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   @@map("deals")
+}
+
+model Activity {
+  id            String         @id @default(cuid())
+  title         String
+  type          ActivityType   @default(TASK)
+  status        ActivityStatus @default(SCHEDULED)
+  description   String?
+  scheduledDate DateTime
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("activities")
 }
 
 enum Role {
@@ -82,4 +108,40 @@ enum DealStage {
   NEGOTIATION
   CLOSED_WON
   CLOSED_LOST
+}
+
+enum ActivityType {
+  TASK
+  CALL
+  MEETING
+  EMAIL
+  NOTE
+}
+
+enum ActivityStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum LeadSource {
+  WEBSITE
+  FACEBOOK
+  GOOGLE_ADS
+  LINKEDIN
+  REFERRAL
+  COLD_CALL
+  EMAIL_CAMPAIGN
+  TRADE_SHOW
+  SOCIAL_MEDIA
+  DIRECT_MAIL
+  PARTNER
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
