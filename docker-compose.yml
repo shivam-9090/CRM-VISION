@@ -6,24 +6,14 @@ services:
     environment:
       POSTGRES_DB: crm_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - crm-network
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: crm-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - crm-network
+    restart: unless-stopped
 
   # Backend API
   backend:
@@ -33,20 +23,22 @@ services:
     container_name: crm-backend
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/crm_db
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-jwt-secret-key
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/crm_db?schema=public
+      JWT_SECRET: CRM_APP_2024_SECURE_JWT_SECRET_KEY_DO_NOT_SHARE
+      JWT_EXPIRES_IN: 24h
+      PORT: 3001
       FRONTEND_URL: http://localhost:3000
     ports:
       - "3001:3001"
     depends_on:
       - postgres
-      - redis
     volumes:
       - ./backend:/app
       - /app/node_modules
     networks:
       - crm-network
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
 
   # Frontend
   frontend:
@@ -55,7 +47,8 @@ services:
       dockerfile: Dockerfile
     container_name: crm-frontend
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NODE_ENV: development
     ports:
       - "3000:3000"
     depends_on:
@@ -63,12 +56,13 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.next
     networks:
       - crm-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   crm-network:
