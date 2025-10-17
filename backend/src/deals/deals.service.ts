@@ -10,10 +10,15 @@ export class DealsService {
 
   async create(createDealDto: CreateDealDto, user: any) {
     // Ensure the deal is created under the user's company
-    const dealData = {
+    const dealData: any = {
       ...createDealDto,
       companyId: user.companyId, // Force company ID from authenticated user
     };
+
+    // Convert date string to ISO DateTime if provided
+    if (dealData.expectedCloseDate) {
+      dealData.expectedCloseDate = new Date(dealData.expectedCloseDate).toISOString();
+    }
 
     return this.prisma.deal.create({
       data: dealData,
@@ -93,7 +98,12 @@ export class DealsService {
       }
 
       // Auto-set closedAt when deal is closed
-      let dataToUpdate = updateDealDto;
+      let dataToUpdate: any = { ...updateDealDto };
+      
+      // Convert date string to ISO DateTime if provided
+      if (dataToUpdate.expectedCloseDate) {
+        dataToUpdate.expectedCloseDate = new Date(dataToUpdate.expectedCloseDate).toISOString();
+      }
       
       if (updateDealDto.stage) {
         if (
