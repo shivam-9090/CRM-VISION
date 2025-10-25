@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: #000000;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Default text is black */
+* {
+  color: #000000;
+}
+
+/* White text on dark/colored backgrounds */
+.bg-black *,
+.bg-gray-900 *,
+.bg-gray-800 *,
+.bg-gray-700 *,
+.bg-blue-600 *,
+.bg-blue-700 *,
+.bg-blue-500 *,
+.bg-red-600 *,
+.bg-red-700 *,
+.bg-red-500 *,
+.bg-green-600 *,
+.bg-green-700 *,
+.bg-green-500 *,
+.bg-yellow-600 *,
+.bg-yellow-700 *,
+.bg-purple-600 *,
+.bg-purple-700 *,
+.bg-indigo-600 *,
+.bg-indigo-700 *,
+[class*="bg-gradient"] * {
+  color: #ffffff !important;
+}
+
+/* Black text on light backgrounds */
+.bg-white *,
+.bg-gray-50 *,
+.bg-gray-100 *,
+.bg-gray-200 *,
+.bg-blue-50 *,
+.bg-blue-100 *,
+.bg-green-50 *,
+.bg-green-100 *,
+.bg-yellow-50 *,
+.bg-yellow-100 *,
+.bg-red-50 *,
+.bg-red-100 * {
+  color: #000000 !important;
+}
+
+/* Preserve button text colors */
+button.text-white,
+button.text-white *,
+.text-white {
+  color: #ffffff !important;
+}
+
+button.text-black,
+button.text-black *,
+.text-black {
+  color: #000000 !important;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: all 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
