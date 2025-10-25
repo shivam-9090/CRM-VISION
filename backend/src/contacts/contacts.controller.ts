@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('contacts')
 @UseGuards(AuthGuard)
@@ -15,8 +16,8 @@ export class ContactsController {
   }
 
   @Get()
-  findAll(@Request() req: any) {
-    return this.contactsService.findAll(req.user.companyId);
+  findAll(@Query() pagination: PaginationDto, @Request() req: any) {
+    return this.contactsService.findAll(req.user.companyId, pagination);
   }
 
   @Get(':id')

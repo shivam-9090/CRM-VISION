@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { PaginationDto, PaginatedResponse } from '../common/dto/pagination.dto';
+import { Company } from '@prisma/client';
 
 @Injectable()
 export class CompaniesService {
@@ -13,12 +15,36 @@ export class CompaniesService {
     });
   }
 
-  async findAll() {
-    return this.prisma.company.findMany({
-      orderBy: {
-        createdAt: 'desc',
+  async findAll(
+    pagination: PaginationDto = {},
+  ): Promise<PaginatedResponse<Company>> {
+    const { page = 1, limit = 50 } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.company.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.company.count(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
       },
-    });
+    };
   }
 
   async findUserCompany(companyId: string) {

@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
+import { PaginationDto, PaginatedResponse } from '../common/dto/pagination.dto';
+import { Contact } from '@prisma/client';
 
 @Injectable()
 export class ContactsService {
@@ -22,18 +24,39 @@ export class ContactsService {
     });
   }
 
-  async findAll(companyId: string) {
-    return this.prisma.contact.findMany({
-      where: {
-        companyId, // Filter by company
+  async findAll(
+    companyId: string,
+    pagination: PaginationDto = {},
+  ): Promise<PaginatedResponse<Contact>> {
+    const { page = 1, limit = 50 } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.contact.findMany({
+        where: { companyId },
+        include: {
+          company: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.contact.count({ where: { companyId } }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
       },
-      include: {
-        company: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    };
   }
 
   async findOne(id: string, companyId: string) {

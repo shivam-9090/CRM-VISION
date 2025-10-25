@@ -5,6 +5,8 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.production  # Production secrets MUST NOT be committed!
+.env.development
 
 # Build outputs
 dist/

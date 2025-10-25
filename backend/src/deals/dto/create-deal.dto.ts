@@ -52,9 +52,7 @@ export class CreateDealDto {
   @IsString()
   notes?: string;
 
+  @IsOptional()
   @IsString()
-  companyId: string;
-
-  @IsString()
-  contactId: string;
+  contactId?: string;
 }

@@ -54,6 +54,9 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([companyId])
+  @@index([email])
+  @@index([companyId, email])
   @@map("contacts")
 }
 
@@ -69,8 +72,8 @@ model Deal {
   closedAt         DateTime?
   assignedToId     String?
   assignedTo       User?      @relation(fields: [assignedToId], references: [id])
-  contactId        String
-  contact          Contact    @relation(fields: [contactId], references: [id])
+  contactId        String?
+  contact          Contact?   @relation(fields: [contactId], references: [id])
   companyId        String
   company          Company    @relation(fields: [companyId], references: [id])
   notes            String?
@@ -78,6 +81,10 @@ model Deal {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
+  @@index([companyId])
+  @@index([companyId, stage])
+  @@index([assignedToId])
+  @@index([contactId])
   @@map("deals")
 }
 
@@ -93,6 +100,9 @@ model Activity {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
+  @@index([companyId])
+  @@index([companyId, scheduledDate])
+  @@index([companyId, status])
   @@map("activities")
 }
 
@@ -144,4 +154,16 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  email     String
+  companyId String
+  role      Role
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("invites")
 }

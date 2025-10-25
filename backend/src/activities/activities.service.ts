@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
+import { PaginationDto, PaginatedResponse } from '../common/dto/pagination.dto';
+import { Activity } from '@prisma/client';
 
 @Injectable()
 export class ActivitiesService {
@@ -25,7 +27,14 @@ export class ActivitiesService {
     });
   }
 
-  async findAll(companyId?: string, type?: string) {
+  async findAll(
+    companyId?: string,
+    pagination: PaginationDto = {},
+    type?: string,
+  ): Promise<PaginatedResponse<Activity>> {
+    const { page = 1, limit = 50 } = pagination;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
     
     if (companyId) {
@@ -36,20 +45,39 @@ export class ActivitiesService {
       where.type = type;
     }
 
-    return this.prisma.activity.findMany({
-      where,
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
+    const [data, total] = await Promise.all([
+      this.prisma.activity.findMany({
+        where,
+        include: {
+          company: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
+        orderBy: {
+          scheduledDate: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.activity.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
       },
-      orderBy: {
-        scheduledDate: 'desc',
-      },
-    });
+    };
   }
 
   async findOne(id: string, companyId?: string) {

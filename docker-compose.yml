@@ -1,70 +1,112 @@
 services:
-  # PostgreSQL Database
+  # ============================================
+  # PostgreSQL Database - Development
+  # ============================================
   postgres:
     image: postgres:15-alpine
-    container_name: crm-postgres
+    container_name: crm-postgres-dev
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: crm_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB:-crm_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-dev_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_123}
     ports:
-      - "5432:5432"
+      - "5432:5432"  # OK for dev, but removed in production
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - crm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dev_user} -d ${POSTGRES_DB:-crm_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis Cache
+  # ============================================
+  # Redis Cache - Development
+  # ============================================
   redis:
     image: redis:7-alpine
-    container_name: crm-redis
+    container_name: crm-redis-dev
     ports:
-      - "6379:6379"
+      - "6379:6379"  # OK for dev, but removed in production
     volumes:
       - redis_data:/data
     networks:
       - crm-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Backend API
+  # ============================================
+  # Backend API - Development
+  # ============================================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: crm-backend
+    container_name: crm-backend-dev
+    env_file:
+      - .env
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/crm_db
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-jwt-secret-key
-      FRONTEND_URL: http://localhost:3000
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://dev_user:dev_password_123@postgres:5432/crm_dev}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: ${PORT:-3001}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     ports:
       - "3001:3001"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
     networks:
       - crm-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # Frontend
+  # ============================================
+  # Frontend - Development
+  # ============================================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: crm-frontend
+    container_name: crm-frontend-dev
+    env_file:
+      - .env
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+      NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.next
     networks:
       - crm-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:

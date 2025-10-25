@@ -14,6 +14,7 @@ import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('activities')
 @UseGuards(AuthGuard)
@@ -26,8 +27,12 @@ export class ActivitiesController {
   }
 
   @Get()
-  findAll(@Query('type') type?: string, @Request() req?) {
-    return this.activitiesService.findAll(req.user.companyId, type);
+  findAll(
+    @Query() pagination: PaginationDto,
+    @Query('type') type?: string,
+    @Request() req?,
+  ) {
+    return this.activitiesService.findAll(req.user.companyId, pagination, type);
   }
 
   @Get(':id')
