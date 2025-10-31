@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -11,6 +11,8 @@ import { DealsModule } from './deals/deals.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { HealthModule } from './health/health.module';
+import { SentryService } from './common/sentry.service';
+import { GlobalExceptionFilter } from './common/global-exception.filter';
 
 @Module({
   imports: [
@@ -43,9 +45,14 @@ import { HealthModule } from './health/health.module';
   controllers: [AppController],
   providers: [
     AppService,
+    SentryService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard, // Global rate limiting on all endpoints
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter, // Global exception handling with Sentry
     },
   ],
 })

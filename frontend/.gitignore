@@ -1,23 +1,24 @@
+# Dependencies
 node_modules
-# Keep environment variables out of version control
+
+# Next.js
+.next
+out
+
+# Environment variables
 .env
 .env.local
 .env.production
+.env.staging
 
 # Build outputs
-dist
 build
+dist
 *.tsbuildinfo
-
-# Test coverage
-coverage
 
 # Logs
 *.log
 logs
-
-# Generated Prisma files
-/generated/prisma
 
 # IDE files
 .vscode
@@ -28,3 +29,6 @@ logs
 # OS files
 .DS_Store
 Thumbs.db
+
+# Sentry
+.sentryclirc

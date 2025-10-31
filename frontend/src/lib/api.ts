@@ -47,12 +47,20 @@ api.interceptors.response.use(
       
       // Don't log 401 errors on auth verification checks
       if (!(isAuthCheck && is401)) {
-        console.error('API Error:', {
-          status: error.response?.status,
+        const errorInfo = {
+          status: error.response?.status || 'No response',
           url: `${error.config?.baseURL || API_URL}${error.config?.url || ''}`,
-          message: error.response?.data?.message || error.message,
-          data: error.response?.data,
-        });
+          message: error.response?.data?.message || error.message || 'Unknown error',
+          method: error.config?.method?.toUpperCase() || 'UNKNOWN',
+        };
+        
+        console.error('API Error:', errorInfo);
+        
+        // Only log response data if it exists and is meaningful
+        if (error.response?.data && typeof error.response.data === 'object') {
+          console.error('Response data:', error.response.data);
+        }
+        
         // Only log full error for server errors
         if (error.response?.status && error.response.status >= 500) {
           console.error('Full error details:', error);
@@ -61,12 +69,14 @@ api.interceptors.response.use(
     }
     
     if (error.response?.status === 401) {
-      // Clear token on 401
+      // Clear auth data on 401
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       
       // Only redirect if not already on login page and not an auth check
       const isAuthCheck = error.config?.url?.includes('/auth/verify');
       if (!isAuthCheck && !window.location.pathname.includes('/auth/login')) {
+        console.log('Unauthorized - redirecting to login');
         window.location.href = '/auth/login';
       }
     }

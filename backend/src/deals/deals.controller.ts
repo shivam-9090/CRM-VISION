@@ -6,18 +6,22 @@ import { UpdateDealDto } from './dto/update-deal.dto';
 import { FilterDealDto } from './dto/filter-deal.dto';
 import { BulkDeleteDto, BulkUpdateDto } from './dto/bulk-operation.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
 
 @Controller('deals')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class DealsController {
   constructor(private dealsService: DealsService) {}
 
   @Post()
+  @Permissions('deal:create')
   async create(@Body() createDealDto: CreateDealDto, @Request() req: any) {
     return this.dealsService.create(createDealDto, req.user);
   }
 
   @Get()
+  @Permissions('deal:read')
   async findAll(@Query() filters: FilterDealDto, @Request() req: any) {
     return this.dealsService.findAll(req.user.companyId, filters);
   }

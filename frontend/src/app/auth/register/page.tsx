@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { register, isAuthenticated } from '@/lib/auth';
+import { hasAuthToken, storeAuthData } from '@/lib/auth-utils';
 import { testBackendConnection } from '@/lib/api';
+import api from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -23,21 +24,66 @@ export default function RegisterPage() {
 
   // Check if already authenticated
   useEffect(() => {
-    const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (authenticated) {
+    if (typeof window !== 'undefined') {
+      const isLoggedIn = hasAuthToken();
+      
+      if (isLoggedIn) {
+        // User already logged in, redirect to dashboard
         router.replace('/dashboard');
       } else {
+        // User not logged in, show register form
         setCheckingAuth(false);
       }
-    };
-    checkAuth();
+    }
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Client-side validation
+    if (!formData.name.trim()) {
+      setError('Full name is required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.name.trim().length < 2) {
+      setError('Full name must be at least 2 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError('Email address is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.email.includes('@') || !formData.email.includes('.')) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.password) {
+      setError('Password is required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])|(?=.*\d)/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter, lowercase letter, or number');
+      setLoading(false);
+      return;
+    }
 
     // Test backend connectivity first
     const isConnected = await testBackendConnection();
@@ -48,7 +94,45 @@ export default function RegisterPage() {
     }
 
     try {
-      await register(formData);
+      // Clean the data before sending
+      const cleanFormData = {
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase()
+      };
+      
+      // Make register API call - the backend will set httpOnly cookie
+      const response = await api.post('/auth/register', cleanFormData);
+      
+      // Store auth data using utility function - handles both 'token' and 'access_token' fields
+      const token = response.data.token || response.data.access_token;
+      if (response.data.user && token) {
+        storeAuthData(token, response.data.user);
+        console.log('✅ Both user and token stored successfully');
+      } else {
+        console.error('❌ Missing user or token in response:', {
+          hasUser: !!response.data.user,
+          hasToken: !!token,
+          response: response.data
+        });
+        setError('Registration successful but authentication data is incomplete. Please try logging in.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Registration successful!', response.data);
+      console.log('✅ Token stored:', !!response.data.token);
+      console.log('✅ User stored:', !!response.data.user);
+      
+      // Small delay to ensure localStorage is written
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify that the data was stored correctly
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      console.log('✅ Verification - Token in localStorage:', !!storedToken);
+      console.log('✅ Verification - User in localStorage:', !!storedUser);
+      
       // Use replace instead of push to prevent going back to register
       router.replace('/dashboard');
     } catch (err: unknown) {
@@ -122,7 +206,8 @@ export default function RegisterPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  placeholder="Enter your full name"
+                  minLength={2}
+                  placeholder="Enter your full name (min 2 characters)"
                 />
 
                 <Input
@@ -132,7 +217,7 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  placeholder="Enter your email"
+                  placeholder="Enter a valid email address"
                 />
 
                 <Input
@@ -143,7 +228,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   required
                   minLength={6}
-                  placeholder="Create a secure password (min 6 characters)"
+                  placeholder="Create a secure password (min 6 characters, include uppercase/lowercase/number)"
                 />
 
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">

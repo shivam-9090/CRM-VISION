@@ -2,28 +2,115 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { hasAuthToken } from '@/lib/auth-utils';
+import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
 import Sidebar from '@/components/layout/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Building2, Users, Briefcase, DollarSign, TrendingUp, Calendar, Clock } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [dashboardData, setDashboardData] = useState({
+    totalCompanies: 0,
+    totalContacts: 0,
+    activeDeals: 0,
+    totalRevenue: 0,
+    recentActivities: [],
+    loading: true
+  });
+
+  const fetchDashboardData = async () => {
+    try {
+      console.log('📊 Fetching dashboard data...');
+      
+      // Fetch all data in parallel
+      const [companiesRes, contactsRes, dealsRes, dealsStatsRes, activitiesRes] = await Promise.all([
+        api.get('/api/companies'),
+        api.get('/api/contacts'),
+        api.get('/api/deals'),
+        api.get('/api/deals/stats/my-deals'),
+        api.get('/api/activities')
+      ]);
+
+      // Calculate metrics
+      const totalCompanies = companiesRes.data.length || 0;
+      const totalContacts = contactsRes.data.length || 0;
+      const activeDeals = dealsRes.data.filter((deal: any) => 
+        !['CLOSED_WON', 'CLOSED_LOST'].includes(deal.stage)
+      ).length || 0;
+      
+      // Calculate revenue from closed won deals
+      const totalRevenue = dealsRes.data
+        .filter((deal: any) => deal.stage === 'CLOSED_WON')
+        .reduce((sum: number, deal: any) => sum + (deal.value || 0), 0);
+
+      // Get recent activities (last 5)
+      const recentActivities = activitiesRes.data.slice(0, 5) || [];
+
+      setDashboardData({
+        totalCompanies,
+        totalContacts,
+        activeDeals,
+        totalRevenue,
+        recentActivities,
+        loading: false
+      });
+
+      console.log('📊 Dashboard data loaded:', {
+        totalCompanies,
+        totalContacts,
+        activeDeals,
+        totalRevenue: `$${totalRevenue.toLocaleString()}`,
+        recentActivities: recentActivities.length
+      });
+
+    } catch (error) {
+      console.error('📊 Error fetching dashboard data:', error);
+      setDashboardData(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
     
-    if (typeof window !== 'undefined') {
-      const isLoggedIn = hasAuthToken();
-      if (isLoggedIn) {
-        setIsAuthorized(true);
-      } else {
-        // Not logged in, redirect to login
-        router.replace('/auth/login');
+    const checkAuth = async () => {
+      if (typeof window !== 'undefined') {
+        // Add debugging info
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        console.log('📊 Dashboard Auth Check:', {
+          hasTokenInLS: !!token,
+          hasUserInLS: !!user,
+          tokenPreview: token ? token.substring(0, 20) + '...' : null
+        });
+        
+        // First do a quick local check
+        const hasToken = hasAuthToken();
+        
+        if (hasToken) {
+          console.log('📊 Dashboard: Local token found, verifying with backend...');
+          // Verify with backend
+          const isValid = await verifyAuthToken();
+          
+          if (isValid) {
+            console.log('📊 Dashboard: Valid token, showing dashboard');
+            setIsAuthorized(true);
+            // Fetch dashboard data
+            await fetchDashboardData();
+          } else {
+            console.log('📊 Dashboard: Invalid token, redirecting to login');
+            router.replace('/auth/login');
+          }
+        } else {
+          console.log('📊 Dashboard: No token found, redirecting to login');
+          router.replace('/auth/login');
+        }
       }
-    }
+    };
+
+    checkAuth();
   }, [router]);
 
   if (!mounted || !isAuthorized) {
@@ -54,10 +141,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Companies</p>
-                  <p className="text-3xl font-bold text-black">0</p>
+                  <p className="text-3xl font-bold text-black">
+                    {dashboardData.loading ? '...' : dashboardData.totalCompanies.toLocaleString()}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    +0% from last month
+                    Real-time data
                   </p>
                 </div>
                 <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -72,10 +161,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Contacts</p>
-                  <p className="text-3xl font-bold text-black">0</p>
+                  <p className="text-3xl font-bold text-black">
+                    {dashboardData.loading ? '...' : dashboardData.totalContacts.toLocaleString()}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    +0% from last month
+                    Real-time data
                   </p>
                 </div>
                 <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -90,10 +181,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Active Deals</p>
-                  <p className="text-3xl font-bold text-black">0</p>
+                  <p className="text-3xl font-bold text-black">
+                    {dashboardData.loading ? '...' : dashboardData.activeDeals.toLocaleString()}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    +0% from last month
+                    In pipeline
                   </p>
                 </div>
                 <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -108,10 +201,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
-                  <p className="text-3xl font-bold text-black">$0</p>
+                  <p className="text-3xl font-bold text-black">
+                    {dashboardData.loading ? '...' : `$${dashboardData.totalRevenue.toLocaleString()}`}
+                  </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
-                    +0% from last month
+                    From closed deals
                   </p>
                 </div>
                 <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -132,11 +227,39 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">No recent activities</p>
-                <p className="text-sm text-gray-400 mt-1">Activities will appear here when you start using the system</p>
-              </div>
+              {dashboardData.loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading activities...</p>
+                </div>
+              ) : dashboardData.recentActivities.length > 0 ? (
+                <div className="space-y-3">
+                  {dashboardData.recentActivities.map((activity: any) => (
+                    <div key={activity.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                      <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{activity.title}</p>
+                        <p className="text-sm text-gray-500">{activity.type} • {new Date(activity.scheduledDate).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        activity.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                        activity.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {activity.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">No recent activities</p>
+                  <p className="text-sm text-gray-400 mt-1">Activities will appear here when you start using the system</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

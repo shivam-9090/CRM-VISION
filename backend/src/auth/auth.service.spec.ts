@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
+import { EmailService } from '../common/email.service';
 
 // Mock bcrypt at module level
 jest.mock('bcrypt', () => ({
@@ -43,6 +44,10 @@ describe('AuthService', () => {
     verify: jest.fn(),
   };
 
+  const mockEmailService = {
+    sendEmail: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -54,6 +59,10 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();

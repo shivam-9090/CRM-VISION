@@ -38,20 +38,55 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    // Client-side validation
+    if (!email.trim()) {
+      setError('Email address is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError('Password is required');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Make login API call directly
+      // Make login API call - the backend will set httpOnly cookie
       const response = await api.post('/auth/login', {
-        email,
+        email: email.trim().toLowerCase(),
         password
       });
 
-      // Store auth data using the utility function
-      storeAuthData(response.data.access_token, response.data.user);
-      console.log('Login successful!');
+      // Store user data in localStorage for quick access (token is in httpOnly cookie)
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Also store token if provided for backward compatibility
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+      }
+
+      console.log('🔑 Login successful!', response.data);
+      console.log('🔑 Token stored:', !!response.data.token);
+      console.log('🔑 User stored:', !!response.data.user);
       
       // Redirect to dashboard after successful login
       router.replace('/dashboard');
     } catch (err: unknown) {
+      console.error('Login error:', err);
       if (err && typeof err === 'object' && 'response' in err) {
         const response = (err as { response?: { data?: { message?: string | string[] } } }).response;
         if (response?.data?.message && Array.isArray(response.data.message)) {
@@ -59,10 +94,10 @@ export default function LoginPage() {
         } else if (response?.data?.message) {
           setError(response.data.message as string);
         } else {
-          setError('Login failed');
+          setError('Login failed. Please check your credentials.');
         }
       } else {
-        setError('Login failed');
+        setError('Login failed. Please check your network connection.');
       }
     } finally {
       setLoading(false);
@@ -167,7 +202,8 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="Enter your password"
+                  minLength={6}
+                  placeholder="Enter your password (min 6 characters)"
                 />
 
                 <Button
@@ -178,6 +214,12 @@ export default function LoginPage() {
                 >
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
+
+                <div className="text-center">
+                  <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 transition-colors">
+                    Forgot your password?
+                  </Link>
+                </div>
 
                 <div className="text-center">
                   <p className="text-gray-700 font-medium">

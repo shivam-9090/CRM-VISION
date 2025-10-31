@@ -14,16 +14,18 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  password     String
-  name         String
-  role         Role     @default(EMPLOYEE)
-  companyId    String?
-  company      Company? @relation(fields: [companyId], references: [id])
-  assignedDeals Deal[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String
+  role             Role      @default(EMPLOYEE)
+  companyId        String?
+  company          Company?  @relation(fields: [companyId], references: [id])
+  assignedDeals    Deal[]
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@map("users")
 }

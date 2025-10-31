@@ -54,8 +54,55 @@ export default function CreateContactPage() {
     setLoading(true);
     setErrors({});
 
+    // Client-side validation
+    if (!formData.firstName.trim()) {
+      setErrors({ firstName: 'First name is required' });
+      setLoading(false);
+      return;
+    }
+
+    if (formData.firstName.trim().length < 2) {
+      setErrors({ firstName: 'First name must be at least 2 characters long' });
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.lastName.trim()) {
+      setErrors({ lastName: 'Last name is required' });
+      setLoading(false);
+      return;
+    }
+
+    if (formData.lastName.trim().length < 2) {
+      setErrors({ lastName: 'Last name must be at least 2 characters long' });
+      setLoading(false);
+      return;
+    }
+
+    if (formData.email && (!formData.email.includes('@') || !formData.email.includes('.'))) {
+      setErrors({ email: 'Please enter a valid email address' });
+      setLoading(false);
+      return;
+    }
+
+    if (formData.phone && formData.phone.length < 10) {
+      setErrors({ phone: 'Phone number must be at least 10 characters long' });
+      setLoading(false);
+      return;
+    }
+
     try {
-      await api.post('/contacts', formData);
+      // Clean the data before sending
+      const cleanFormData = {
+        ...formData,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email?.trim().toLowerCase() || '',
+        phone: formData.phone?.trim() || '',
+        companyId: formData.companyId || ''
+      };
+      
+      await api.post('/contacts', cleanFormData);
       router.push('/contacts');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {

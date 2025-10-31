@@ -28,6 +28,14 @@ export function CardTitle({ children, className = '', ...props }: CardProps) {
   );
 }
 
+export function CardDescription({ children, className = '', ...props }: CardProps) {
+  return (
+    <p className={`text-sm text-gray-600 mt-1 ${className}`} {...props}>
+      {children}
+    </p>
+  );
+}
+
 export function CardContent({ children, className = '', ...props }: CardProps) {
   return (
     <div className={`px-6 py-4 ${className}`} {...props}>

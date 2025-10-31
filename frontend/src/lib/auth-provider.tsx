@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    localStorage.setItem('token', data.access_token);
+    localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
     // Let the login page handle the redirect
@@ -139,7 +139,7 @@ export async function loginUser(email: string, password: string): Promise<void> 
   }
 
   const data = await response.json();
-  localStorage.setItem('token', data.access_token);
+  localStorage.setItem('token', data.token);
   localStorage.setItem('user', JSON.stringify(data.user));
 }
 
@@ -156,7 +156,7 @@ export async function registerUser(email: string, password: string, name: string
   }
 
   const data = await response.json();
-  localStorage.setItem('token', data.access_token);
+  localStorage.setItem('token', data.token);
   localStorage.setItem('user', JSON.stringify(data.user));
 }
 

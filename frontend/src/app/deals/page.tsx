@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { isAuthenticated, verify } from '@/lib/auth';
+import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -151,9 +151,21 @@ export default function DealsPage() {
   // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        router.push('/auth/login');
+      if (typeof window !== 'undefined') {
+        const hasToken = hasAuthToken();
+        
+        if (hasToken) {
+          console.log('💼 Deals: Local token found, verifying with backend...');
+          const isValid = await verifyAuthToken();
+          
+          if (!isValid) {
+            console.log('💼 Deals: Invalid token, redirecting to login');
+            router.push('/auth/login');
+          }
+        } else {
+          console.log('💼 Deals: No token found, redirecting to login');
+          router.push('/auth/login');
+        }
       }
     };
     checkAuth();
@@ -235,10 +247,18 @@ export default function DealsPage() {
   // Authentication check - only run once on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        router.push('/auth/login');
-        return;
+      if (typeof window !== 'undefined') {
+        const hasToken = hasAuthToken();
+        if (!hasToken) {
+          router.push('/auth/login');
+          return;
+        }
+        
+        const isValid = await verifyAuthToken();
+        if (!isValid) {
+          router.push('/auth/login');
+          return;
+        }
       }
       // Initial data fetch
       fetchDeals();
@@ -670,12 +690,13 @@ export default function DealsPage() {
                     onClick={async () => {
                       setAssigningDeals(true);
                       try {
-                        // Get current user
-                        const user = await verify();
-                        if (!user) {
+                        // Get current user from localStorage
+                        const userData = localStorage.getItem('user');
+                        if (!userData) {
                           alert('Failed to get current user. Please refresh and try again.');
                           return;
                         }
+                        const user = JSON.parse(userData);
                         
                         console.log('Current user:', user);
                         console.log('Total deals to assign:', deals.length);

@@ -66,32 +66,36 @@ export const register = async (data: {
 
 export const logout = async () => {
   try {
+    // Call backend logout to clear httpOnly cookie
     await api.post('/auth/logout');
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
-    // Clear token from localStorage
+    // Clear all auth data from localStorage
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Redirect to login
     window.location.href = '/auth/login';
   }
 };
 
 export const verify = async () => {
   try {
-    // Check if token exists in localStorage or cookie
-    const hasToken = typeof window !== 'undefined' && 
-      (localStorage.getItem('token') || document.cookie.includes('token='));
+    // Always try to verify with backend (it will use httpOnly cookie)
+    const response = await api.get('/auth/verify');
     
-    if (!hasToken) {
-      return null;
+    // Store user data in localStorage for quick access
+    if (response.data.user && typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     
-    const response = await api.get('/auth/verify');
     return response.data.user;
-  } catch {
-    // Clear invalid token
+  } catch (error) {
+    // Clear any stored auth data on failed verification
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     }
     return null;
   }
@@ -100,12 +104,6 @@ export const verify = async () => {
 export const isAuthenticated = async (): Promise<boolean> => {
   // Since we're using httpOnly cookies, we need to verify with the backend
   if (typeof window === 'undefined') return false;
-  
-  // Quick check: if no token in localStorage or cookie, don't even try
-  const hasToken = localStorage.getItem('token') || document.cookie.includes('token=');
-  if (!hasToken) {
-    return false;
-  }
   
   try {
     const user = await verify();

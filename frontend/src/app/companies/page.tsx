@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { isAuthenticated } from '@/lib/auth';
+import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -32,10 +32,18 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        router.push('/auth/login');
-        return;
+      if (typeof window !== 'undefined') {
+        const hasToken = hasAuthToken();
+        if (!hasToken) {
+          router.push('/auth/login');
+          return;
+        }
+        
+        const isValid = await verifyAuthToken();
+        if (!isValid) {
+          router.push('/auth/login');
+          return;
+        }
       }
       fetchCompanies();
     };
