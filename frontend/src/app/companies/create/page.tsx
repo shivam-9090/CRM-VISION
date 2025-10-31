@@ -96,7 +96,7 @@ export default function CreateCompanyPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={loading}>
                   Create Company
                 </Button>
                 <Link href="/companies">

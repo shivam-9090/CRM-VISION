@@ -8,30 +8,31 @@
 
 ### Technology Stack:
 
-- **Frontend**: Next.js 14, TypeScript, React Query, shadcn/ui, Tailwind CSS
+- **Frontend**: Next.js 15.5.5, TypeScript, React Query, shadcn/ui, Tailwind CSS
 - **Backend**: NestJS, TypeScript, Prisma ORM, JWT Authentication
 - **Database**: PostgreSQL with Prisma migrations
 - **Development**: Docker containers, hot-reload enabled
 
 ## 🚀 Development Environment Status
 
-### ✅ CROSS-PLATFORM CONFIGURATION
+### ✅ ALWAYS-RUNNING SERVERS
 
-- **Backend Server**: Running on workspace (Port 3001) - ACTIVE on all interfaces (0.0.0.0)
-- **Frontend**: Can run on PC or any device (Port 3000)
-- **Database**: PostgreSQL Docker container on workspace - ACTIVE
+**CRITICAL - NEVER SUGGEST STARTING SERVERS:**
+- **Backend Server**: PERMANENTLY running in background CMD (Port 3001)
+- **Frontend Server**: PERMANENTLY running in background CMD (Port 3000)
+- **Database**: PostgreSQL Docker container - ALWAYS ACTIVE
 
-**CROSS-PLATFORM SETUP**:
+**DEVELOPMENT ASSUMPTIONS**:
+- Both servers auto-start and run continuously in background
+- Hot-reload is ALWAYS active for both frontend and backend
+- Database connection is persistent and always available
+- No need to run `npm start`, `npm run dev`, or any server commands
 
-- Backend (Workspace): `npm run start:dev` - RUNNING in background
-- Frontend (Your PC): Connect via workspace IP address
-- CORS configured for local network access (192.168.x.x, 10.x.x.x)
-
-**IMPORTANT**: Backend runs on workspace, frontend can run anywhere on network.
+**IMPORTANT**: Servers are managed externally - focus ONLY on code development.
 
 ## 📁 Project Structure Context
 
-### Backend (`/backend`)
+### Backend (`/backend`) - Always Running
 
 ```
 src/
@@ -44,36 +45,46 @@ src/
 └── prisma/        # Database service and utilities
 ```
 
-### Frontend (`/frontend`)
+### Frontend (`/frontend`) - Always Running
 
 ```
-app/
-├── auth/          # Login/register pages
+src/app/
+├── auth/          # Login/register pages (/auth/login, /auth/register)
 ├── companies/     # Company management UI
 ├── contacts/      # Contact management UI
 ├── deals/         # Deal pipeline UI
 ├── activities/    # Activities management UI
-components/
+├── dashboard/     # Main dashboard with stats and navigation
+└── page.tsx       # Root page (/) with auth flow logic
+src/components/
 ├── ui/            # shadcn/ui components (Button, Card, Input)
-└── layout/        # Navigation and sidebar
-lib/
+└── layout/        # Navigation, sidebar, and layout components
+src/lib/
 ├── api.ts         # Axios client with auth interceptors
-└── auth.tsx       # Authentication context provider
+├── auth-provider.tsx  # Authentication context provider
+└── auth-utils.ts  # Simple auth utilities (no auto-redirects)
 ```
 
 ## 🔧 Development Guidelines
 
 ### API Endpoints
 
-- **Local Base URL**: `http://localhost:3001/api` (same machine)
-- **Cross-Platform URL**: `http://[WORKSPACE_IP]:3001/api` (from other devices)
+- **Base URL**: `http://localhost:3001/api` (backend always running)
 - **Authentication**: Bearer JWT tokens required
 - **All endpoints**: Require `/api` prefix
-- **CORS**: Configured for cross-network access
+- **CORS**: Pre-configured and always active
+
+### Authentication Flow (IMPLEMENTED)
+
+Based on `page_flow.dio` diagram:
+1. **URL:3000 (first time)** → Check auth → Redirect to `/auth/login` OR `/dashboard`
+2. **Login Page** → Backend check "if user exist then open that data" → Store JWT → `/dashboard`
+3. **Dashboard** → Navigation to `deals`, `contacts`, `activities`, `companies`
+4. **Protected Routes** → Auto-redirect to login if not authenticated
 
 ### Key Patterns:
 
-1. **Authentication Flow**: Register → Auto-create company → JWT token → Dashboard
+1. **Authentication**: Uses `auth-utils.ts` (no auto-redirects) and `auth-provider.tsx`
 2. **Data Scoping**: All data is company-scoped for multi-tenancy
 3. **CRUD Operations**: Consistent across all modules (GET, POST, PATCH, DELETE)
 4. **Error Handling**: Try-catch with proper HTTP status codes
@@ -85,6 +96,23 @@ lib/
 - **Activity Field**: `scheduledDate` (required) not `dueDate`
 - **Company Relations**: Users belong to companies, data is company-scoped
 - **Foreign Keys**: Proper cascading deletes and null constraints
+- **Seed Data**: Admin user (admin@crm.com/password123) with test companies, deals, contacts
+
+## 🎯 Current Development Focus
+
+### ✅ COMPLETED (95% Done)
+
+- Full backend API implementation
+- Complete frontend pages with CRUD operations
+- Authentication system with company isolation
+- Database schema with proper relationships
+- All API endpoints tested and working
+
+### 🔄 CURRENT PHASE
+
+- Final end-to-end testing
+- Production deployment preparation
+- Documentation updates
 
 ## 🎯 Current Development Focus
 
@@ -145,6 +173,39 @@ const [formData, setFormData] = useState<CreateActivityDto>({
 - Environment configuration for cross-platform access
 - Network troubleshooting for cross-device connections
 - Using workspace IP address in frontend configuration
+
+---
+
+## 🎯 Authentication Flow Status (COMPLETED)
+
+**Page Flow Implementation (Based on `page_flow.dio`):**
+
+1. **Root Page (`/`)**: 
+   - First time visit → Check auth status
+   - If authenticated → Redirect to `/dashboard`  
+   - If not authenticated → Redirect to `/auth/login`
+
+2. **Login Page (`/auth/login`)**:
+   - Backend check: "if user exist then open that data"
+   - Successful login → Store JWT + user data → Redirect to `/dashboard`
+   - Failed login → Show error message
+
+3. **Dashboard (`/dashboard`)**:
+   - Auth-protected route
+   - Navigation buttons to: deals, contacts, activities, companies
+   - Sidebar navigation available
+
+4. **Protected Pages**: All other pages redirect to login if not authenticated
+
+**Login Credentials (Seed Data)**:
+- Email: `admin@crm.com`
+- Password: `password123`
+
+**Testing Flow**:
+1. Clear browser data
+2. Visit `http://localhost:3000` → Auto-redirects to login
+3. Login with seed credentials → Redirects to dashboard
+4. Navigate between sections using dashboard buttons or sidebar
 
 ---
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -21,11 +21,7 @@ export default function EditCompanyPage() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCompany();
-  }, []);
-
-  const fetchCompany = async () => {
+  const fetchCompany = useCallback(async () => {
     try {
       const response = await api.get(`/companies/${params.id}`);
       setFormData({
@@ -37,7 +33,11 @@ export default function EditCompanyPage() {
     } finally {
       setFetchLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    fetchCompany();
+  }, [fetchCompany]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -127,7 +127,7 @@ export default function EditCompanyPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={loading}>
                   Update Company
                 </Button>
                 <Link href="/companies">

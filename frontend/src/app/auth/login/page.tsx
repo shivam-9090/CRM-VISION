@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { login, isAuthenticated } from '@/lib/auth';
+import { hasAuthToken, storeAuthData } from '@/lib/auth-utils';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { LogIn, Building2, Sparkles } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,15 +20,17 @@ export default function LoginPage() {
 
   // Check if already authenticated
   useEffect(() => {
-    const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (authenticated) {
+    if (typeof window !== 'undefined') {
+      const isLoggedIn = hasAuthToken();
+      
+      if (isLoggedIn) {
+        // User already logged in, redirect to dashboard
         router.replace('/dashboard');
       } else {
+        // User not logged in, show login form
         setCheckingAuth(false);
       }
-    };
-    checkAuth();
+    }
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,13 +39,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const user = await login(email, password);
-      console.log('Login successful, user:', user);
+      // Make login API call directly
+      const response = await api.post('/auth/login', {
+        email,
+        password
+      });
+
+      // Store auth data using the utility function
+      storeAuthData(response.data.access_token, response.data.user);
+      console.log('Login successful!');
       
-      // Give a small delay to ensure token is stored
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Use replace instead of push to prevent going back to login
+      // Redirect to dashboard after successful login
       router.replace('/dashboard');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -165,7 +172,7 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  loading={loading}
+                  isLoading={loading}
                   size="lg"
                   className="w-full"
                 >

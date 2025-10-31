@@ -156,7 +156,7 @@ export default function ProfilePage() {
                   />
 
                   <div className="flex gap-3 pt-2">
-                    <Button type="submit" loading={loading}>
+                    <Button type="submit" isLoading={loading}>
                       Save Changes
                     </Button>
                     <Button type="button" variant="secondary" onClick={handleCancel}>

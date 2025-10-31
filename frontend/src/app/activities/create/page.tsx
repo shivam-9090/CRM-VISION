@@ -155,7 +155,7 @@ export default function CreateActivityPage() {
               </div>
 
               <div className="flex gap-4">
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={loading}>
                   Create Activity
                 </Button>
                 <Link href="/activities">

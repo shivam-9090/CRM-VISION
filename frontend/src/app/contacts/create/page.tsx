@@ -150,7 +150,7 @@ export default function CreateContactPage() {
               />
 
               <div className="flex gap-4">
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={loading}>
                   Create Contact
                 </Button>
                 <Link href="/contacts">

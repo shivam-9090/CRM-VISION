@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+import { hasAuthToken } from '@/lib/auth-utils';
 import Sidebar from '@/components/layout/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Building2, Users, Briefcase, DollarSign, TrendingUp, Calendar, Clock } from 'lucide-react';
@@ -10,21 +10,32 @@ import { Building2, Users, Briefcase, DollarSign, TrendingUp, Calendar, Clock } 
 export default function DashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [checking, setChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (!authenticated) {
-        router.push('/auth/login');
+    
+    if (typeof window !== 'undefined') {
+      const isLoggedIn = hasAuthToken();
+      if (isLoggedIn) {
+        setIsAuthorized(true);
+      } else {
+        // Not logged in, redirect to login
+        router.replace('/auth/login');
       }
-      setChecking(false);
-    };
-    checkAuth();
+    }
   }, [router]);
 
-  if (!mounted || checking) return null;
+  if (!mounted || !isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -138,30 +149,51 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <button className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]">
+                <button 
+                  onClick={() => router.push('/companies')}
+                  className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]"
+                >
                   <div className="flex items-center">
                     <Building2 className="h-5 w-5 text-black mr-3" />
                     <div>
-                      <p className="font-semibold text-black">Add New Company</p>
-                      <p className="text-sm text-gray-600">Create a new company record</p>
+                      <p className="font-semibold text-black">Manage Companies</p>
+                      <p className="text-sm text-gray-600">View and manage company records</p>
                     </div>
                   </div>
                 </button>
-                <button className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]">
+                <button 
+                  onClick={() => router.push('/contacts')}
+                  className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]"
+                >
                   <div className="flex items-center">
                     <Users className="h-5 w-5 text-black mr-3" />
                     <div>
-                      <p className="font-semibold text-black">Add New Contact</p>
-                      <p className="text-sm text-gray-600">Create a new contact record</p>
+                      <p className="font-semibold text-black">View Contacts</p>
+                      <p className="text-sm text-gray-600">Manage contact records</p>
                     </div>
                   </div>
                 </button>
-                <button className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]">
+                <button 
+                  onClick={() => router.push('/deals')}
+                  className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]"
+                >
                   <div className="flex items-center">
                     <Briefcase className="h-5 w-5 text-black mr-3" />
                     <div>
-                      <p className="font-semibold text-black">Create New Deal</p>
-                      <p className="text-sm text-gray-600">Start tracking a new deal</p>
+                      <p className="font-semibold text-black">Track Deals</p>
+                      <p className="text-sm text-gray-600">View and manage deals pipeline</p>
+                    </div>
+                  </div>
+                </button>
+                <button 
+                  onClick={() => router.push('/activities')}
+                  className="w-full text-left p-3 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  <div className="flex items-center">
+                    <Calendar className="h-5 w-5 text-black mr-3" />
+                    <div>
+                      <p className="font-semibold text-black">Activities</p>
+                      <p className="text-sm text-gray-600">Schedule and track activities</p>
                     </div>
                   </div>
                 </button>

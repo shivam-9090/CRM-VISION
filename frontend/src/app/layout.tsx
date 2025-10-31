@@ -1,5 +1,5 @@
 import './globals.css';
-import { AuthProvider } from '@/lib/auth';
+import { AuthProvider } from '@/lib/auth-provider';
 
 export const metadata = {
   title: 'CRM System',
@@ -12,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true}>
         <AuthProvider>
           {children}
         </AuthProvider>

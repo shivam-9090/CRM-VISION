@@ -292,7 +292,7 @@ export default function CreateDealPage() {
 
 
               <div className="flex gap-4">
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={loading}>
                   Create Deal
                 </Button>
                 <Link href="/deals">

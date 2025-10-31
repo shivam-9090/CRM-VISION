@@ -184,7 +184,7 @@ export default function CompanyProfilePage() {
                   </div>
 
                   <div className="flex gap-4 pt-4">
-                    <Button type="submit" loading={saving} className="flex-1">
+                    <Button type="submit" isLoading={saving} className="flex-1">
                       <Save className="h-4 w-4 mr-2" />
                       {saving ? 'Saving...' : 'Save Changes'}
                     </Button>

@@ -1,24 +1,39 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated } from '@/lib/auth';
+import { hasAuthToken } from '@/lib/auth-utils';
 
 export default function Home() {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      const authenticated = await isAuthenticated();
-      if (authenticated) {
+    setIsMounted(true);
+    
+    // Implement the exact flow from diagram:
+    // URL:3000 (first time) → check auth → if logged in go to dashboard, else go to login
+    if (typeof window !== 'undefined') {
+      const isLoggedIn = hasAuthToken();
+      
+      console.log('🏠 Root Page: Auth check result:', isLoggedIn);
+      
+      if (isLoggedIn) {
+        // User is already logged in, go to dashboard
+        console.log('🏠 Root Page: Redirecting to dashboard');
         router.replace('/dashboard');
       } else {
+        // First time visit or not logged in, go to login/auth
+        console.log('🏠 Root Page: Redirecting to login');
         router.replace('/auth/login');
       }
-    };
-    checkAuth();
+    }
   }, [router]);
+
+  // Prevent hydration mismatch
+  if (!isMounted) {
+    return null;
+  }
 
   // Show loading while redirecting
   return (
