@@ -37,12 +37,15 @@ export default function DashboardPage() {
       // Calculate metrics
       const totalCompanies = companiesRes.data.length || 0;
       const totalContacts = contactsRes.data.length || 0;
-      const activeDeals = dealsRes.data.filter((deal: any) => 
+      
+      // Handle paginated deals response
+      const dealsData = dealsRes.data.data || dealsRes.data || [];
+      const activeDeals = dealsData.filter((deal: any) => 
         !['CLOSED_WON', 'CLOSED_LOST'].includes(deal.stage)
       ).length || 0;
       
       // Calculate revenue from closed won deals
-      const totalRevenue = dealsRes.data
+      const totalRevenue = dealsData
         .filter((deal: any) => deal.stage === 'CLOSED_WON')
         .reduce((sum: number, deal: any) => sum + (deal.value || 0), 0);
 

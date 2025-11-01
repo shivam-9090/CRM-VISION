@@ -19,7 +19,7 @@ import { GlobalExceptionFilter } from './common/global-exception.filter';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // Global rate limiting: 100 req/min in production, 10 req/min in dev
+    // Global rate limiting: 100 req/min in production, 200 req/min in dev
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,7 +29,7 @@ import { GlobalExceptionFilter } from './common/global-exception.filter';
             name: 'default',
             ttl: 60000, // 1 minute
             limit:
-              configService.get('NODE_ENV') === 'production' ? 100 : 10, // 100 req/min per user
+              configService.get('NODE_ENV') === 'production' ? 100 : 200, // 200 req/min in dev for hot-reload
           },
         ],
       }),
