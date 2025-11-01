@@ -1011,31 +1011,31 @@ export default function DealsPage() {
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`${column.cardColor} rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-200 w-full flex flex-col ${
+                                  className={`${column.cardColor} rounded-lg p-2 shadow-sm hover:shadow-md transition-all duration-200 w-full flex flex-col ${
                                     snapshot.isDragging ? 'shadow-xl ring-2 ring-blue-400' : ''
                                   }`}
                                 >
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-1">
                                     {/* ✅ NEW: Drag Handle + Checkbox */}
                                     <div className="flex justify-between items-center">
                                       <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600">
-                                        <Grip className="h-4 w-4" />
+                                        <Grip className="h-3.5 w-3.5" />
                                       </div>
                                       <input
                                         type="checkbox"
                                         checked={selectedDeals.has(deal.id)}
                                         onChange={() => toggleDealSelection(deal.id)}
-                                        className="w-4 h-4 cursor-pointer"
+                                        className="w-3.5 h-3.5 cursor-pointer"
                                         onClick={(e) => e.stopPropagation()}
                                       />
                                     </div>
 
                                     {/* Name - Always shown */}
                                     <div>
-                                      <div className="text-xs font-semibold text-gray-500 uppercase">Name:</div>
+                                      <div className="text-[10px] font-semibold text-gray-500 uppercase">Name:</div>
                                       <button 
                                         onClick={() => handleViewDetails(deal.id)}
-                                        className="font-bold text-black text-sm truncate leading-tight hover:text-blue-600 text-left w-full"
+                                        className="font-bold text-black text-xs truncate leading-tight hover:text-blue-600 text-left w-full"
                                       >
                                         {deal.title || 'No Name'}
                                       </button>
@@ -1043,7 +1043,7 @@ export default function DealsPage() {
                                     
                                     {/* Status - Always shown */}
                                     <div>
-                                      <div className="text-xs font-semibold text-gray-500 uppercase">Status:</div>
+                                      <div className="text-[10px] font-semibold text-gray-500 uppercase">Status:</div>
                                       <Select
                                         value={deal.stage}
                                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStageChange(deal.id, e.target.value)}
@@ -1055,13 +1055,13 @@ export default function DealsPage() {
                                     
                                     {/* Company Name - Always reserve space */}
                                     <div>
-                                      <div className="text-xs font-semibold text-gray-500 uppercase">Company Name:</div>
+                                      <div className="text-[10px] font-semibold text-gray-500 uppercase">Company Name:</div>
                                       <div className="font-semibold text-black text-xs truncate leading-tight">{deal.company?.name || 'No Company'}</div>
                                     </div>
                                     
                                     {/* Value - Always reserve space */}
                                     <div>
-                                      <div className="text-xs font-semibold text-gray-500 uppercase">Value:</div>
+                                      <div className="text-[10px] font-semibold text-gray-500 uppercase">Value:</div>
                                       <div className="font-bold text-green-700 text-xs truncate">
                                         {deal.value ? `$${deal.value.toLocaleString()}` : 'No Value'}
                                       </div>
@@ -1069,7 +1069,7 @@ export default function DealsPage() {
                                     
                                     {/* CD (Close Date) - Always reserve space */}
                                     <div>
-                                      <div className="text-xs font-semibold text-gray-500 uppercase flex items-center">
+                                      <div className="text-[10px] font-semibold text-gray-500 uppercase flex items-center">
                                         <Calendar className="h-3 w-3 mr-1" />
                                         Close Date:
                                       </div>
@@ -1087,17 +1087,17 @@ export default function DealsPage() {
                                   </div>
                                   
                                   {/* Actions - Always at bottom */}
-                                  <div className="flex gap-2 pt-2 border-t border-gray-300">
+                                  <div className="flex gap-2 pt-1.5 mt-1 border-t border-gray-300">
                                     <button 
                                       onClick={() => handleEdit(deal)}
-                                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs font-medium"
+                                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs font-medium"
                                     >
                                       <Edit className="h-3 w-3" />
                                       Edit
                                     </button>
                                     <button
                                       onClick={() => handleDelete(deal.id)}
-                                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-xs font-medium"
+                                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-xs font-medium"
                                     >
                                       <Trash2 className="h-3 w-3" />
                                       Delete
