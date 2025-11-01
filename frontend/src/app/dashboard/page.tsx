@@ -27,11 +27,11 @@ export default function DashboardPage() {
       
       // Fetch all data in parallel
       const [companiesRes, contactsRes, dealsRes, dealsStatsRes, activitiesRes] = await Promise.all([
-        api.get('/api/companies'),
-        api.get('/api/contacts'),
-        api.get('/api/deals'),
-        api.get('/api/deals/stats/my-deals'),
-        api.get('/api/activities')
+        api.get('/companies'),
+        api.get('/contacts'),
+        api.get('/deals'),
+        api.get('/deals/stats/my-deals'),
+        api.get('/activities')
       ]);
 
       // Calculate metrics

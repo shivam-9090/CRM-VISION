@@ -10,7 +10,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Select from '@/components/ui/Select';
-import { Plus, Edit, Trash2, Calendar, X, Download, Grip } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, X, Download, Grip, LayoutGrid, List } from 'lucide-react';
 
 interface Deal {
   id: string;
@@ -112,6 +112,9 @@ export default function DealsPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
   
   // ✅ NEW: Bulk operations state
   const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
@@ -138,6 +141,9 @@ export default function DealsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalDeals, setTotalDeals] = useState(0);
   const limit = 50;
+  
+  // ✅ NEW: View mode state (card/list)
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -575,6 +581,28 @@ export default function DealsPage() {
     }
   };
 
+  // ✅ NEW: Save notes
+  const handleSaveNotes = async () => {
+    if (!selectedDeal) return;
+    
+    setSavingNotes(true);
+    try {
+      await api.put(`/deals/${selectedDeal.id}`, { notes: notesValue });
+      
+      // Update local state
+      setSelectedDeal({ ...selectedDeal, notes: notesValue });
+      setDeals(deals.map(d => d.id === selectedDeal.id ? { ...d, notes: notesValue } : d));
+      setEditingNotes(false);
+      
+      alert('Notes saved successfully!');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save notes';
+      alert(errorMessage);
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex">
@@ -593,7 +621,33 @@ export default function DealsPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-black animate-slide-in-left">Deals Pipeline</h1>
           <div className="flex gap-2">
-            {/* ✅ NEW: Export CSV Button */}
+            {/* ✅ NEW: View Toggle Buttons */}
+            <div className="flex gap-1 bg-white border border-gray-300 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('card')}
+                className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                  viewMode === 'card'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Card
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-md flex items-center gap-2 transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <List className="h-4 w-4" />
+                List
+              </button>
+            </div>
+            
+            {/* ✅ Export CSV Button */}
             <Button 
               onClick={handleExportCSV}
               disabled={exportLoading}
@@ -739,45 +793,45 @@ export default function DealsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-5 gap-4 mb-4">
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-gray-600">Total Deals</CardTitle>
+                    <CardTitle className="text-sm text-blue-600 font-semibold">Total Deals</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-blue-700">{myStats.total}</div>
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-300 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-gray-600">Won</CardTitle>
+                    <CardTitle className="text-sm text-green-600 font-semibold">Won</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-green-700">{myStats.won}</div>
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+                <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-gray-600">In Progress</CardTitle>
+                    <CardTitle className="text-sm text-yellow-700 font-semibold">In Progress</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-yellow-700">{myStats.inProgress}</div>
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-300 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-gray-600">Lost</CardTitle>
+                    <CardTitle className="text-sm text-red-600 font-semibold">Lost</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-red-700">{myStats.lost}</div>
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-gray-600">Win Rate</CardTitle>
+                    <CardTitle className="text-sm text-purple-600 font-semibold">Win Rate</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-purple-700">{myStats.winRate}%</div>
@@ -915,7 +969,8 @@ export default function DealsPage() {
                 })}
               </div>
             )}
-            {/* ✅ IMPROVED: Kanban Board with Drag and Drop */}
+            {/* ✅ IMPROVED: Kanban Board with Drag and Drop (Card View) */}
+            {viewMode === 'card' ? (
             <DragDropContext onDragEnd={handleDragEnd}>
               <div className="grid grid-cols-5 gap-4 h-[calc(100vh-450px)]">
                 {organizedDeals.map((column) => (
@@ -1017,12 +1072,16 @@ export default function DealsPage() {
                                     <div className="mb-1.5">
                                       <div className="text-xs font-semibold text-gray-500 uppercase flex items-center">
                                         <Calendar className="h-3 w-3 mr-1" />
-                                        CD:
+                                        Close Date:
                                       </div>
-                                      <div className="font-medium text-black text-xs">
+                                      <div className="font-semibold text-blue-700 text-xs">
                                         {(deal.expectedCloseDate || deal.closedAt) 
-                                          ? new Date(deal.closedAt || deal.expectedCloseDate!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                                          : 'No Date'
+                                          ? new Date(deal.closedAt || deal.expectedCloseDate!).toLocaleDateString('en-US', { 
+                                              month: 'short', 
+                                              day: 'numeric',
+                                              year: 'numeric'
+                                            })
+                                          : 'Not Set'
                                         }
                                       </div>
                                     </div>
@@ -1065,6 +1124,144 @@ export default function DealsPage() {
                 ))}
               </div>
             </DragDropContext>
+            ) : (
+            /* ✅ NEW: List View */
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        checked={deals.length > 0 && deals.every(d => selectedDeals.has(d.id))}
+                        onChange={() => {
+                          const allSelected = deals.every(d => selectedDeals.has(d.id));
+                          const newSelected = new Set(selectedDeals);
+                          deals.forEach(d => {
+                            if (allSelected) newSelected.delete(d.id);
+                            else newSelected.add(d.id);
+                          });
+                          setSelectedDeals(newSelected);
+                        }}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Deal Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Value
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Stage
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Priority
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Close Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Assigned To
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {deals.map((deal) => (
+                    <tr key={deal.id} className={`hover:opacity-90 border-l-4 ${
+                      deal.stage === 'CLOSED_WON' ? 'border-green-500 bg-green-50' :
+                      deal.stage === 'CLOSED_LOST' ? 'border-red-400 bg-red-50' :
+                      deal.stage === 'PROPOSAL' ? 'border-yellow-400 bg-yellow-50' :
+                      deal.stage === 'QUALIFIED' ? 'border-orange-400 bg-orange-50' :
+                      'border-cyan-400 bg-cyan-50'
+                    }`}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedDeals.has(deal.id)}
+                          onChange={() => toggleDealSelection(deal.id)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button 
+                          onClick={() => handleViewDetails(deal.id)}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-900"
+                        >
+                          {deal.title}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{deal.company?.name || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-green-700">
+                          ${deal.value ? deal.value.toLocaleString() : '0'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          deal.stage === 'CLOSED_WON' ? 'bg-green-100 text-green-800' :
+                          deal.stage === 'CLOSED_LOST' ? 'bg-red-100 text-red-800' :
+                          deal.stage === 'PROPOSAL' ? 'bg-yellow-100 text-yellow-800' :
+                          deal.stage === 'QUALIFIED' ? 'bg-orange-100 text-orange-800' :
+                          'bg-cyan-100 text-cyan-800'
+                        }`}>
+                          {DEAL_STAGE_CONFIG[deal.stage as keyof typeof DEAL_STAGE_CONFIG]?.label || deal.stage}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          deal.priority === 'URGENT' ? 'bg-red-100 text-red-800' :
+                          deal.priority === 'HIGH' ? 'bg-orange-100 text-orange-800' :
+                          deal.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {deal.priority || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(deal.expectedCloseDate || deal.closedAt) 
+                          ? new Date(deal.closedAt || deal.expectedCloseDate!).toLocaleDateString()
+                          : 'N/A'
+                        }
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{deal.assignedTo?.name || 'Unassigned'}</div>
+                        {deal.assignedTo?.email && (
+                          <div className="text-xs text-gray-500">{deal.assignedTo.email}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(deal)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(deal.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -1397,13 +1594,56 @@ export default function DealsPage() {
                   </div>
                 </div>
 
-                {/* Notes Section */}
-                {selectedDeal.notes && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Notes</h3>
-                    <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">{selectedDeal.notes}</p>
+                {/* Notes Section - NOW EDITABLE */}
+                <div>
+                  <div className="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 className="text-lg font-semibold text-gray-800">Notes</h3>
+                    {!editingNotes ? (
+                      <button
+                        onClick={() => {
+                          setEditingNotes(true);
+                          setNotesValue(selectedDeal.notes || '');
+                        }}
+                        className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-1"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Edit Notes
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveNotes}
+                          disabled={savingNotes}
+                          className="text-sm px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+                        >
+                          {savingNotes ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingNotes(false);
+                            setNotesValue('');
+                          }}
+                          className="text-sm px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
+                  {editingNotes ? (
+                    <textarea
+                      value={notesValue}
+                      onChange={(e) => setNotesValue(e.target.value)}
+                      rows={6}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Enter notes for this deal..."
+                    />
+                  ) : (
+                    <div className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg min-h-[100px]">
+                      {selectedDeal.notes || 'No notes yet. Click "Edit Notes" to add notes.'}
+                    </div>
+                  )}
+                </div>
 
                 {/* Recent Activities */}
                 {selectedDeal.recentActivities && selectedDeal.recentActivities.length > 0 && (

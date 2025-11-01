@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     setMessage('');
 
     try {
-      const response = await api.post('/api/auth/forgot-password', { email });
+      const response = await api.post('/auth/forgot-password', { email });
       setIsSuccess(true);
       setMessage('Password reset instructions have been sent to your email address.');
     } catch (err: any) {

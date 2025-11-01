@@ -1,3 +1,4 @@
+// Edge runtime Sentry initialization
 // This file configures the initialization of Sentry for edge runtime.
 
 import * as Sentry from "@sentry/nextjs";
