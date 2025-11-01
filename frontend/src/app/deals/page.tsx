@@ -1011,13 +1011,13 @@ export default function DealsPage() {
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`${column.cardColor} rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-200 w-full aspect-square flex flex-col justify-between ${
+                                  className={`${column.cardColor} rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 w-full min-h-[280px] flex flex-col justify-between ${
                                     snapshot.isDragging ? 'shadow-xl ring-2 ring-blue-400' : ''
                                   }`}
                                 >
-                                  <div className="flex-1 overflow-hidden">
+                                  <div className="flex-1 overflow-hidden space-y-2">
                                     {/* ✅ NEW: Drag Handle + Checkbox */}
-                                    <div className="flex justify-between items-center mb-1.5">
+                                    <div className="flex justify-between items-center">
                                       <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600">
                                         <Grip className="h-4 w-4" />
                                       </div>
@@ -1031,7 +1031,7 @@ export default function DealsPage() {
                                     </div>
 
                                     {/* Name - Always shown */}
-                                    <div className="mb-1.5">
+                                    <div>
                                       <div className="text-xs font-semibold text-gray-500 uppercase">Name:</div>
                                       <button 
                                         onClick={() => handleViewDetails(deal.id)}
@@ -1042,7 +1042,7 @@ export default function DealsPage() {
                                     </div>
                                     
                                     {/* Status - Always shown */}
-                                    <div className="mb-1.5">
+                                    <div>
                                       <div className="text-xs font-semibold text-gray-500 uppercase">Status:</div>
                                       <Select
                                         value={deal.stage}
@@ -1054,13 +1054,13 @@ export default function DealsPage() {
                                     </div>
                                     
                                     {/* Company Name - Always reserve space */}
-                                    <div className="mb-1.5">
+                                    <div>
                                       <div className="text-xs font-semibold text-gray-500 uppercase">Company Name:</div>
                                       <div className="font-semibold text-black text-xs truncate leading-tight">{deal.company?.name || 'No Company'}</div>
                                     </div>
                                     
                                     {/* Value - Always reserve space */}
-                                    <div className="mb-1.5">
+                                    <div>
                                       <div className="text-xs font-semibold text-gray-500 uppercase">Value:</div>
                                       <div className="font-bold text-green-700 text-xs truncate">
                                         {deal.value ? `$${deal.value.toLocaleString()}` : 'No Value'}
@@ -1068,7 +1068,7 @@ export default function DealsPage() {
                                     </div>
                                     
                                     {/* CD (Close Date) - Always reserve space */}
-                                    <div className="mb-1.5">
+                                    <div>
                                       <div className="text-xs font-semibold text-gray-500 uppercase flex items-center">
                                         <Calendar className="h-3 w-3 mr-1" />
                                         Close Date:
