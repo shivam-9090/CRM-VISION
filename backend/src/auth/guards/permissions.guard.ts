@@ -1,39 +1,10 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
-
-// Define role permissions mapping
-const ROLE_PERMISSIONS = {
-  [Role.ADMIN]: [
-    'user:create',
-    'user:read',
-    'user:update',
-    'user:delete',
-    'user:invite',
-    'company:create',
-    'company:read',
-    'company:update',
-    'company:delete',
-    'contact:create',
-    'contact:read',
-    'contact:update',
-    'contact:delete',
-    'deal:create',
-    'deal:read',
-    'deal:update',
-    'deal:delete',
-  ],
-  [Role.EMPLOYEE]: [
-    'user:read',
-    'company:read',
-    'contact:create',
-    'contact:read',
-    'contact:update',
-    'deal:create',
-    'deal:read',
-    'deal:update',
-  ],
-};
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  hasPermission,
+} from '../constants/permissions.constants';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -45,7 +16,7 @@ export class PermissionsGuard implements CanActivate {
       context.getHandler(),
     );
 
-    if (!requiredPermissions) {
+    if (!requiredPermissions || requiredPermissions.length === 0) {
       return true;
     }
 
@@ -56,10 +27,18 @@ export class PermissionsGuard implements CanActivate {
       return false;
     }
 
-    const userPermissions = ROLE_PERMISSIONS[user.role] || [];
+    // Get user's permissions from database (stored in JSON field)
+    let userPermissions: string[] = [];
 
-    return requiredPermissions.every((permission) =>
-      userPermissions.includes(permission),
-    );
+    // If user has custom permissions in database, use those
+    if (user.permissions && Array.isArray(user.permissions)) {
+      userPermissions = user.permissions;
+    } else {
+      // Otherwise, use default role-based permissions
+      userPermissions = DEFAULT_ROLE_PERMISSIONS[user.role as Role] || [];
+    }
+
+    // Check if user has at least one of the required permissions
+    return hasPermission(userPermissions, requiredPermissions);
   }
 }

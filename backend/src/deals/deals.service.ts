@@ -1,5 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SanitizerService } from '../common/sanitizer.service';
+import { REDIS_CLIENT } from '../redis/redis.module';
+import Redis from 'ioredis';
 import { CreateDealDto } from './dto/create-deal.dto';
 import { UpdateDealDto } from './dto/update-deal.dto';
 import { FilterDealDto } from './dto/filter-deal.dto';
@@ -8,7 +11,11 @@ import { PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class DealsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private sanitizer: SanitizerService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+  ) {}
 
   // ✅ Reusable include config - prevents code duplication & over-fetching
   private getDealIncludes(): Prisma.DealInclude {
@@ -38,13 +45,34 @@ export class DealsService {
     };
   }
 
+  // ✅ Invalidate Redis cache after mutations
+  private async invalidateCache(
+    companyId: string,
+    userId?: string,
+  ): Promise<void> {
+    try {
+      const keys = [`pipeline:stats:${companyId}`];
+      if (userId) {
+        keys.push(`user:stats:${userId}:${companyId}`);
+      }
+      await this.redis.del(...keys);
+    } catch (error) {
+      console.error('Redis cache invalidation error:', error);
+      // Continue without throwing - cache invalidation failure shouldn't break the app
+    }
+  }
+
   // ✅ Auto-calculate lead score based on deal attributes
-  private calculateLeadScore(deal: Partial<Deal> | any): number {
+  private calculateLeadScore(deal: Partial<Deal>): number {
     let score = 0;
 
     // Value-based scoring (30 points max)
     if (deal.value) {
-      const value = typeof deal.value === 'number' ? deal.value : Number(deal.value);
+      // Convert Prisma Decimal to number
+      const value =
+        typeof deal.value === 'number'
+          ? deal.value
+          : Number(deal.value.toString());
       if (value > 10000) score += 30;
       else if (value > 5000) score += 20;
       else if (value > 1000) score += 10;
@@ -87,18 +115,24 @@ export class DealsService {
   }
 
   async create(createDealDto: CreateDealDto, user: any) {
+    // ✅ Sanitize text inputs to prevent XSS
+    const sanitizedTitle =
+      this.sanitizer.sanitizeText(createDealDto.title) || '';
+    const sanitizedNotes =
+      this.sanitizer.sanitizeRichText(createDealDto.notes) || undefined;
+
     // Calculate lead score automatically
-    const leadScore = this.calculateLeadScore(createDealDto);
+    const leadScore = this.calculateLeadScore(createDealDto as any);
 
     // Build deal data object conditionally
     const dealData: Prisma.DealCreateInput = {
-      title: createDealDto.title,
+      title: sanitizedTitle,
       value: createDealDto.value,
       stage: createDealDto.stage,
       priority: createDealDto.priority || 'MEDIUM',
       leadSource: createDealDto.leadSource,
       leadScore,
-      notes: createDealDto.notes,
+      notes: sanitizedNotes,
       expectedCloseDate: createDealDto.expectedCloseDate
         ? new Date(createDealDto.expectedCloseDate)
         : undefined,
@@ -115,10 +149,15 @@ export class DealsService {
       dealData.assignedTo = { connect: { id: createDealDto.assignedToId } };
     }
 
-    return this.prisma.deal.create({
+    const newDeal = await this.prisma.deal.create({
       data: dealData,
       include: this.getDealIncludes(),
     });
+
+    // ✅ Invalidate Redis cache after creating deal
+    await this.invalidateCache(user.companyId, createDealDto.assignedToId);
+
+    return newDeal;
   }
 
   // ✅ Optimized with filtering & search
@@ -194,11 +233,19 @@ export class DealsService {
       // Prepare update data
       const dataToUpdate: Prisma.DealUpdateInput = {};
 
-      if (updateDealDto.title !== undefined) dataToUpdate.title = updateDealDto.title;
+      // ✅ Sanitize text inputs
+      if (updateDealDto.title !== undefined) {
+        const sanitizedTitle = this.sanitizer.sanitizeText(updateDealDto.title);
+        dataToUpdate.title = sanitizedTitle ?? undefined;
+      }
+      if (updateDealDto.notes !== undefined) {
+        const sanitizedNotes = this.sanitizer.sanitizeRichText(updateDealDto.notes);
+        dataToUpdate.notes = sanitizedNotes ?? undefined;
+      }
+
       if (updateDealDto.value !== undefined) dataToUpdate.value = updateDealDto.value;
       if (updateDealDto.priority !== undefined) dataToUpdate.priority = updateDealDto.priority;
       if (updateDealDto.leadSource !== undefined) dataToUpdate.leadSource = updateDealDto.leadSource;
-      if (updateDealDto.notes !== undefined) dataToUpdate.notes = updateDealDto.notes;
       if (updateDealDto.lastContactDate !== undefined) {
         dataToUpdate.lastContactDate = updateDealDto.lastContactDate
           ? new Date(updateDealDto.lastContactDate)
@@ -251,7 +298,7 @@ export class DealsService {
         });
         if (currentDeal) {
           const mergedDeal = { ...currentDeal, ...updateDealDto };
-          dataToUpdate.leadScore = this.calculateLeadScore(mergedDeal);
+          dataToUpdate.leadScore = this.calculateLeadScore(mergedDeal as any);
         }
       }
 
@@ -264,6 +311,9 @@ export class DealsService {
       if (updated.count === 0) {
         throw new NotFoundException(`Deal with ID ${id} not found`);
       }
+
+      // ✅ Invalidate Redis cache after update
+      await this.invalidateCache(companyId, updateDealDto.assignedToId);
 
       // Return updated deal
       return this.findOne(id, companyId);
@@ -278,6 +328,12 @@ export class DealsService {
   // ✅ Optimized delete - single query with deleteMany
   async remove(id: string, companyId: string) {
     try {
+      // Get deal info before deletion for cache invalidation
+      const deal = await this.prisma.deal.findFirst({
+        where: { id, companyId },
+        select: { assignedToId: true },
+      });
+
       const deleted = await this.prisma.deal.deleteMany({
         where: { id, companyId },
       });
@@ -285,6 +341,9 @@ export class DealsService {
       if (deleted.count === 0) {
         throw new NotFoundException(`Deal with ID ${id} not found`);
       }
+
+      // ✅ Invalidate Redis cache after delete
+      await this.invalidateCache(companyId, deal?.assignedToId || undefined);
 
       return { message: 'Deal deleted successfully' };
     } catch (error) {
@@ -295,8 +354,21 @@ export class DealsService {
     }
   }
 
-  // ✅ NEW: Pipeline statistics
+  // ✅ NEW: Pipeline statistics with Redis caching
   async getPipelineStats(companyId: string) {
+    const cacheKey = `pipeline:stats:${companyId}`;
+
+    try {
+      // Try to get from cache
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      console.error('Redis get error:', error);
+      // Continue without cache on error
+    }
+
     const stats = await this.prisma.deal.groupBy({
       by: ['stage'],
       where: { companyId },
@@ -305,16 +377,39 @@ export class DealsService {
       _avg: { leadScore: true },
     });
 
-    return stats.map((stat) => ({
+    const result = stats.map((stat) => ({
       stage: stat.stage,
       count: stat._count._all,
       totalValue: stat._sum.value ? Number(stat._sum.value) : 0,
       avgLeadScore: Math.round(stat._avg.leadScore || 0),
     }));
+
+    try {
+      // Cache for 2 minutes
+      await this.redis.setex(cacheKey, 120, JSON.stringify(result));
+    } catch (error) {
+      console.error('Redis setex error:', error);
+      // Continue without caching on error
+    }
+
+    return result;
   }
 
-  // ✅ NEW: My deals statistics
+  // ✅ NEW: My deals statistics with Redis caching
   async getMyDealsStats(userId: string, companyId: string) {
+    const cacheKey = `user:stats:${userId}:${companyId}`;
+
+    try {
+      // Try to get from cache
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      console.error('Redis get error:', error);
+      // Continue without cache on error
+    }
+
     const [total, won, lost, inProgress] = await Promise.all([
       this.prisma.deal.count({
         where: { assignedToId: userId, companyId },
@@ -334,13 +429,23 @@ export class DealsService {
       }),
     ]);
 
-    return {
+    const result = {
       total,
       won,
       lost,
       inProgress,
       winRate: total > 0 ? Number(((won / total) * 100).toFixed(1)) : 0,
     };
+
+    try {
+      // Cache for 5 minutes
+      await this.redis.setex(cacheKey, 300, JSON.stringify(result));
+    } catch (error) {
+      console.error('Redis setex error:', error);
+      // Continue without caching on error
+    }
+
+    return result;
   }
 
   // ✅ NEW: Get deal details with full information

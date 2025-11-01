@@ -79,6 +79,10 @@ node_modules/.prisma/
 postgres_data/
 redis_data/
 
+# File uploads (backend)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # Docker generated files
 **/.dockerignore
 

@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { User, Shield } from 'lucide-react';
+import { User, Shield, Lock, ArrowRight } from 'lucide-react';
 
 const USER_ROLES = [
   { value: 'USER', label: 'User' },
@@ -26,6 +27,7 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -212,6 +214,31 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
                   <p className="text-sm text-gray-500 font-mono">{profile.id}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Lock className="h-5 w-5 mr-2" />
+                Security Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Manage your account security settings including two-factor authentication.
+                </p>
+                <Button 
+                  onClick={() => router.push('/profile/security')}
+                  variant="outline"
+                  className="w-full flex items-center justify-between"
+                >
+                  <span>Manage Security Settings</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>

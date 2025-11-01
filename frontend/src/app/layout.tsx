@@ -1,5 +1,7 @@
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-provider';
+import { WebSocketProvider } from '@/lib/websocket-provider';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
   title: 'CRM System',
@@ -15,7 +17,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body suppressHydrationWarning={true}>
         <AuthProvider>
-          {children}
+          <WebSocketProvider>
+            {children}
+            <Toaster />
+          </WebSocketProvider>
         </AuthProvider>
       </body>
     </html>

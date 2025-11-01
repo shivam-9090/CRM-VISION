@@ -50,6 +50,40 @@ export class EmailService {
     }
   }
 
+  async sendEmail(options: {
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+  }): Promise<void> {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'noreply@crm-system.com',
+        ...options,
+      };
+
+      // In development, log the email content
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.log('Email (Development Mode):');
+        this.logger.log(`To: ${options.to}`);
+        this.logger.log(`Subject: ${options.subject}`);
+        if (options.html) {
+          this.logger.log(
+            'HTML content available. In production, this would be sent via SMTP.',
+          );
+        }
+        return;
+      }
+
+      // In production, actually send the email
+      const result: any = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Email sent to ${options.to}`, result.messageId);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${options.to}`, error);
+      throw new Error('Failed to send email');
+    }
+  }
+
   async sendPasswordResetEmail(
     email: string,
     resetToken: string,
@@ -183,6 +217,43 @@ export class EmailService {
     } catch (error) {
       this.logger.error(`Failed to send welcome email to ${email}`, error);
       // Don't throw here as welcome email is not critical
+    }
+  }
+
+  async sendInvitationEmail(email: string, inviteUrl: string, role: string): Promise<void> {
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || 'noreply@crm-system.com',
+        to: email,
+        subject: 'You have been invited to join a CRM System workspace',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">You've Been Invited!</h2>
+            <p>Hello,</p>
+            <p>You have been invited to join a workspace on CRM System as a <strong>${role}</strong>.</p>
+            <p>Click the button below to accept the invitation and create your account:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="${inviteUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Accept Invitation</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #666;">${inviteUrl}</p>
+            <p><strong>This invitation will expire in 7 days.</strong></p>
+          </div>
+        `,
+      };
+
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.log('Invitation Email (Development Mode):');
+        this.logger.log(`To: ${email}`);
+        this.logger.log(`Invite URL: ${inviteUrl}`);
+        return;
+      }
+
+      const result: any = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Invitation email sent to ${email}`, result.messageId);
+    } catch (error) {
+      this.logger.error(`Failed to send invitation email to ${email}`, error);
+      throw new Error('Failed to send invitation email');
     }
   }
 }

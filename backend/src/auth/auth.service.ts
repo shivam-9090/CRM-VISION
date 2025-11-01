@@ -7,18 +7,21 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../common/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { InviteDto } from './dto/invite.dto';
-import { Role } from '@prisma/client';
 import { RegisterWithInviteDto } from './dto/register-with-invite.dto';
 import { randomBytes } from 'crypto';
+import * as speakeasy from 'speakeasy';
+import * as QRCode from 'qrcode';
 
 @Injectable()
 export class AuthService {
+  private readonly MAX_LOGIN_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -26,7 +29,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto, res: Response) {
-    const { email, password, name, role, companyId } = registerDto;
+    const { email, password, name, role, companyId, phone } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -39,6 +42,10 @@ export class AuthService {
 
     // Hash password with 12 rounds
     const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Generate email verification token
+    const verificationToken = randomBytes(32).toString('hex');
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Create user and company in a transaction
     const result = await this.prisma.$transaction(async (prisma) => {
@@ -63,6 +70,10 @@ export class AuthService {
           name,
           role: role,
           companyId: userCompanyId,
+          phone: phone || null,
+          isVerified: false,
+          verificationToken,
+          verificationExpiry,
         },
         select: {
           id: true,
@@ -70,6 +81,8 @@ export class AuthService {
           name: true,
           role: true,
           companyId: true,
+          phone: true,
+          isVerified: true,
           createdAt: true,
           updatedAt: true,
           company: {
@@ -83,6 +96,28 @@ export class AuthService {
 
       return { user };
     });
+
+    // Send verification email
+    try {
+      const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
+      await this.emailService.sendEmail({
+        to: email,
+        subject: 'Verify Your Email - CRM System',
+        text: `Please verify your email by clicking this link: ${verificationUrl}`,
+        html: `
+          <h2>Welcome to CRM System!</h2>
+          <p>Please click the link below to verify your email address:</p>
+          <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Verify Email
+          </a>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you didn't create this account, please ignore this email.</p>
+        `,
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail registration if email fails - user can request new verification
+    }
 
     const payload = { id: result.user.id, role: result.user.role };
     const access_token = this.jwtService.sign(payload);
@@ -148,7 +183,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto, res: Response) {
-    const { email, password } = loginDto;
+    const { email, password, twoFactorToken } = loginDto;
 
     // Find user with company information
     const user = await this.prisma.user.findUnique({
@@ -162,6 +197,10 @@ export class AuthService {
         companyId: true,
         createdAt: true,
         updatedAt: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
+        twoFactorEnabled: true,
+        twoFactorSecret: true,
         company: {
           select: {
             id: true,
@@ -175,11 +214,80 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if account is locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000,
+      );
+      throw new UnauthorizedException(
+        `Account locked due to too many failed login attempts. Please try again in ${remainingMinutes} minute(s).`,
+      );
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      // Increment failed login attempts
+      const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
+
+      // Lock account if max attempts reached
+      if (newFailedAttempts >= this.MAX_LOGIN_ATTEMPTS) {
+        const lockUntil = new Date(Date.now() + this.LOCKOUT_DURATION);
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: newFailedAttempts,
+            lockedUntil: lockUntil,
+          },
+        });
+        throw new UnauthorizedException(
+          `Account locked for 15 minutes due to ${this.MAX_LOGIN_ATTEMPTS} failed login attempts.`,
+        );
+      }
+
+      // Update failed attempts
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newFailedAttempts,
+        },
+      });
+
+      const remainingAttempts = this.MAX_LOGIN_ATTEMPTS - newFailedAttempts;
+      throw new UnauthorizedException(
+        `Invalid credentials. ${remainingAttempts} attempt(s) remaining before account lockout.`,
+      );
     }
+
+    // Check for 2FA if enabled
+    if (user.twoFactorEnabled) {
+      if (!twoFactorToken) {
+        // Password is correct, but 2FA token is required
+        return {
+          requiresTwoFactor: true,
+          message: 'Please provide your 2FA token',
+        };
+      }
+
+      // Verify 2FA token
+      const is2FAValid = await this.verifyTwoFactorToken(
+        user.id,
+        twoFactorToken,
+      );
+      if (!is2FAValid) {
+        throw new UnauthorizedException('Invalid 2FA token');
+      }
+    }
+
+    // Reset failed attempts on successful login
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+      },
+    });
 
     const payload = { id: user.id, role: user.role };
     const access_token = this.jwtService.sign(payload);
@@ -341,5 +449,204 @@ export class AuthService {
     });
 
     return { message: 'Password has been reset successfully' };
+  }
+
+  async verifyEmail(token: string) {
+    // Find user with valid verification token
+    const user = await this.prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+        verificationExpiry: {
+          gt: new Date(), // Token must not be expired
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired verification token');
+    }
+
+    // Mark email as verified
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationToken: null,
+        verificationExpiry: null,
+      },
+    });
+
+    return {
+      message: 'Email verified successfully',
+      email: user.email,
+    };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Don't reveal if user exists
+      return {
+        message: 'If an account exists, a verification email has been sent',
+      };
+    }
+
+    if (user.isVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    // Generate new verification token
+    const verificationToken = randomBytes(32).toString('hex');
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken,
+        verificationExpiry,
+      },
+    });
+
+    // Send verification email
+    try {
+      const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
+      await this.emailService.sendEmail({
+        to: email,
+        subject: 'Verify Your Email - CRM System',
+        text: `Please verify your email by clicking this link: ${verificationUrl}`,
+        html: `
+          <h2>Email Verification</h2>
+          <p>Please click the link below to verify your email address:</p>
+          <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Verify Email
+          </a>
+          <p>This link will expire in 24 hours.</p>
+        `,
+      });
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+      throw new BadRequestException(
+        'Failed to send verification email. Please try again later.',
+      );
+    }
+
+    return {
+      message: 'Verification email sent successfully',
+    };
+  }
+
+  async enableTwoFactor(userId: string) {
+    // Generate secret for TOTP
+    const secret = speakeasy.generateSecret({
+      name: `CRM System (${userId})`,
+      length: 32,
+    });
+
+    // Store the secret temporarily (not enabled until verified)
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorSecret: secret.base32,
+        twoFactorEnabled: false, // Not enabled until verified
+      },
+    });
+
+    // Generate QR code
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
+
+    return {
+      secret: secret.base32,
+      qrCode: qrCodeUrl,
+      message:
+        'Scan the QR code with your authenticator app and verify to enable 2FA',
+    };
+  }
+
+  async verifyAndEnableTwoFactor(userId: string, token: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { twoFactorSecret: true, twoFactorEnabled: true },
+    });
+
+    if (!user || !user.twoFactorSecret) {
+      throw new BadRequestException(
+        '2FA setup not initiated. Please enable 2FA first.',
+      );
+    }
+
+    // Verify the token
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token,
+      window: 2, // Allow 2 time steps before/after
+    });
+
+    if (!verified) {
+      throw new UnauthorizedException('Invalid 2FA token');
+    }
+
+    // Enable 2FA
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: true },
+    });
+
+    return {
+      message: '2FA enabled successfully',
+      enabled: true,
+    };
+  }
+
+  async verifyTwoFactorToken(userId: string, token: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { twoFactorSecret: true, twoFactorEnabled: true },
+    });
+
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      return false;
+    }
+
+    return speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token,
+      window: 2,
+    });
+  }
+
+  async disableTwoFactor(userId: string, password: string) {
+    // Verify password before disabling
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { password: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password');
+    }
+
+    // Disable 2FA and remove secret
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+      },
+    });
+
+    return {
+      message: '2FA disabled successfully',
+      enabled: false,
+    };
   }
 }

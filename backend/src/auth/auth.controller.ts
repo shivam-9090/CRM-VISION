@@ -107,4 +107,62 @@ export class AuthController {
       resetPasswordDto.newPassword,
     );
   }
+
+  @Post('verify-email')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Verify email with token' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired token' })
+  async verifyEmail(@Body() body: { token: string }) {
+    return this.authService.verifyEmail(body.token);
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent if account exists',
+  })
+  async resendVerification(@Body() body: { email: string }) {
+    return this.authService.resendVerificationEmail(body.email);
+  }
+
+  @Post('2fa/enable')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Enable Two-Factor Authentication' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns QR code and secret for 2FA setup',
+  })
+  async enableTwoFactor(@Request() req) {
+    return this.authService.enableTwoFactor(req.user.id);
+  }
+
+  @Post('2fa/verify')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Verify and activate Two-Factor Authentication' })
+  @ApiResponse({ status: 200, description: '2FA enabled successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid 2FA token' })
+  async verifyTwoFactor(
+    @Request() req,
+    @Body() body: { token: string },
+  ) {
+    return this.authService.verifyAndEnableTwoFactor(req.user.id, body.token);
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Disable Two-Factor Authentication' })
+  @ApiResponse({ status: 200, description: '2FA disabled successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid password' })
+  async disableTwoFactor(
+    @Request() req,
+    @Body() body: { password: string },
+  ) {
+    return this.authService.disableTwoFactor(req.user.id, body.password);
+  }
 }

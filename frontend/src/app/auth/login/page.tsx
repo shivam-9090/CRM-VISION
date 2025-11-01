@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { LogIn, Building2, Sparkles } from 'lucide-react';
+import TwoFactorVerify from '@/components/TwoFactorVerify';
 import api from '@/lib/api';
 
 export default function LoginPage() {
@@ -17,6 +18,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorError, setTwoFactorError] = useState<string | null>(null);
 
   // Check if already authenticated
   useEffect(() => {
@@ -70,6 +73,13 @@ export default function LoginPage() {
         password
       });
 
+      // Check if 2FA is required
+      if (response.data.requiresTwoFactor) {
+        setRequires2FA(true);
+        setLoading(false);
+        return;
+      }
+
       // Store user data in localStorage for quick access (token is in httpOnly cookie)
       if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -98,6 +108,43 @@ export default function LoginPage() {
         }
       } else {
         setError('Login failed. Please check your network connection.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTwoFactorVerify = async (token: string) => {
+    setTwoFactorError(null);
+    setLoading(true);
+
+    try {
+      // Make login API call with 2FA token
+      const response = await api.post('/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+        twoFactorToken: token
+      });
+
+      // Store user data
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+      }
+
+      console.log('🔑 2FA Login successful!', response.data);
+      
+      // Redirect to dashboard
+      router.replace('/dashboard');
+    } catch (err: unknown) {
+      console.error('2FA verify error:', err);
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response;
+        setTwoFactorError(response?.data?.message || 'Invalid 2FA code. Please try again.');
+      } else {
+        setTwoFactorError('Verification failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -174,12 +221,36 @@ export default function LoginPage() {
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-3xl font-bold text-gray-900 flex items-center justify-center">
                 <LogIn className="h-8 w-8 mr-3 text-blue-600" />
-                Sign In
+                {requires2FA ? 'Two-Factor Authentication' : 'Sign In'}
               </CardTitle>
-              <p className="text-gray-700 mt-2 font-medium">Welcome back! Please sign in to your account.</p>
+              <p className="text-gray-700 mt-2 font-medium">
+                {requires2FA
+                  ? 'Enter the code from your authenticator app'
+                  : 'Welcome back! Please sign in to your account.'}
+              </p>
             </CardHeader>
             <CardContent className="pt-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {requires2FA ? (
+                <div className="space-y-4">
+                  <TwoFactorVerify
+                    onVerify={handleTwoFactorVerify}
+                    loading={loading}
+                    error={twoFactorError}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setRequires2FA(false);
+                      setTwoFactorError(null);
+                      setPassword('');
+                    }}
+                    className="w-full"
+                  >
+                    Back to Login
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
                 {error && (
                   <div className="bg-red-50 border-2 border-red-200 text-red-600 px-4 py-3 rounded-xl flex items-center">
                     <div className="h-2 w-2 bg-red-500 rounded-full mr-3"></div>
@@ -230,6 +301,7 @@ export default function LoginPage() {
                   </p>
                 </div>
               </form>
+              )}
             </CardContent>
           </Card>
         </div>

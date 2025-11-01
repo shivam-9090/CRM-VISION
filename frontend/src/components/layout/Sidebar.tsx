@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '@/lib/auth';
-import { LayoutDashboard, Building2, Users, Briefcase, Calendar, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Briefcase, Calendar, User, LogOut, Download } from 'lucide-react';
+import NotificationBell from '../NotificationBell';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -11,6 +12,7 @@ const navigation = [
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Deals', href: '/deals', icon: Briefcase },
   { name: 'Activities', href: '/activities', icon: Calendar },
+  { name: 'Export/Import', href: '/export', icon: Download },
   { name: 'Profile', href: '/profile', icon: User },
 ];
 
@@ -20,11 +22,12 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col w-72 bg-white min-h-screen border-r border-gray-200 shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-center h-20 px-6 border-b border-gray-200">
-        <div className="text-center">
+      <div className="flex items-center justify-between h-20 px-6 border-b border-gray-200">
+        <div className="text-center flex-1">
           <h1 className="text-black text-2xl font-bold tracking-wide">CRM</h1>
           <p className="text-gray-600 text-xs font-medium tracking-wider">VISION</p>
         </div>
+        <NotificationBell />
       </div>
       
       {/* Navigation */}

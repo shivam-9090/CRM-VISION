@@ -28,3 +28,7 @@ logs
 # OS files
 .DS_Store
 Thumbs.db
+
+# Uploads directory (keep structure, ignore files)
+uploads/*
+!uploads/.gitkeep

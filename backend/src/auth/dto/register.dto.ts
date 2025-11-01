@@ -28,6 +28,10 @@ export class RegisterDto {
 
   @IsString()
   @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
   companyId?: string;
 
   @IsEnum(Role)

@@ -10,9 +10,18 @@ import { CompaniesModule } from './company/companies.module';
 import { DealsModule } from './deals/deals.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { UserModule } from './user/user.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { SearchModule } from './search/search.module';
+import { ExportModule } from './export/export.module';
+import { CommentsModule } from './comments/comments.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { AttachmentsModule } from './attachments/attachments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
-import { SentryService } from './common/sentry.service';
 import { GlobalExceptionFilter } from './common/global-exception.filter';
+import { RedisModule } from './redis/redis.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -34,18 +43,27 @@ import { GlobalExceptionFilter } from './common/global-exception.filter';
         ],
       }),
     }),
+    RedisModule,
+    CommonModule, // Global module with SanitizerService, EmailService, SentryService
     PrismaModule,
     AuthModule,
     CompaniesModule,
     DealsModule,
     ContactsModule,
     ActivitiesModule,
+    UserModule,
+    AnalyticsModule,
+    SearchModule,
+    ExportModule,
+    CommentsModule,
+    AuditLogModule,
+    AttachmentsModule,
+    NotificationsModule,
     HealthModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    SentryService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard, // Global rate limiting on all endpoints
