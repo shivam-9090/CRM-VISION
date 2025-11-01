@@ -423,8 +423,10 @@ export class DealsService {
 
     if (updateData.stage) dataToUpdate.stage = updateData.stage;
     if (updateData.priority) dataToUpdate.priority = updateData.priority;
+    
+    // ✅ FIX: Use flat field instead of nested relation (updateMany doesn't support relations)
     if (updateData.assignedToId) {
-      dataToUpdate.assignedTo = { connect: { id: updateData.assignedToId } };
+      dataToUpdate.assignedToId = updateData.assignedToId;
     }
 
     // Handle closedAt for stage changes
@@ -488,22 +490,29 @@ export class DealsService {
       'Created At',
     ];
 
+    // ✅ FIX: Helper function to properly escape CSV fields
+    const escapeCsvField = (value: string | null | undefined): string => {
+      if (!value) return '';
+      // Escape quotes and wrap in quotes
+      return `"${value.replace(/"/g, '""')}"`;
+    };
+
     // CSV Rows
     const rows = deals.map((deal) => [
       deal.id,
-      `"${deal.title}"`,
+      escapeCsvField(deal.title),
       deal.value ? deal.value.toString() : '',
       deal.stage,
       deal.priority || '',
       deal.leadSource || '',
       deal.leadScore || '',
-      deal.company?.name || '',
-      deal.contact ? `"${deal.contact.firstName} ${deal.contact.lastName}"` : '',
-      deal.assignedTo?.name || '',
+      escapeCsvField(deal.company?.name),
+      deal.contact ? escapeCsvField(`${deal.contact.firstName} ${deal.contact.lastName}`) : '',
+      escapeCsvField(deal.assignedTo?.name),
       deal.expectedCloseDate ? new Date(deal.expectedCloseDate).toISOString().split('T')[0] : '',
       deal.closedAt ? new Date(deal.closedAt).toISOString().split('T')[0] : '',
       deal.lastContactDate ? new Date(deal.lastContactDate).toISOString().split('T')[0] : '',
-      deal.notes ? `"${deal.notes.replace(/"/g, '""')}"` : '',
+      escapeCsvField(deal.notes),
       new Date(deal.createdAt).toISOString().split('T')[0],
     ]);
 
