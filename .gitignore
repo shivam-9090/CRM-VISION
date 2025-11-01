@@ -1,12 +1,16 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables (CRITICAL - Never commit real secrets!)
 .env
 .env.local
 .env.*.local
 .env.production  # Production secrets MUST NOT be committed!
 .env.development
+backend/.env
+backend/.env.production
+frontend/.env
+frontend/.env.production
 
 # Build outputs
 dist/
@@ -46,10 +50,13 @@ pnpm-debug.log*
 ehthumbs.db
 Thumbs.db
 
-# Coverage
+# Coverage reports (generated files)
 coverage/
+*/coverage/
 *.lcov
 .nyc_output
+.c8
+jest-coverage/
 
 # Temporary folders
 tmp/
@@ -64,9 +71,39 @@ temp/
 # Yarn Integrity file
 .yarn-integrity
 
-# Prisma migrations (keep schema but ignore auto-generated)
-prisma/migrations/
+# Prisma (keep migrations but ignore generated client)
+node_modules/.prisma/
+**/prisma/generated/
 
 # Local database volumes
 postgres_data/
 redis_data/
+
+# Docker generated files
+**/.dockerignore
+
+# Package manager lock files (keep one, ignore others if using multiple)
+# Uncomment the ones you want to ignore:
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Terraform state files (if using infra/)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Editor specific
+*.sublime-project
+*.sublime-workspace
