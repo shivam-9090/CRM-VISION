@@ -70,7 +70,6 @@ interface MyDealsStats {
 const DEAL_STAGE_CONFIG = {
   LEAD: { label: 'New Lead', color: 'bg-cyan-400', cardColor: 'bg-cyan-100 border-l-4 border-cyan-400' },
   QUALIFIED: { label: 'Qualified', color: 'bg-orange-400', cardColor: 'bg-orange-100 border-l-4 border-orange-400' },
-  PROPOSAL: { label: 'Proposal', color: 'bg-yellow-400', cardColor: 'bg-yellow-100 border-l-4 border-yellow-400' },
   NEGOTIATION: { label: 'Negotiation', color: 'bg-purple-400', cardColor: 'bg-purple-100 border-l-4 border-purple-400' },
   CLOSED_WON: { label: 'Won', color: 'bg-green-500', cardColor: 'bg-green-100 border-l-4 border-green-500' },
   CLOSED_LOST: { label: 'Lost', color: 'bg-red-400', cardColor: 'bg-red-100 border-l-4 border-red-400' },
@@ -284,8 +283,7 @@ export default function DealsPage() {
       
       return () => clearTimeout(timeoutId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, currentPage, limit]); // Only depend on the actual filter values, not the function
+  }, [filters, currentPage, limit, fetchDeals, loading]); // ✅ FIX BUG #4: Added missing dependencies
 
   const handleApplyFilters = () => {
     setCurrentPage(1); // Reset to first page when filtering
@@ -1179,7 +1177,6 @@ export default function DealsPage() {
                       deal.stage === 'CLOSED_WON' ? 'border-green-500 bg-green-50' :
                       deal.stage === 'CLOSED_LOST' ? 'border-red-400 bg-red-50' :
                       deal.stage === 'NEGOTIATION' ? 'border-purple-400 bg-purple-50' :
-                      deal.stage === 'PROPOSAL' ? 'border-yellow-400 bg-yellow-50' :
                       deal.stage === 'QUALIFIED' ? 'border-orange-400 bg-orange-50' :
                       'border-cyan-400 bg-cyan-50'
                     }`}>
@@ -1212,7 +1209,6 @@ export default function DealsPage() {
                           deal.stage === 'CLOSED_WON' ? 'bg-green-100 text-green-800' :
                           deal.stage === 'CLOSED_LOST' ? 'bg-red-100 text-red-800' :
                           deal.stage === 'NEGOTIATION' ? 'bg-purple-100 text-purple-800' :
-                          deal.stage === 'PROPOSAL' ? 'bg-yellow-100 text-yellow-800' :
                           deal.stage === 'QUALIFIED' ? 'bg-orange-100 text-orange-800' :
                           'bg-cyan-100 text-cyan-800'
                         }`}>
