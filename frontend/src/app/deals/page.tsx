@@ -1053,12 +1053,6 @@ export default function DealsPage() {
                                       />
                                     </div>
                                     
-                                    {/* Company Name - Always reserve space */}
-                                    <div>
-                                      <div className="text-[10px] font-semibold text-gray-500 uppercase">Company Name:</div>
-                                      <div className="font-semibold text-black text-xs truncate leading-tight">{deal.company?.name || 'No Company'}</div>
-                                    </div>
-                                    
                                     {/* Value - Always reserve space */}
                                     <div>
                                       <div className="text-[10px] font-semibold text-gray-500 uppercase">Value:</div>
