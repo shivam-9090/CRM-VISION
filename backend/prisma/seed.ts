@@ -93,7 +93,7 @@ async function main() {
       data: {
         title: 'Manufacturing Equipment Deal',
         value: 250000,
-        stage: 'PROPOSAL',
+        stage: 'NEGOTIATION',
         companyId: companies[1].id,
         contactId: contacts[1].id,
       },
