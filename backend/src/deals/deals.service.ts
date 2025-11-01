@@ -67,8 +67,7 @@ export class DealsService {
     const stageScores: Record<string, number> = {
       LEAD: 5,
       QUALIFIED: 15,
-      PROPOSAL: 25,
-      NEGOTIATION: 35,
+      NEGOTIATION: 25,
       CLOSED_WON: 40,
       CLOSED_LOST: 0,
     };
@@ -246,13 +245,26 @@ export class DealsService {
         updateDealDto.priority !== undefined ||
         updateDealDto.leadSource !== undefined
       ) {
-        const currentDeal = await this.prisma.deal.findUnique({
-          where: { id },
-        });
-        if (currentDeal) {
-          const mergedDeal = { ...currentDeal, ...updateDealDto };
-          dataToUpdate.leadScore = this.calculateLeadScore(mergedDeal);
+        // ✅ FIX BUG #2: Calculate from update data directly to avoid race condition
+        // Fetch current deal only if we don't have all required fields
+        const needsCurrentData = 
+          updateDealDto.value === undefined ||
+          updateDealDto.stage === undefined ||
+          updateDealDto.priority === undefined ||
+          updateDealDto.leadSource === undefined;
+
+        let scoreData = updateDealDto;
+        if (needsCurrentData) {
+          const currentDeal = await this.prisma.deal.findUnique({
+            where: { id },
+            select: { value: true, stage: true, priority: true, leadSource: true },
+          });
+          if (currentDeal) {
+            scoreData = { ...currentDeal, ...updateDealDto };
+          }
         }
+        
+        dataToUpdate.leadScore = this.calculateLeadScore(scoreData);
       }
 
       // ✅ Single query with company check
@@ -402,13 +414,20 @@ export class DealsService {
     };
   }
 
-  // ✅ NEW: Bulk delete deals
-  async bulkDelete(dealIds: string[], companyId: string) {
+  // ✅ NEW: Bulk delete deals with role-based restrictions
+  async bulkDelete(dealIds: string[], companyId: string, userId: string, userRole: string) {
+    // ✅ FIX SEC #2: Employees can only delete their assigned deals
+    const where: Prisma.DealWhereInput = {
+      id: { in: dealIds },
+      companyId,
+    };
+
+    if (userRole === 'EMPLOYEE') {
+      where.assignedToId = userId;
+    }
+
     const deleted = await this.prisma.deal.deleteMany({
-      where: {
-        id: { in: dealIds },
-        companyId,
-      },
+      where,
     });
 
     return {
@@ -417,8 +436,14 @@ export class DealsService {
     };
   }
 
-  // ✅ NEW: Bulk update deals
-  async bulkUpdate(dealIds: string[], updateData: Partial<UpdateDealDto>, companyId: string) {
+  // ✅ NEW: Bulk update deals with role-based restrictions
+  async bulkUpdate(
+    dealIds: string[],
+    updateData: Partial<UpdateDealDto>,
+    companyId: string,
+    userId: string,
+    userRole: string,
+  ) {
     const dataToUpdate: any = {};
 
     if (updateData.stage) dataToUpdate.stage = updateData.stage;
@@ -436,11 +461,18 @@ export class DealsService {
       dataToUpdate.closedAt = null;
     }
 
+    // ✅ FIX SEC #2: Employees can only update their assigned deals
+    const where: Prisma.DealWhereInput = {
+      id: { in: dealIds },
+      companyId,
+    };
+
+    if (userRole === 'EMPLOYEE') {
+      where.assignedToId = userId;
+    }
+
     const updated = await this.prisma.deal.updateMany({
-      where: {
-        id: { in: dealIds },
-        companyId,
-      },
+      where,
       data: dataToUpdate,
     });
 

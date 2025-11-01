@@ -87,6 +87,10 @@ model Deal {
   @@index([companyId, stage])
   @@index([assignedToId])
   @@index([contactId])
+  @@index([companyId, priority]) // ✅ FIX PERF #2: Added for priority-based queries
+  @@index([companyId, leadScore]) // ✅ FIX PERF #2: Added for lead score sorting
+  @@index([expectedCloseDate]) // ✅ FIX PERF #2: Added for date filtering
+  @@index([companyId, stage, priority]) // ✅ FIX PERF #2: Composite for common queries
   @@map("deals")
 }
 
@@ -116,7 +120,6 @@ enum Role {
 enum DealStage {
   LEAD
   QUALIFIED
-  PROPOSAL
   NEGOTIATION
   CLOSED_WON
   CLOSED_LOST

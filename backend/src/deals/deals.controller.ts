@@ -27,11 +27,13 @@ export class DealsController {
   }
 
   @Get('stats/pipeline')
+  @Permissions('deal:read') // ✅ FIX SEC #1: Added permission guard
   async getPipelineStats(@Request() req: any) {
     return this.dealsService.getPipelineStats(req.user.companyId);
   }
 
   @Get('stats/my-deals')
+  @Permissions('deal:read') // ✅ FIX SEC #1: Added permission guard
   async getMyDealsStats(@Request() req: any) {
     return this.dealsService.getMyDealsStats(req.user.id, req.user.companyId);
   }
@@ -46,7 +48,12 @@ export class DealsController {
 
   @Post('bulk/delete')
   async bulkDelete(@Body() bulkDeleteDto: BulkDeleteDto, @Request() req: any) {
-    return this.dealsService.bulkDelete(bulkDeleteDto.dealIds, req.user.companyId);
+    return this.dealsService.bulkDelete(
+      bulkDeleteDto.dealIds,
+      req.user.companyId,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   @Put('bulk/update')
@@ -54,7 +61,9 @@ export class DealsController {
     return this.dealsService.bulkUpdate(
       bulkUpdateDto.dealIds,
       bulkUpdateDto,
-      req.user.companyId
+      req.user.companyId,
+      req.user.id,
+      req.user.role,
     );
   }
 
