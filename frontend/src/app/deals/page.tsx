@@ -1009,7 +1009,7 @@ export default function DealsPage() {
                         <div 
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className={`bg-white flex-1 p-2 grid grid-cols-1 gap-1 overflow-y-auto border-l border-r border-b border-gray-200 ${
+                          className={`bg-white flex-1 p-2 grid grid-cols-1 gap-3 overflow-y-auto border-l border-r border-b border-gray-200 ${
                             snapshot.isDraggingOver ? 'bg-blue-50' : ''
                           }`}
                         >

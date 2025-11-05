@@ -21,7 +21,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed:test": "ts-node prisma/seed-test.ts",
+    "db:clean:test": "ts-node prisma/clean-test-data.ts"
   },
   "dependencies": {
     "@json2csv/plainjs": "^7.0.6",
