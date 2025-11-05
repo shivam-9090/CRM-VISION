@@ -34,9 +34,23 @@ model User {
   comments             Comment[]
   auditLogs            AuditLog[]
   notifications        Notification[]
+  refreshTokens        RefreshToken[]
   company              Company?  @relation(fields: [companyId], references: [id])
 
   @@map("users")
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }
 
 model Company {

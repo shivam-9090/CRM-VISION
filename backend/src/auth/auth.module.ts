@@ -14,9 +14,9 @@ import { EmailService } from '../common/email.service';
     PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: { expiresIn: '24h' },
+        signOptions: { expiresIn: '15m' }, // Short-lived access token
       }),
       inject: [ConfigService],
     }),

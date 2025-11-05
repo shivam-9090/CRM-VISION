@@ -6,8 +6,9 @@ import {
   Get,
   Request,
   Res,
+  Req,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Response, Request as ExpressRequest } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
@@ -67,6 +68,42 @@ export class AuthController {
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
     return this.authService.logout(res);
+  }
+
+  @Post('refresh')
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 refreshes per minute
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiResponse({
+    status: 200,
+    description: 'New access token generated successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  async refreshToken(
+    @Body() body: { refreshToken: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.refreshAccessToken(body.refreshToken, res);
+  }
+
+  @Post('revoke')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Revoke a specific refresh token' })
+  @ApiResponse({ status: 200, description: 'Refresh token revoked successfully' })
+  async revokeToken(@Body() body: { refreshToken: string }) {
+    return this.authService.revokeRefreshToken(body.refreshToken);
+  }
+
+  @Post('revoke-all')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Revoke all refresh tokens for current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'All refresh tokens revoked successfully',
+  })
+  async revokeAllTokens(@Request() req) {
+    return this.authService.revokeAllRefreshTokens(req.user.id);
   }
 
   @UseGuards(AuthGuard)

@@ -21,6 +21,7 @@ import * as QRCode from 'qrcode';
 export class AuthService {
   private readonly MAX_LOGIN_ATTEMPTS = 5;
   private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+  private readonly REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   constructor(
     private prisma: PrismaService,
@@ -120,18 +121,28 @@ export class AuthService {
       // Don't fail registration if email fails - user can request new verification
     }
 
-    const payload = { 
-      id: result.user.id, 
+    const payload = {
+      id: result.user.id,
       role: result.user.role,
       permissions: result.user.permissions || [],
     };
     const access_token = this.jwtService.sign(payload);
 
+    // Generate refresh token
+    const refreshToken = await this.generateRefreshToken(result.user.id);
+
     res.cookie('token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: this.REFRESH_TOKEN_EXPIRY, // 7 days
     });
 
     return {
@@ -174,18 +185,28 @@ export class AuthService {
 
     await this.prisma.invite.delete({ where: { token } });
 
-    const payload = { 
-      id: user.id, 
+    const payload = {
+      id: user.id,
       role: user.role,
       permissions: [],
     };
     const access_token = this.jwtService.sign(payload);
 
+    // Generate refresh token
+    const refreshToken = await this.generateRefreshToken(user.id);
+
     res.cookie('token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: this.REFRESH_TOKEN_EXPIRY, // 7 days
     });
 
     return { user };
@@ -299,18 +320,28 @@ export class AuthService {
       },
     });
 
-    const payload = { 
-      id: user.id, 
+    const payload = {
+      id: user.id,
       role: user.role,
       permissions: user.permissions || [],
     };
     const access_token = this.jwtService.sign(payload);
 
+    // Generate refresh token
+    const refreshToken = await this.generateRefreshToken(user.id);
+
     res.cookie('token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: this.REFRESH_TOKEN_EXPIRY, // 7 days
     });
 
     return {
@@ -331,7 +362,131 @@ export class AuthService {
 
   logout(res: Response) {
     res.clearCookie('token');
+    res.clearCookie('refreshToken');
     return { message: 'Logged out successfully' };
+  }
+
+  async generateRefreshToken(userId: string): Promise<string> {
+    // Generate a random refresh token
+    const refreshToken = randomBytes(64).toString('hex');
+    const expiresAt = new Date(Date.now() + this.REFRESH_TOKEN_EXPIRY);
+
+    // Store refresh token in database
+    await this.prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId,
+        expiresAt,
+      },
+    });
+
+    return refreshToken;
+  }
+
+  async refreshAccessToken(refreshToken: string, res: Response) {
+    // Find refresh token in database
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: true },
+    });
+
+    if (!storedToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Check if token is expired
+    if (storedToken.expiresAt < new Date()) {
+      // Delete expired token
+      await this.prisma.refreshToken.delete({
+        where: { id: storedToken.id },
+      });
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Get user with permissions
+    const user = await this.prisma.user.findUnique({
+      where: { id: storedToken.userId },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Generate new access token
+    const payload = {
+      id: user.id,
+      role: user.role,
+      permissions: user.permissions || [],
+    };
+    const accessToken = this.jwtService.sign(payload);
+
+    // Rotate refresh token (delete old, create new)
+    await this.prisma.refreshToken.delete({
+      where: { id: storedToken.id },
+    });
+    const newRefreshToken = await this.generateRefreshToken(user.id);
+
+    // Set cookies
+    res.cookie('token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: this.REFRESH_TOKEN_EXPIRY,
+    });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        companyId: user.companyId,
+        permissions: user.permissions,
+        company: user.company,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      accessToken,
+    };
+  }
+
+  async revokeRefreshToken(refreshToken: string) {
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
+
+    if (!storedToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    await this.prisma.refreshToken.delete({
+      where: { id: storedToken.id },
+    });
+
+    return { message: 'Refresh token revoked successfully' };
+  }
+
+  async revokeAllRefreshTokens(userId: string) {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
+
+    return { message: 'All refresh tokens revoked successfully' };
   }
 
   async generateInviteToken(inviteDto: InviteDto) {
