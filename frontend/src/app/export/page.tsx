@@ -22,7 +22,7 @@ export default function ExportImportPage() {
     try {
       setLoading(type);
 
-      const response = await api.get(`/api/export/${type}`, {
+      const response = await api.get(`/export/${type}`, {
         responseType: "blob",
       });
 
@@ -62,7 +62,7 @@ export default function ExportImportPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await api.post(`/api/export/import/${type}`, formData, {
+      const response = await api.post(`/export/import/${type}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

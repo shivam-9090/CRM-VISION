@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -91,6 +92,7 @@ export class DealsController {
   }
 
   @Put(':id')
+  @Patch(':id')
   @Permissions(PERMISSIONS.DEAL_UPDATE)
   async update(@Param('id') id: string, @Body() updateDealDto: UpdateDealDto, @Request() req: RequestWithUser) {
     return this.dealsService.update(id, updateDealDto, req.user.companyId);

@@ -20,7 +20,7 @@ import { PERMISSIONS } from '../auth/constants/permissions.constants';
 import { CommentableType } from '@prisma/client';
 import type { RequestWithUser } from '../common/types/request.types';
 
-@Controller('api/comments')
+@Controller('comments')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}

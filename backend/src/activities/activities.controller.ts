@@ -31,7 +31,7 @@ export class ActivitiesController {
     @Body() createActivityDto: CreateActivityDto,
     @Request() req: RequestWithUser,
   ) {
-    return this.activitiesService.create(createActivityDto, req.user.id);
+    return this.activitiesService.create(createActivityDto, req.user.companyId);
   }
 
   @Get()

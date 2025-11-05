@@ -40,6 +40,7 @@ async function main() {
       name: 'Admin User',
       role: 'ADMIN',
       companyId: companies[0].id,
+      permissions: ['*:*'], // Full admin permissions
     },
   });
 

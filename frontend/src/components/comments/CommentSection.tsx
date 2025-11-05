@@ -62,7 +62,7 @@ export default function CommentSection({
 
     try {
       setSubmitting(true);
-      const response = await api.post("/api/comments", {
+      const response = await api.post("/comments", {
         content: newComment,
         commentableType: entityType,
         commentableId: entityId,
@@ -82,7 +82,7 @@ export default function CommentSection({
     if (!editContent.trim()) return;
 
     try {
-      const response = await api.patch(`/api/comments/${id}`, {
+      const response = await api.patch(`/comments/${id}`, {
         content: editContent,
       });
       setComments(
@@ -103,7 +103,7 @@ export default function CommentSection({
     if (!confirm("Are you sure you want to delete this comment?")) return;
 
     try {
-      await api.delete(`/api/comments/${id}`);
+      await api.delete(`/comments/${id}`);
       setComments(comments.filter((comment) => comment.id !== id));
       alert("Comment deleted successfully!");
     } catch (error) {

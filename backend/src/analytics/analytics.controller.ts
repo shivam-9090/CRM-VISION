@@ -13,7 +13,7 @@ interface RequestWithUser {
   };
 }
 
-@Controller('api/analytics')
+@Controller('analytics')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}

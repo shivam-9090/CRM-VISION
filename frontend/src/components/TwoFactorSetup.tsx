@@ -28,7 +28,7 @@ export default function TwoFactorSetup({ onSetupComplete }: TwoFactorSetupProps)
       setLoading(true);
       setError(null);
       
-      const response = await api.post("/api/auth/2fa/enable");
+      const response = await api.post("/auth/2fa/enable");
       
       setQrCode(response.data.qrCode);
       setSecret(response.data.secret);
@@ -51,7 +51,7 @@ export default function TwoFactorSetup({ onSetupComplete }: TwoFactorSetupProps)
       setLoading(true);
       setError(null);
       
-      const response = await api.post("/api/auth/2fa/verify", {
+      const response = await api.post("/auth/2fa/verify", {
         token: verificationToken,
       });
       

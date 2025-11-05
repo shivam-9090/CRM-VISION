@@ -359,14 +359,15 @@ export class DealsService {
     const cacheKey = `pipeline:stats:${companyId}`;
 
     try {
-      // Try to get from cache
-      const cached = await this.redis.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      // Try to get from cache (silently fail if Redis unavailable)
+      if (this.redis?.status === 'ready') {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
     } catch (error) {
-      console.error('Redis get error:', error);
-      // Continue without cache on error
+      // Silently continue without cache on error
     }
 
     const stats = await this.prisma.deal.groupBy({
@@ -385,11 +386,12 @@ export class DealsService {
     }));
 
     try {
-      // Cache for 2 minutes
-      await this.redis.setex(cacheKey, 120, JSON.stringify(result));
+      // Cache for 2 minutes (silently fail if Redis unavailable)
+      if (this.redis?.status === 'ready') {
+        await this.redis.setex(cacheKey, 120, JSON.stringify(result));
+      }
     } catch (error) {
-      console.error('Redis setex error:', error);
-      // Continue without caching on error
+      // Silently continue without caching on error
     }
 
     return result;
@@ -400,14 +402,15 @@ export class DealsService {
     const cacheKey = `user:stats:${userId}:${companyId}`;
 
     try {
-      // Try to get from cache
-      const cached = await this.redis.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+      // Try to get from cache (silently fail if Redis unavailable)
+      if (this.redis?.status === 'ready') {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
       }
-    } catch (error) {
-      console.error('Redis get error:', error);
-      // Continue without cache on error
+    } catch {
+      // Silently continue without cache on error
     }
 
     const [total, won, lost, inProgress] = await Promise.all([
@@ -438,11 +441,12 @@ export class DealsService {
     };
 
     try {
-      // Cache for 5 minutes
-      await this.redis.setex(cacheKey, 300, JSON.stringify(result));
-    } catch (error) {
-      console.error('Redis setex error:', error);
-      // Continue without caching on error
+      // Cache for 5 minutes (silently fail if Redis unavailable)
+      if (this.redis?.status === 'ready') {
+        await this.redis.setex(cacheKey, 300, JSON.stringify(result));
+      }
+    } catch {
+      // Silently continue without caching on error
     }
 
     return result;

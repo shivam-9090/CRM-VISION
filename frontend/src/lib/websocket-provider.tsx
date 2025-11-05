@@ -42,7 +42,30 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    const user = localStorage.getItem("user");
+    
+    // Don't connect if no token or user data
+    if (!token || !user) {
+      console.log("⚠️ No authentication data available, skipping WebSocket connection");
+      return;
+    }
+
+    // Check if token is expired before attempting connection
+    try {
+      const base64Url = token.split('.')[1];
+      if (base64Url) {
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          console.log("⚠️ Token expired, skipping WebSocket connection");
+          return;
+        }
+      }
+    } catch (error) {
+      console.log("⚠️ Invalid token format, skipping WebSocket connection");
+      return;
+    }
 
     // Connect to WebSocket server
     const newSocket = io("http://localhost:3001", {
@@ -53,20 +76,25 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     newSocket.on("connect", () => {
-      console.log("WebSocket connected");
+      console.log("✅ WebSocket connected");
       // Request unread count on connect
       newSocket.emit("getUnreadCount");
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("WebSocket disconnected");
+    newSocket.on("disconnect", (reason) => {
+      console.log("🔌 WebSocket disconnected:", reason);
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("❌ WebSocket connection error:", error.message);
     });
 
     newSocket.on("notification", (notification: Notification) => {
-      console.log("New notification:", notification);
+      console.log("📬 New notification:", notification.title);
       // Add to notifications list
       setNotifications((prev) => [notification, ...prev]);
       
@@ -78,17 +106,44 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     });
 
     newSocket.on("unreadCount", (count: number) => {
-      console.log("Unread count:", count);
+      console.log("📊 Unread count:", count);
       setUnreadCount(count);
     });
 
     newSocket.on("error", (error: any) => {
-      console.error("WebSocket error:", error);
+      const errorMessage = error?.message || error || 'Unknown error';
+      
+      // Only log meaningful errors (not "Unauthorized" spam)
+      if (errorMessage !== "Unauthorized") {
+        console.error("⚠️ WebSocket error:", errorMessage);
+      }
+      
+      // Handle token expiration or authentication errors
+      if (
+        errorMessage === "Unauthorized" ||
+        errorMessage?.includes("Token expired") || 
+        errorMessage?.includes("expired") ||
+        errorMessage?.includes("Authentication")
+      ) {
+        console.log("🔄 Authentication error - clearing WebSocket connection");
+        
+        // Only show toast if it's an explicit expiration (not just missing token)
+        if (errorMessage?.includes("Token expired") || errorMessage?.includes("expired")) {
+          toast.error("Session expired. Please login again.", {
+            duration: 5000,
+          });
+        }
+        
+        newSocket.close();
+        // Optionally redirect to login
+        // window.location.href = "/auth/login";
+      }
     });
 
     setSocket(newSocket);
 
     return () => {
+      console.log("🧹 Cleaning up WebSocket connection");
       newSocket.close();
     };
   }, []);

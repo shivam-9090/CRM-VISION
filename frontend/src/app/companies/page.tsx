@@ -53,7 +53,9 @@ export default function CompaniesPage() {
   const fetchCompanies = async () => {
     try {
       const response = await api.get('/companies');
-      setCompanies(response.data);
+      // Handle paginated response
+      const companiesData = response.data.data || response.data || [];
+      setCompanies(Array.isArray(companiesData) ? companiesData : []);
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const response = (err as { response?: { data?: { message?: string } } }).response;

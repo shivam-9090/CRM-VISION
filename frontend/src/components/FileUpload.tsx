@@ -32,7 +32,7 @@ export default function FileUpload({
           formData.append("attachableType", attachableType);
           formData.append("attachableId", attachableId);
 
-          const response = await api.post("/api/attachments/upload", formData, {
+          const response = await api.post("/attachments/upload", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
             },

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -63,6 +64,7 @@ export class CompaniesController {
   }
 
   @Put(':id')
+  @Patch(':id')
   @Permissions(PERMISSIONS.COMPANY_UPDATE)
   async update(
     @Param('id') id: string,

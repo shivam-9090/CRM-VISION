@@ -10,7 +10,7 @@ interface RequestWithUser {
   };
 }
 
-@Controller('api/search')
+@Controller('search')
 @UseGuards(AuthGuard('jwt'))
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}

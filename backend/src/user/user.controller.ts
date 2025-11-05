@@ -21,7 +21,7 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PERMISSIONS } from '../auth/constants/permissions.constants';
 import { Role } from '@prisma/client';
 
-@Controller('api/users')
+@Controller('users')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}

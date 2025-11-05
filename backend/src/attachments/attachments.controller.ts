@@ -61,7 +61,7 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
   }
 };
 
-@Controller('api/attachments')
+@Controller('attachments')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}

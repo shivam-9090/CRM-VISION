@@ -767,7 +767,14 @@ export default function DealsPage() {
                         // Update deals one by one
                         for (const deal of unassignedDeals) {
                           console.log(`Assigning deal ${deal.id} to user ${user.id}`);
-                          await api.put(`/deals/${deal.id}`, { assignedToId: user.id });
+                          console.log('Deal object:', deal);
+                          try {
+                            const response = await api.patch(`/deals/${deal.id}`, { assignedToId: user.id });
+                            console.log(`✅ Deal ${deal.id} assigned successfully:`, response.data);
+                          } catch (dealError: any) {
+                            console.error(`❌ Failed to assign deal ${deal.id}:`, dealError.response?.data || dealError.message);
+                            throw dealError; // Re-throw to stop the loop
+                          }
                         }
                         
                         console.log('All deals assigned successfully');

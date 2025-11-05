@@ -7,7 +7,7 @@ import { PERMISSIONS } from '../auth/constants/permissions.constants';
 import type { RequestWithUser } from '../common/types/request.types';
 import { AuditAction } from '@prisma/client';
 
-@Controller('api/audit-logs')
+@Controller('audit-logs')
 @UseGuards(AuthGuard, PermissionsGuard)
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}

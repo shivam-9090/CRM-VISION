@@ -47,7 +47,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: crm-backend-dev
     env_file:
       - .env
@@ -67,8 +67,11 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend:/app
-      - /app/node_modules
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - ./backend/package.json:/app/package.json
+      - ./backend/tsconfig.json:/app/tsconfig.json
+      - ./backend/nest-cli.json:/app/nest-cli.json
     networks:
       - crm-network
     healthcheck:
@@ -84,22 +87,26 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: crm-frontend-dev
     env_file:
       - .env
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
       NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
     ports:
       - "3000:3000"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/next.config.ts:/app/next.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs
     networks:
       - crm-network
     healthcheck:

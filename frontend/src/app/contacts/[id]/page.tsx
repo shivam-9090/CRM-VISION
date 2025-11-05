@@ -37,7 +37,7 @@ export default function ContactDetailPage() {
 
   const fetchContact = async () => {
     try {
-      const response = await api.get(`/api/contacts/${contactId}`);
+      const response = await api.get(`/contacts/${contactId}`);
       setContact(response.data);
     } catch (error) {
       console.error("Failed to fetch contact:", error);
@@ -49,7 +49,7 @@ export default function ContactDetailPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/users/profile");
       setCurrentUserId(response.data.id);
     } catch (error) {
       console.error("Failed to fetch user:", error);

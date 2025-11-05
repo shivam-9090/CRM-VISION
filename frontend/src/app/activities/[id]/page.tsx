@@ -52,7 +52,7 @@ export default function ActivityDetailPage() {
 
   const fetchActivity = async () => {
     try {
-      const response = await api.get(`/api/activities/${activityId}`);
+      const response = await api.get(`/activities/${activityId}`);
       setActivity(response.data);
     } catch (error) {
       console.error("Failed to fetch activity:", error);
@@ -64,7 +64,7 @@ export default function ActivityDetailPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/users/profile");
       setCurrentUserId(response.data.id);
     } catch (error) {
       console.error("Failed to fetch user:", error);

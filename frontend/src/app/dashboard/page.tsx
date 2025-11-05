@@ -47,10 +47,15 @@ export default function DashboardPage() {
       // Calculate revenue from closed won deals
       const totalRevenue = dealsData
         .filter((deal: any) => deal.stage === 'CLOSED_WON')
-        .reduce((sum: number, deal: any) => sum + (deal.value || 0), 0);
+        .reduce((sum: number, deal: any) => {
+          // Ensure deal.value is treated as a number, not string
+          const dealValue = typeof deal.value === 'string' ? parseFloat(deal.value) : (deal.value || 0);
+          return sum + dealValue;
+        }, 0);
 
-      // Get recent activities (last 5)
-      const recentActivities = activitiesRes.data.slice(0, 5) || [];
+      // Handle paginated activities response - get recent activities (last 5)
+      const activitiesData = activitiesRes.data.data || activitiesRes.data || [];
+      const recentActivities = Array.isArray(activitiesData) ? activitiesData.slice(0, 5) : [];
 
       setDashboardData({
         totalCompanies,

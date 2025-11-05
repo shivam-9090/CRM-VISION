@@ -83,6 +83,7 @@ export class AuthService {
           companyId: true,
           phone: true,
           isVerified: true,
+          permissions: true,
           createdAt: true,
           updatedAt: true,
           company: {
@@ -119,7 +120,11 @@ export class AuthService {
       // Don't fail registration if email fails - user can request new verification
     }
 
-    const payload = { id: result.user.id, role: result.user.role };
+    const payload = { 
+      id: result.user.id, 
+      role: result.user.role,
+      permissions: result.user.permissions || [],
+    };
     const access_token = this.jwtService.sign(payload);
 
     res.cookie('token', access_token, {
@@ -169,7 +174,11 @@ export class AuthService {
 
     await this.prisma.invite.delete({ where: { token } });
 
-    const payload = { id: user.id, role: user.role };
+    const payload = { 
+      id: user.id, 
+      role: user.role,
+      permissions: [],
+    };
     const access_token = this.jwtService.sign(payload);
 
     res.cookie('token', access_token, {
@@ -201,6 +210,7 @@ export class AuthService {
         lockedUntil: true,
         twoFactorEnabled: true,
         twoFactorSecret: true,
+        permissions: true,
         company: {
           select: {
             id: true,
@@ -289,7 +299,11 @@ export class AuthService {
       },
     });
 
-    const payload = { id: user.id, role: user.role };
+    const payload = { 
+      id: user.id, 
+      role: user.role,
+      permissions: user.permissions || [],
+    };
     const access_token = this.jwtService.sign(payload);
 
     res.cookie('token', access_token, {
@@ -306,6 +320,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         companyId: user.companyId,
+        permissions: user.permissions,
         company: user.company,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -378,6 +393,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       companyId: user.companyId,
+      permissions: user.permissions,
       company: user.company,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

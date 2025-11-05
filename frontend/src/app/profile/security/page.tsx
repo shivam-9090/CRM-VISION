@@ -31,7 +31,7 @@ export default function SecurityPage() {
       setLoading(true);
       setError(null);
       
-      const response = await api.post("/api/auth/2fa/disable", { password });
+      const response = await api.post("/auth/2fa/disable", { password });
       
       setSuccess(response.data.message || "2FA disabled successfully");
       setPassword("");

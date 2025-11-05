@@ -8,7 +8,8 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { User, Shield, Lock, ArrowRight } from 'lucide-react';
+import { User, Shield, Lock, ArrowRight, Camera, Mail, Phone, Calendar, Activity, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const USER_ROLES = [
   { value: 'USER', label: 'User' },
@@ -19,18 +20,32 @@ interface UserProfile {
   id: string;
   email: string;
   name: string;
+  phone?: string;
   role: string;
+  createdAt: string;
+  lastLoginAt?: string;
+  twoFactorEnabled?: boolean;
   company: {
     id: string;
     name: string;
+    description?: string;
   };
+}
+
+interface ActivityStats {
+  total: number;
+  completed: number;
+  scheduled: number;
+  thisWeek: number;
 }
 
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [activityStats, setActivityStats] = useState<ActivityStats | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     role: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -39,18 +54,51 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchProfile();
+    fetchActivityStats();
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get('/user/profile');
+      const response = await api.get('/users/profile');
       setProfile(response.data);
       setFormData({
         name: response.data.name || '',
+        phone: response.data.phone || '',
         role: response.data.role || 'USER',
       });
     } catch (err) {
       console.error('Failed to fetch profile:', err);
+      toast.error('Failed to load profile');
+    }
+  };
+
+  const fetchActivityStats = async () => {
+    try {
+      const response = await api.get('/activities');
+      // Handle paginated response
+      const activitiesData = response.data.data || response.data || [];
+      const activities = Array.isArray(activitiesData) ? activitiesData : [];
+      
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const stats = {
+        total: activities.length,
+        completed: activities.filter((a: any) => a.status === 'COMPLETED').length,
+        scheduled: activities.filter((a: any) => a.status === 'SCHEDULED').length,
+        thisWeek: activities.filter((a: any) => new Date(a.scheduledDate) >= oneWeekAgo).length,
+      };
+      
+      setActivityStats(stats);
+    } catch (err) {
+      console.error('Failed to fetch activity stats:', err);
+      // Set default stats on error
+      setActivityStats({
+        total: 0,
+        completed: 0,
+        scheduled: 0,
+        thisWeek: 0,
+      });
     }
   };
 
@@ -67,9 +115,11 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await api.patch('/user/profile', formData);
+      const response = await api.patch(`/users/${profile?.id}`, formData);
       setProfile(response.data);
       setIsEditing(false);
+      toast.success('Profile updated successfully');
+      fetchProfile(); // Refresh profile data
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const response = (err as { response?: { data?: { errors?: Record<string, string>; message?: string } } }).response;
@@ -81,6 +131,7 @@ export default function ProfilePage() {
       } else {
         setErrors({ general: 'Failed to update profile' });
       }
+      toast.error('Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -89,6 +140,7 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setFormData({
       name: profile?.name || '',
+      phone: profile?.phone || '',
       role: profile?.role || 'USER',
     });
     setIsEditing(false);
@@ -120,8 +172,60 @@ export default function ProfilePage() {
           <p className="text-gray-600 mt-2">Manage your account information and settings</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Profile Information */}
+        {/* Activity Stats Cards */}
+        {activityStats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Activities</p>
+                    <p className="text-2xl font-bold text-black">{activityStats.total}</p>
+                  </div>
+                  <Activity className="h-10 w-10 text-blue-500 opacity-75" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Completed</p>
+                    <p className="text-2xl font-bold text-green-600">{activityStats.completed}</p>
+                  </div>
+                  <CheckCircle2 className="h-10 w-10 text-green-500 opacity-75" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Scheduled</p>
+                    <p className="text-2xl font-bold text-blue-600">{activityStats.scheduled}</p>
+                  </div>
+                  <Calendar className="h-10 w-10 text-blue-500 opacity-75" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">This Week</p>
+                    <p className="text-2xl font-bold text-purple-600">{activityStats.thisWeek}</p>
+                  </div>
+                  <Activity className="h-10 w-10 text-purple-500 opacity-75" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">{/* Profile Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -147,6 +251,16 @@ export default function ProfilePage() {
                     required
                   />
 
+                  <Input
+                    label="Phone Number"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    error={errors.phone}
+                    placeholder="+1 (555) 000-0000"
+                  />
+
                   <Select
                     label="Role *"
                     name="role"
@@ -155,7 +269,11 @@ export default function ProfilePage() {
                     options={USER_ROLES}
                     error={errors.role}
                     required
+                    disabled={profile?.role !== 'ADMIN'}
                   />
+                  {profile?.role !== 'ADMIN' && (
+                    <p className="text-xs text-gray-500">Only admins can change user roles</p>
+                  )}
 
                   <div className="flex gap-3 pt-2">
                     <Button type="submit" isLoading={loading}>
@@ -170,14 +288,22 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <p className="text-gray-900">{profile.name || 'Not set'}</p>
+                    <p className="text-gray-900 font-medium">{profile?.name || 'Not set'}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                      <span className="text-gray-900">{profile?.phone || 'Not set'}</span>
+                    </div>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                     <div className="flex items-center">
                       <Shield className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="capitalize text-gray-900">{profile.role?.toLowerCase()}</span>
+                      <span className="capitalize text-gray-900">{profile?.role?.toLowerCase()}</span>
                     </div>
                   </div>
 
@@ -201,18 +327,64 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <p className="text-gray-900">{profile.email}</p>
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                    <span className="text-gray-900">{profile?.email}</span>
+                  </div>
                   <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
-                  <p className="text-gray-900">{profile.company.name}</p>
+                  <p className="text-gray-900 font-medium">{profile?.company.name}</p>
+                  {profile?.company.description && (
+                    <p className="text-sm text-gray-500 mt-1">{profile.company.description}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-                  <p className="text-sm text-gray-500 font-mono">{profile.id}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                    <span className="text-gray-900">
+                      {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      }) : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+
+                {profile?.lastLoginAt && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Login</label>
+                    <p className="text-sm text-gray-600">
+                      {new Date(profile.lastLoginAt).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Two-Factor Authentication</label>
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 rounded-full mr-2 ${profile?.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <span className="text-gray-900">{profile?.twoFactorEnabled ? 'Enabled' : 'Disabled'}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <p className="text-xs text-gray-600 font-mono break-all select-all">{profile?.id}</p>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Your unique identifier</p>
                 </div>
               </div>
             </CardContent>

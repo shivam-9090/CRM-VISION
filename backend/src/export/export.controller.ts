@@ -19,7 +19,7 @@ import { ExportService } from './export.service';
 import { ImportService } from './import.service';
 import type { RequestWithUser } from '../common/types/request.types';
 
-@Controller('api/export')
+@Controller('export')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class ExportController {
   constructor(

@@ -16,24 +16,37 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
 
         const redis = new Redis(redisUrl, {
           retryStrategy(times) {
+            // Stop retrying after 3 attempts
+            if (times > 3) {
+              console.log('⚠️ Redis connection failed after 3 attempts. Caching disabled.');
+              return null; // Stop retrying
+            }
             const delay = Math.min(times * 50, 2000);
             return delay;
           },
-          maxRetriesPerRequest: 3,
+          maxRetriesPerRequest: 1, // Reduced from 3 to fail faster
           lazyConnect: true, // Don't fail if Redis is not available
+          enableOfflineQueue: false, // Don't queue commands when offline
         });
 
         redis.on('connect', () => {
-          console.log('✅ Redis connected');
+          console.log('✅ Redis connected - caching enabled');
         });
 
         redis.on('error', (err) => {
-          console.warn('⚠️ Redis error (optional cache):', err.message);
+          // Only log once, not for every retry
+          if (!redis.status || redis.status === 'connecting') {
+            console.log('⚠️ Redis unavailable - caching disabled');
+          }
+        });
+
+        redis.on('close', () => {
+          console.log('🔴 Redis connection closed');
         });
 
         // Try to connect, but don't fail if it doesn't work
-        redis.connect().catch((err) => {
-          console.warn('⚠️ Redis not available, caching disabled:', err.message);
+        redis.connect().catch(() => {
+          console.log('⚠️ Redis not available - application will run without caching');
         });
 
         return redis;

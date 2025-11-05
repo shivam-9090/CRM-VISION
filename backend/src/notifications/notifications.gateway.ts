@@ -36,12 +36,38 @@ export class NotificationsGateway
       const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
       
       if (!token) {
+        console.log('⚠️ WebSocket connection rejected: No token provided');
+        client.emit('error', { message: 'Authentication required' });
         client.disconnect();
         return;
       }
 
-      const payload = this.jwtService.verify(token);
-      const userId = payload.sub;
+      // Verify token with proper error handling
+      let payload;
+      try {
+        payload = this.jwtService.verify(token);
+      } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+          console.log('⚠️ WebSocket connection rejected: Token expired');
+          client.emit('error', { message: 'Token expired. Please login again.' });
+        } else if (err.name === 'JsonWebTokenError') {
+          console.log('⚠️ WebSocket connection rejected: Invalid token');
+          client.emit('error', { message: 'Invalid token' });
+        } else {
+          console.log('⚠️ WebSocket connection rejected: Token verification failed');
+          client.emit('error', { message: 'Authentication failed' });
+        }
+        client.disconnect();
+        return;
+      }
+
+      const userId = payload.id || payload.sub;
+      if (!userId) {
+        console.log('⚠️ WebSocket connection rejected: No user ID in token');
+        client.emit('error', { message: 'Invalid token payload' });
+        client.disconnect();
+        return;
+      }
 
       // Store socket connection
       if (!this.userSockets.has(userId)) {
@@ -54,14 +80,17 @@ export class NotificationsGateway
 
       // Join user-specific room
       client.join(`user:${userId}`);
-      client.join(`company:${payload.companyId}`);
+      if (payload.companyId) {
+        client.join(`company:${payload.companyId}`);
+      }
 
       client.data.userId = userId;
       client.data.companyId = payload.companyId;
 
-      console.log(`Client connected: ${client.id} (User: ${userId})`);
+      console.log(`✅ WebSocket connected: ${client.id} (User: ${userId})`);
     } catch (error) {
-      console.error('WebSocket connection error:', error);
+      console.error('❌ WebSocket connection error:', error.message || error);
+      client.emit('error', { message: 'Connection failed' });
       client.disconnect();
     }
   }
@@ -77,7 +106,7 @@ export class NotificationsGateway
         }
       }
     }
-    console.log(`Client disconnected: ${client.id}`);
+    console.log(`🔌 WebSocket disconnected: ${client.id}${userId ? ` (User: ${userId})` : ''}`);
   }
 
   @SubscribeMessage('getUnreadCount')

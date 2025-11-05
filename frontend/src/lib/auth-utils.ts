@@ -1,11 +1,57 @@
 // Simple auth utilities without automatic redirects
+import { migrateJWTToken } from './jwt-migration';
+
+// Helper function to decode JWT and check expiration
+function isTokenExpired(token: string): boolean {
+  try {
+    // Decode JWT payload (base64)
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return true;
+    
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+    
+    // Check if token has expired (exp is in seconds, Date.now() is in milliseconds)
+    if (payload.exp) {
+      const expirationTime = payload.exp * 1000;
+      const now = Date.now();
+      const isExpired = now > expirationTime;
+      
+      if (isExpired) {
+        console.log('⚠️ Token expired:', {
+          expiredAt: new Date(expirationTime).toISOString(),
+          now: new Date(now).toISOString()
+        });
+      }
+      
+      return isExpired;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('❌ Error checking token expiration:', error);
+    return true; // Treat as expired if we can't decode
+  }
+}
+
 export function hasAuthToken(): boolean {
   if (typeof window === 'undefined') return false;
+  
+  // MIGRATION: Check if JWT has permissions field, clear if not
+  migrateJWTToken();
   
   // Check for token in localStorage (fallback) or check for cookie
   const token = localStorage.getItem('token');
   const user = localStorage.getItem('user');
   const hasCookie = document.cookie.includes('token=');
+  
+  // Check if token is expired
+  if (token && isTokenExpired(token)) {
+    console.log('🔄 Clearing expired token from localStorage');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return hasCookie; // Rely on cookie if available
+  }
   
   // Debug logging
   console.log('🔍 Auth Check:', { 

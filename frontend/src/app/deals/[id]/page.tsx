@@ -50,7 +50,7 @@ export default function DealDetailPage() {
 
   const fetchDeal = async () => {
     try {
-      const response = await api.get(`/api/deals/${dealId}`);
+      const response = await api.get(`/deals/${dealId}`);
       setDeal(response.data);
     } catch (error) {
       console.error("Failed to fetch deal:", error);
@@ -62,7 +62,7 @@ export default function DealDetailPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/users/profile");
       setCurrentUserId(response.data.id);
     } catch (error) {
       console.error("Failed to fetch user:", error);

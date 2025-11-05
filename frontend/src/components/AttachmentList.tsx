@@ -47,16 +47,16 @@ export default function AttachmentList({
     fetchAttachments();
   }, [fetchAttachments, refreshTrigger]);
 
-  const handleDownload = async (id: string, originalName: string) => {
+  const handleDownload = async (id: string, filename: string) => {
     try {
-      const response = await api.get(`/api/attachments/${id}/download`, {
+      const response = await api.get(`/attachments/${id}/download`, {
         responseType: "blob",
       });
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", originalName);
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -71,7 +71,7 @@ export default function AttachmentList({
     if (!confirm("Are you sure you want to delete this attachment?")) return;
 
     try {
-      await api.delete(`/api/attachments/${id}`);
+      await api.delete(`/attachments/${id}`);
       setAttachments((prev) => prev.filter((att) => att.id !== id));
     } catch (error) {
       console.error("Delete failed:", error);
