@@ -120,12 +120,24 @@ async function bootstrap() {
     next();
   });
 
-  // Enable global validation
+  // Enable global validation with enhanced options
   app.useGlobalPipes(
     new ValidationPipe({
+      // Strip properties that do not have any decorators
       whitelist: true,
+      // Throw an error if non-whitelisted properties are present
       forbidNonWhitelisted: true,
+      // Automatically transform payloads to DTO instances
       transform: true,
+      // Enable detailed error messages
+      disableErrorMessages: false,
+      // Validate nested objects
+      validateCustomDecorators: true,
+      // Transform options for class-transformer
+      transformOptions: {
+        enableImplicitConversion: true,
+        exposeDefaultValues: true,
+      },
     }),
   );
 
