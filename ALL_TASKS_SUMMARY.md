@@ -48,14 +48,17 @@ This file consolidates all 28 tasks, their status, descriptions, key files, comm
 - Key files: `backend/src/common/redis-throttler.storage.ts`, `backend/src/common/decorators/rate-limit.decorator.ts`, `backend/src/common/middlewares/rate-limit-headers.middleware.ts`, `backend/src/app.module.ts`
 - Commit: `0f26b5b`
 
-7. HTTPS & Security Headers
-- Status: not-started
-- Description: Enforce HTTPS, add Helmet config, HSTS, CSP, X-Frame-Options, X-Content-Type-Options; production-only redirect.
-- Key files to change: `backend/src/main.ts`, `backend/src/app.module.ts` (or new middleware)
+7. ✅ HTTPS & Security Headers
+- Status: completed
+- Description: Helmet configuration with HSTS, CSP, X-Frame-Options, X-Content-Type-Options; production HTTPS enforcement, Permissions-Policy header.
+- Key files: `backend/src/main.ts`, `SECURITY_HEADERS.md`
+- Commit: (already implemented in previous commits)
 
-8. Input Validation Enhancement
-- Status: not-started
-- Description: Update DTOs using class-validator, stricter rules, sanitization.
+8. ✅ Input Validation Enhancement
+- Status: completed
+- Description: Comprehensive DTO validation with class-validator, custom decorators (@IsStrongPassword, @IsPhoneNumber, @IsFutureDate, @DecimalPrecision), sanitization with sanitize-html, email normalization, length constraints, enhanced ValidationPipe configuration. Fixed RBAC permission system to resolve 403 errors.
+- Key files: `backend/src/common/decorators/validation.decorators.ts`, all DTOs in `src/*/dto/*.dto.ts`, `backend/INPUT_VALIDATION.md`, `backend/src/auth/constants/permissions.constants.ts`, `backend/src/auth/guards/permissions.guard.ts`
+- Commit: `053df3a` + `99807c2`
 
 9. Environment Variables Security
 - Status: not-started
