@@ -1,10 +1,10 @@
 /**
  * Granular Permissions System
- * 
+ *
  * Permission format: {resource}:{action}
  * Resources: deal, contact, activity, company, user, comment, analytics
  * Actions: create, read, update, delete, export, import, invite
- * 
+ *
  * Special permissions:
  * - *:* = Full admin access (all permissions)
  * - {resource}:* = All actions on a resource
@@ -80,7 +80,7 @@ export const PERMISSIONS = {
  */
 export const DEFAULT_ROLE_PERMISSIONS = {
   ADMIN: [PERMISSIONS.ADMIN_ALL], // Admin has all permissions
-  
+
   MANAGER: [
     PERMISSIONS.DEAL_ALL,
     PERMISSIONS.CONTACT_ALL,
@@ -90,31 +90,40 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     PERMISSIONS.COMMENT_ALL,
     PERMISSIONS.ANALYTICS_READ,
     PERMISSIONS.DATA_EXPORT,
+    PERMISSIONS.DATA_IMPORT, // Allow managers to import data
     PERMISSIONS.AUDIT_READ,
   ],
-  
+
   SALES: [
     PERMISSIONS.DEAL_CREATE,
     PERMISSIONS.DEAL_READ,
     PERMISSIONS.DEAL_UPDATE,
+    PERMISSIONS.DEAL_EXPORT, // Allow sales team to export their deals
     PERMISSIONS.CONTACT_CREATE,
     PERMISSIONS.CONTACT_READ,
     PERMISSIONS.CONTACT_UPDATE,
+    PERMISSIONS.CONTACT_EXPORT, // Allow sales team to export their contacts
     PERMISSIONS.ACTIVITY_ALL,
     PERMISSIONS.COMPANY_READ,
+    PERMISSIONS.USER_READ, // Allow users to read their own profile
     PERMISSIONS.COMMENT_ALL,
     PERMISSIONS.ANALYTICS_READ,
+    PERMISSIONS.DATA_EXPORT, // Allow exporting data (for CSV exports)
+    PERMISSIONS.DATA_IMPORT, // Allow sales team to import deals/contacts
   ],
-  
+
   EMPLOYEE: [
     PERMISSIONS.DEAL_READ,
+    PERMISSIONS.DEAL_CREATE, // Allow employees to create deals
     PERMISSIONS.CONTACT_READ,
     PERMISSIONS.ACTIVITY_CREATE,
     PERMISSIONS.ACTIVITY_READ,
     PERMISSIONS.ACTIVITY_UPDATE,
     PERMISSIONS.COMPANY_READ,
+    PERMISSIONS.USER_READ, // Allow users to read their own profile
     PERMISSIONS.COMMENT_CREATE,
     PERMISSIONS.COMMENT_READ,
+    PERMISSIONS.DATA_IMPORT, // Allow employees to import data
   ],
 };
 
