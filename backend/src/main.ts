@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import { validateEnvironment } from './config/env.validation';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   // Validate environment variables before starting the app
@@ -18,9 +19,7 @@ async function bootstrap() {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV,
-      integrations: [
-        nodeProfilingIntegration(),
-      ],
+      integrations: [nodeProfilingIntegration()],
       // Performance Monitoring
       tracesSampleRate: 0.1, // 10% of transactions
       // Profiling
@@ -32,17 +31,71 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-  // Security headers
-  app.use(helmet());
+  // Enhanced security headers with Helmet
+  const isProduction = configService.get('NODE_ENV') === 'production';
+  app.use(
+    helmet({
+      // Strict Transport Security (HSTS) - Force HTTPS for 1 year
+      strictTransportSecurity: {
+        maxAge: 31536000, // 1 year in seconds
+        includeSubDomains: true,
+        preload: true,
+      },
+      // Content Security Policy (CSP)
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for Swagger UI
+          scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for Swagger UI
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'", 'data:'],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          upgradeInsecureRequests: isProduction ? [] : null, // Force HTTPS upgrade in production
+        },
+      },
+      // Prevent clickjacking
+      frameguard: {
+        action: 'deny',
+      },
+      // Prevent MIME type sniffing
+      noSniff: true,
+      // Disable X-Powered-By header
+      hidePoweredBy: true,
+      // Referrer Policy
+      referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+      },
+    }),
+  );
+
+  // Permissions Policy (manual header - not yet in Helmet stable)
+  app.use((req, res: Response, next: NextFunction) => {
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), payment=()',
+    );
+    next();
+  });
 
   // Enable CORS for cross-platform development
+  // In production, only allow HTTPS origins
+  const allowedOrigins = isProduction
+    ? [
+        configService.get('FRONTEND_URL') || 'https://your-domain.com',
+        // Add production HTTPS domains here
+      ]
+    : [
+        configService.get('FRONTEND_URL') || 'http://localhost:3000',
+        /^http:\/\/192\.168\.[0-9]+\.[0-9]+:3000$/, // Local network
+        /^http:\/\/10\.[0-9]+\.[0-9]+\.[0-9]+:3000$/, // Corporate network
+        /^http:\/\/172\.[0-9]+\.[0-9]+\.[0-9]+:3000$/, // Docker network
+      ];
+
   app.enableCors({
-    origin: [
-      configService.get('FRONTEND_URL') || 'http://localhost:3000',
-      /^http:\/\/192\.168\.[0-9]+\.[0-9]+:3000$/, // Local network
-      /^http:\/\/10\.[0-9]+\.[0-9]+\.[0-9]+:3000$/, // Corporate network
-      /^http:\/\/172\.[0-9]+\.[0-9]+\.[0-9]+:3000$/, // Docker network
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -51,7 +104,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Request timeout middleware (30 seconds)
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const timeout = setTimeout(() => {
       if (!res.headersSent) {
         res.status(504).json({
@@ -82,7 +135,9 @@ async function bootstrap() {
   // Configure Swagger/OpenAPI documentation
   const config = new DocumentBuilder()
     .setTitle('CRM System API')
-    .setDescription('Comprehensive CRM system with user management, companies, contacts, deals, and activities')
+    .setDescription(
+      'Comprehensive CRM system with user management, companies, contacts, deals, and activities',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -96,7 +151,7 @@ async function bootstrap() {
       'JWT-auth',
     )
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
     customSiteTitle: 'CRM API Documentation',
@@ -111,19 +166,18 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend server running on port ${port}`);
   console.log(
-    `🔒 Rate limiting enabled: ${configService.get('NODE_ENV') === 'production' ? '100' : '10'} requests per minute`,
+    `🔒 Rate limiting enabled: ${configService.get('NODE_ENV') === 'production' ? '100' : '200'} requests per minute`,
   );
-  console.log(
-    `🔐 Security: Enhanced password requirements (12+ chars)`,
-  );
+  console.log(`🔐 Security: Enhanced password requirements (12+ chars)`);
   console.log(`📊 Database: Performance indexes added`);
-  console.log(
-    `📄 Pagination: Enabled on all list endpoints (max 100/page)`,
-  );
+  console.log(`📄 Pagination: Enabled on all list endpoints (max 100/page)`);
   console.log(`❤️  Health check: Available at /api/health`);
   console.log(`⏱️  Request timeout: 30 seconds`);
-  if (configService.get('NODE_ENV') === 'production') {
+  if (isProduction) {
     console.log(`🔗 Connection pooling: 10 connections, 20s timeout`);
+    console.log(`🛡️  HTTPS enforced with HSTS (max-age: 1 year)`);
+    console.log(`🔒 Security headers: CSP, Frame Guard, No Sniff enabled`);
+    console.log(`⚠️  HTTP requests will be redirected to HTTPS`);
   }
 }
 

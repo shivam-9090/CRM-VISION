@@ -24,6 +24,7 @@ import { RedisModule } from './redis/redis.module';
 import { CommonModule } from './common/common.module';
 import { RedisThrottlerStorage } from './common/redis-throttler.storage';
 import { RateLimitHeadersMiddleware } from './common/middlewares/rate-limit-headers.middleware';
+import { ForceHttpsMiddleware } from './common/middlewares/force-https.middleware';
 
 @Module({
   imports: [
@@ -90,6 +91,9 @@ import { RateLimitHeadersMiddleware } from './common/middlewares/rate-limit-head
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    // Force HTTPS in production (must be first middleware)
+    consumer.apply(ForceHttpsMiddleware).forRoutes('*');
+
     // Apply rate limit headers middleware to all routes
     consumer.apply(RateLimitHeadersMiddleware).forRoutes('*');
   }
