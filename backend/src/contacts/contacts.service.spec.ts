@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ContactsService } from './contacts.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SanitizerService } from '../common/sanitizer.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('ContactsService', () => {
@@ -16,6 +17,10 @@ describe('ContactsService', () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
+  };
+
+  const mockSanitizerService = {
+    sanitize: jest.fn((text) => text),
   };
 
   const mockContact = {
@@ -40,6 +45,10 @@ describe('ContactsService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: SanitizerService,
+          useValue: mockSanitizerService,
         },
       ],
     }).compile();

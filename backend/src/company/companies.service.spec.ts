@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CompaniesService } from './companies.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SanitizerService } from '../common/sanitizer.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('CompaniesService', () => {
@@ -18,6 +19,10 @@ describe('CompaniesService', () => {
     },
   };
 
+  const mockSanitizerService = {
+    sanitize: jest.fn((text) => text),
+  };
+
   const mockCompany = {
     id: 'company-1',
     name: 'Test Company',
@@ -33,6 +38,10 @@ describe('CompaniesService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: SanitizerService,
+          useValue: mockSanitizerService,
         },
       ],
     }).compile();

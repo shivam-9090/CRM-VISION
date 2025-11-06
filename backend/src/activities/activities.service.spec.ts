@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ActivitiesService } from './activities.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SanitizerService } from '../common/sanitizer.service';
 import { NotFoundException } from '@nestjs/common';
 import { ActivityType, ActivityStatus } from '@prisma/client';
 
@@ -17,6 +18,10 @@ describe('ActivitiesService', () => {
       delete: jest.fn(),
       count: jest.fn(),
     },
+  };
+
+  const mockSanitizerService = {
+    sanitize: jest.fn((text) => text), // Pass through by default
   };
 
   const mockActivity = {
@@ -42,6 +47,10 @@ describe('ActivitiesService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: SanitizerService,
+          useValue: mockSanitizerService,
         },
       ],
     }).compile();
@@ -166,12 +175,12 @@ describe('ActivitiesService', () => {
     it('should throw NotFoundException if activity not found', async () => {
       mockPrismaService.activity.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.findOne('invalid-id', 'company-1'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.findOne('invalid-id', 'company-1'),
-      ).rejects.toThrow('Activity not found');
+      await expect(service.findOne('invalid-id', 'company-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findOne('invalid-id', 'company-1')).rejects.toThrow(
+        'Activity not found',
+      );
     });
 
     it('should work without companyId filter', async () => {
@@ -269,9 +278,9 @@ describe('ActivitiesService', () => {
     it('should throw NotFoundException if activity not found', async () => {
       mockPrismaService.activity.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.remove('invalid-id', 'company-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.remove('invalid-id', 'company-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should work without companyId filter', async () => {

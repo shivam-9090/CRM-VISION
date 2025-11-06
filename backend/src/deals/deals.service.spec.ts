@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DealsService } from './deals.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SanitizerService } from '../common/sanitizer.service';
 import { NotFoundException } from '@nestjs/common';
 import { DealStage, Priority, LeadSource } from '@prisma/client';
 
@@ -8,20 +9,25 @@ describe('DealsService', () => {
   let service: DealsService;
   let prismaService: PrismaService;
 
-const mockPrismaService = {
-  deal: {
-    create: jest.fn(),
-    findMany: jest.fn(),
-    findFirst: jest.fn(),
-    findUnique: jest.fn(),
-    update: jest.fn(),
-    updateMany: jest.fn(),
-    delete: jest.fn(),
-    deleteMany: jest.fn(),
-    count: jest.fn(),
-    groupBy: jest.fn(),
-  },
-};  const mockDeal = {
+  const mockPrismaService = {
+    deal: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+      count: jest.fn(),
+      groupBy: jest.fn(),
+    },
+  };
+  
+  const mockSanitizerService = {
+    sanitize: jest.fn((text) => text),
+  };
+  const mockDeal = {
     id: 'deal-1',
     title: 'Test Deal',
     value: 10000,
@@ -54,6 +60,10 @@ const mockPrismaService = {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: SanitizerService,
+          useValue: mockSanitizerService,
         },
       ],
     }).compile();
