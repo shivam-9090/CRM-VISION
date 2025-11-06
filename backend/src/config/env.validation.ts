@@ -105,8 +105,92 @@ export function validateEnvironment() {
           warnings.push('Database password is weak - acceptable for dev only');
         }
       }
+
+      // Validate connection pool parameters in URL
+      const searchParams = new URLSearchParams(dbUrl.search);
+      const connectionLimit = searchParams.get('connection_limit');
+      const poolTimeout = searchParams.get('pool_timeout');
+
+      if (connectionLimit) {
+        const limit = parseInt(connectionLimit, 10);
+        if (isNaN(limit) || limit < 1) {
+          errors.push(
+            `connection_limit in DATABASE_URL must be >= 1, got: ${connectionLimit}`,
+          );
+        } else if (limit > 100) {
+          warnings.push(
+            `connection_limit is very high (${limit}). PostgreSQL default max_connections is 100. Ensure your database can handle this.`,
+          );
+        }
+      }
+
+      if (poolTimeout) {
+        const timeout = parseInt(poolTimeout, 10);
+        if (isNaN(timeout) || timeout < 1) {
+          errors.push(
+            `pool_timeout in DATABASE_URL must be >= 1, got: ${poolTimeout}`,
+          );
+        }
+      }
     } catch {
       errors.push('DATABASE_URL is not a valid URL format');
+    }
+  }
+
+  // Validate connection pool environment variables
+  if (process.env.DB_POOL_SIZE) {
+    const poolSize = parseInt(process.env.DB_POOL_SIZE, 10);
+    if (isNaN(poolSize) || poolSize < 1) {
+      errors.push(
+        `DB_POOL_SIZE must be a positive integer, got: ${process.env.DB_POOL_SIZE}`,
+      );
+    } else if (poolSize > 50) {
+      warnings.push(
+        `DB_POOL_SIZE is very high (${poolSize}). Ensure your database and application can handle this load.`,
+      );
+    } else if (poolSize < 5 && process.env.NODE_ENV === 'production') {
+      warnings.push(
+        `DB_POOL_SIZE is low (${poolSize}) for production. Consider increasing to 10-20 for better performance.`,
+      );
+    }
+  }
+
+  if (process.env.DB_POOL_TIMEOUT) {
+    const timeout = parseInt(process.env.DB_POOL_TIMEOUT, 10);
+    if (isNaN(timeout) || timeout < 1) {
+      errors.push(
+        `DB_POOL_TIMEOUT must be a positive integer (seconds), got: ${process.env.DB_POOL_TIMEOUT}`,
+      );
+    } else if (timeout < 10 && process.env.NODE_ENV === 'production') {
+      warnings.push(
+        `DB_POOL_TIMEOUT is low (${timeout}s). Recommended: 20s or higher for production.`,
+      );
+    }
+  }
+
+  if (process.env.DB_CONNECTION_LIMIT) {
+    const limit = parseInt(process.env.DB_CONNECTION_LIMIT, 10);
+    if (isNaN(limit) || limit < 1) {
+      errors.push(
+        `DB_CONNECTION_LIMIT must be a positive integer, got: ${process.env.DB_CONNECTION_LIMIT}`,
+      );
+    }
+  }
+
+  if (process.env.DB_POOL_MIN) {
+    const min = parseInt(process.env.DB_POOL_MIN, 10);
+    if (isNaN(min) || min < 0) {
+      errors.push(
+        `DB_POOL_MIN must be a non-negative integer, got: ${process.env.DB_POOL_MIN}`,
+      );
+    }
+    if (process.env.DB_POOL_SIZE) {
+      const poolSize = parseInt(process.env.DB_POOL_SIZE, 10);
+      if (min > poolSize) {
+        errors.push(
+          `DB_POOL_MIN (${min}) cannot be greater than DB_POOL_SIZE (${poolSize})`,
+        );
+      }
     }
   }
 
@@ -195,6 +279,9 @@ export function validateEnvironment() {
     );
     logger.log(
       `  ✓ DATABASE_URL: ${process.env.DATABASE_URL ? '✅ Set' : '❌ Missing'}`,
+    );
+    logger.log(
+      `  ✓ Connection Pool: ${process.env.DB_POOL_SIZE || '10'} connections (timeout: ${process.env.DB_POOL_TIMEOUT || '20'}s)`,
     );
     logger.log(
       `  ✓ SENTRY_DSN: ${process.env.SENTRY_DSN ? '✅ Set' : '❌ Missing'}`,

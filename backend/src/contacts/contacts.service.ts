@@ -19,8 +19,12 @@ export class ContactsService {
       firstName: this.sanitizer.sanitizeText(createContactDto.firstName) || '',
       lastName: this.sanitizer.sanitizeText(createContactDto.lastName) || '',
       email: createContactDto.email, // Email is validated by DTO
-      phone: createContactDto.phone ? this.sanitizer.sanitizeText(createContactDto.phone) : undefined,
-      position: createContactDto.position ? this.sanitizer.sanitizeText(createContactDto.position) : undefined,
+      phone: createContactDto.phone
+        ? this.sanitizer.sanitizeText(createContactDto.phone)
+        : undefined,
+      position: createContactDto.position
+        ? this.sanitizer.sanitizeText(createContactDto.position)
+        : undefined,
       companyId, // Force company ID from authenticated user
     };
 
@@ -93,7 +97,11 @@ export class ContactsService {
     return contact;
   }
 
-  async update(id: string, updateContactDto: UpdateContactDto, companyId: string) {
+  async update(
+    id: string,
+    updateContactDto: UpdateContactDto,
+    companyId: string,
+  ) {
     try {
       // First verify the contact belongs to the company
       const existingContact = await this.prisma.contact.findFirst({
@@ -107,19 +115,25 @@ export class ContactsService {
       // ✅ Sanitize updated fields
       const sanitizedUpdate: any = {};
       if (updateContactDto.firstName !== undefined) {
-        sanitizedUpdate.firstName = this.sanitizer.sanitizeText(updateContactDto.firstName) || '';
+        sanitizedUpdate.firstName =
+          this.sanitizer.sanitizeText(updateContactDto.firstName) || '';
       }
       if (updateContactDto.lastName !== undefined) {
-        sanitizedUpdate.lastName = this.sanitizer.sanitizeText(updateContactDto.lastName) || '';
+        sanitizedUpdate.lastName =
+          this.sanitizer.sanitizeText(updateContactDto.lastName) || '';
       }
       if (updateContactDto.email !== undefined) {
         sanitizedUpdate.email = updateContactDto.email;
       }
       if (updateContactDto.phone !== undefined) {
-        sanitizedUpdate.phone = updateContactDto.phone ? this.sanitizer.sanitizeText(updateContactDto.phone) : null;
+        sanitizedUpdate.phone = updateContactDto.phone
+          ? this.sanitizer.sanitizeText(updateContactDto.phone)
+          : null;
       }
       if (updateContactDto.position !== undefined) {
-        sanitizedUpdate.position = updateContactDto.position ? this.sanitizer.sanitizeText(updateContactDto.position) : null;
+        sanitizedUpdate.position = updateContactDto.position
+          ? this.sanitizer.sanitizeText(updateContactDto.position)
+          : null;
       }
 
       return await this.prisma.contact.update({

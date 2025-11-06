@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:audit:fix": "npm audit fix",
+    "security:check": "npm audit && npm outdated",
+    "deps:update": "npm update && npm outdated",
+    "deps:check": "npx npm-check-updates"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

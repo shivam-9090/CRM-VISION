@@ -242,6 +242,8 @@ model Notification {
 
 enum Role {
   ADMIN
+  MANAGER
+  SALES
   EMPLOYEE
 }
 
@@ -255,6 +257,8 @@ enum AuditAction {
   CREATE
   UPDATE
   DELETE
+  VIEW
+  EXPORT
 }
 
 enum DealStage {

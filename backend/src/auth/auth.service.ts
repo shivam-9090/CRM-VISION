@@ -151,7 +151,10 @@ export class AuthService {
     };
   }
 
-  async registerWithInvite(registerWithInviteDto: RegisterWithInviteDto, res: Response) {
+  async registerWithInvite(
+    registerWithInviteDto: RegisterWithInviteDto,
+    res: Response,
+  ) {
     const { token, password, name } = registerWithInviteDto;
 
     const invite = await this.validateInviteToken(token);
@@ -564,7 +567,10 @@ export class AuthService {
 
     if (!user) {
       // Don't reveal if user exists or not for security
-      return { message: 'If an account with that email exists, we have sent a password reset link.' };
+      return {
+        message:
+          'If an account with that email exists, we have sent a password reset link.',
+      };
     }
 
     // Generate reset token (valid for 1 hour)
@@ -588,7 +594,10 @@ export class AuthService {
       // Don't fail the request if email fails - for better UX
     }
 
-    return { message: 'If an account with that email exists, we have sent a password reset link.' };
+    return {
+      message:
+        'If an account with that email exists, we have sent a password reset link.',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -726,7 +735,7 @@ export class AuthService {
     });
 
     // Generate QR code
-    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
 
     return {
       secret: secret.base32,

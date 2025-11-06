@@ -111,19 +111,24 @@ export class CompaniesService {
     const sanitizedData: Partial<UpdateCompanyDto> = {};
 
     if (updateCompanyDto.name !== undefined) {
-      sanitizedData.name = this.sanitizer.sanitizeText(updateCompanyDto.name) || undefined;
+      sanitizedData.name =
+        this.sanitizer.sanitizeText(updateCompanyDto.name) || undefined;
     }
     if (updateCompanyDto.industry !== undefined) {
-      sanitizedData.industry = this.sanitizer.sanitizeText(updateCompanyDto.industry) ?? undefined;
+      sanitizedData.industry =
+        this.sanitizer.sanitizeText(updateCompanyDto.industry) ?? undefined;
     }
     if (updateCompanyDto.size !== undefined) {
-      sanitizedData.size = this.sanitizer.sanitizeText(updateCompanyDto.size) ?? undefined;
+      sanitizedData.size =
+        this.sanitizer.sanitizeText(updateCompanyDto.size) ?? undefined;
     }
     if (updateCompanyDto.phone !== undefined) {
-      sanitizedData.phone = this.sanitizer.sanitizeText(updateCompanyDto.phone) ?? undefined;
+      sanitizedData.phone =
+        this.sanitizer.sanitizeText(updateCompanyDto.phone) ?? undefined;
     }
     if (updateCompanyDto.address !== undefined) {
-      sanitizedData.address = this.sanitizer.sanitizeText(updateCompanyDto.address) ?? undefined;
+      sanitizedData.address =
+        this.sanitizer.sanitizeText(updateCompanyDto.address) ?? undefined;
     }
     // Website and email are not sanitized (validated by DTOs)
     if (updateCompanyDto.website !== undefined) {

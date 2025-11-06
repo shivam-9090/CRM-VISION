@@ -2,6 +2,7 @@
 // This file configures the initialization of Sentry on the server side.
 
 import * as Sentry from "@sentry/nextjs";
+import type { Instrumentation } from "next";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -15,3 +16,12 @@ Sentry.init({
   // Optionally uncomment the lines below to enable Spotlight in development
   // spotlight: process.env.NODE_ENV === 'development',
 });
+
+// Capture server-side request errors
+export const onRequestError: Instrumentation.onRequestError = (
+  err,
+  request,
+  context
+) => {
+  Sentry.captureRequestError(err, request, context);
+};

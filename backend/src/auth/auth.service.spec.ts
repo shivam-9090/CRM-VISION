@@ -142,10 +142,12 @@ describe('AuthService', () => {
 
     it('should create a new company if companyId is not provided', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
-      
-      const createCompanyMock = jest.fn().mockResolvedValue({ id: 'new-company-1' });
+
+      const createCompanyMock = jest
+        .fn()
+        .mockResolvedValue({ id: 'new-company-1' });
       const createUserMock = jest.fn().mockResolvedValue(mockUser);
-      
+
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
           company: { create: createCompanyMock },
@@ -183,7 +185,9 @@ describe('AuthService', () => {
 
     it('should successfully login with valid credentials', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockImplementation(() => Promise.resolve(true));
+      (bcrypt.compare as jest.Mock).mockImplementation(() =>
+        Promise.resolve(true),
+      );
       mockJwtService.sign.mockReturnValue('mock-jwt-token');
 
       const result = await service.login(loginDto, mockResponse);
@@ -211,7 +215,9 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException if password is invalid', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockImplementation(() => Promise.resolve(false));
+      (bcrypt.compare as jest.Mock).mockImplementation(() =>
+        Promise.resolve(false),
+      );
 
       await expect(service.login(loginDto, mockResponse)).rejects.toThrow(
         UnauthorizedException,

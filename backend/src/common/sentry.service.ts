@@ -39,10 +39,7 @@ export class SentryService implements OnModuleInit {
         // Before send hook for filtering
         beforeSend(event) {
           // Don't send events in development unless explicitly enabled
-          if (
-            environment === 'development' &&
-            !process.env.SENTRY_ENABLE_DEV
-          ) {
+          if (environment === 'development' && !process.env.SENTRY_ENABLE_DEV) {
             return null;
           }
           return event;

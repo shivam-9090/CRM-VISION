@@ -75,9 +75,7 @@ export class AttachmentsService {
 
     // Only allow the uploader or admin to delete
     if (attachment.uploadedBy !== userId) {
-      throw new ForbiddenException(
-        'You can only delete your own attachments',
-      );
+      throw new ForbiddenException('You can only delete your own attachments');
     }
 
     // Delete file from filesystem

@@ -22,7 +22,7 @@ export class PerformanceInterceptor implements NestInterceptor {
         next: () => {
           const response = context.switchToHttp().getResponse();
           const duration = Date.now() - startTime;
-          
+
           this.logger.logRequest(
             method,
             url,
@@ -34,14 +34,8 @@ export class PerformanceInterceptor implements NestInterceptor {
         error: (error) => {
           const duration = Date.now() - startTime;
           const statusCode = error.status || 500;
-          
-          this.logger.logRequest(
-            method,
-            url,
-            statusCode,
-            duration,
-            user?.id,
-          );
+
+          this.logger.logRequest(method, url, statusCode, duration, user?.id);
         },
       }),
     );

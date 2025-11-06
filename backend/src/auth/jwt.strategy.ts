@@ -8,12 +8,12 @@ import { AuthService } from './auth.service';
 // Extract JWT from either cookie OR Authorization header
 const jwtExtractor = (req: Request): string | null => {
   let token: string | null = null;
-  
+
   // First, try to get from cookie
   if (req && req.cookies) {
     token = req.cookies['token'] || null;
   }
-  
+
   // If not in cookie, try Authorization header
   if (!token) {
     const authHeader = req.headers.authorization;
@@ -21,7 +21,7 @@ const jwtExtractor = (req: Request): string | null => {
       token = authHeader.substring(7);
     }
   }
-  
+
   return token;
 };
 

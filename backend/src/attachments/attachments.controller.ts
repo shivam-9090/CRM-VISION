@@ -67,7 +67,11 @@ export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}
 
   @Post('upload')
-  @Permissions(PERMISSIONS.DEAL_CREATE, PERMISSIONS.CONTACT_CREATE, PERMISSIONS.ACTIVITY_CREATE)
+  @Permissions(
+    PERMISSIONS.DEAL_CREATE,
+    PERMISSIONS.CONTACT_CREATE,
+    PERMISSIONS.ACTIVITY_CREATE,
+  )
   @UseInterceptors(
     FileInterceptor('file', {
       storage,
@@ -95,41 +99,61 @@ export class AttachmentsController {
   }
 
   @Get()
-  @Permissions(PERMISSIONS.DEAL_READ, PERMISSIONS.CONTACT_READ, PERMISSIONS.ACTIVITY_READ)
+  @Permissions(
+    PERMISSIONS.DEAL_READ,
+    PERMISSIONS.CONTACT_READ,
+    PERMISSIONS.ACTIVITY_READ,
+  )
   async findByEntity(
     @Query('type') type: string,
     @Query('id') id: string,
     @Request() req: RequestWithUser,
   ) {
     if (!type || !id) {
-      throw new BadRequestException('type and id query parameters are required');
+      throw new BadRequestException(
+        'type and id query parameters are required',
+      );
     }
 
     return this.attachmentsService.findByEntity(type, id, req.user.companyId);
   }
 
   @Get(':id/download')
-  @Permissions(PERMISSIONS.DEAL_READ, PERMISSIONS.CONTACT_READ, PERMISSIONS.ACTIVITY_READ)
+  @Permissions(
+    PERMISSIONS.DEAL_READ,
+    PERMISSIONS.CONTACT_READ,
+    PERMISSIONS.ACTIVITY_READ,
+  )
   async downloadFile(
     @Param('id') id: string,
     @Request() req: RequestWithUser,
     @Res() res: Response,
   ) {
-    const attachment = await this.attachmentsService.findOne(id, req.user.companyId);
-    
+    const attachment = await this.attachmentsService.findOne(
+      id,
+      req.user.companyId,
+    );
+
     if (!fs.existsSync(attachment.path)) {
       throw new BadRequestException('File not found on disk');
     }
 
     res.setHeader('Content-Type', attachment.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
-    
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${attachment.originalName}"`,
+    );
+
     const fileStream = fs.createReadStream(attachment.path);
     fileStream.pipe(res);
   }
 
   @Delete(':id')
-  @Permissions(PERMISSIONS.DEAL_DELETE, PERMISSIONS.CONTACT_DELETE, PERMISSIONS.ACTIVITY_DELETE)
+  @Permissions(
+    PERMISSIONS.DEAL_DELETE,
+    PERMISSIONS.CONTACT_DELETE,
+    PERMISSIONS.ACTIVITY_DELETE,
+  )
   async remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.attachmentsService.remove(id, req.user.companyId, req.user.id);
   }

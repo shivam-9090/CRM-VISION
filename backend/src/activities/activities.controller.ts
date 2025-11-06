@@ -10,6 +10,7 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
@@ -19,14 +20,27 @@ import { Permissions } from '../auth/decorators/permissions.decorator';
 import { PERMISSIONS } from '../auth/constants/permissions.constants';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import type { RequestWithUser } from '../common/types/request.types';
+import {
+  ApiList,
+  ApiGetById,
+  ApiCreate,
+  ApiUpdate,
+  ApiDelete,
+} from '../common/swagger/swagger-decorators';
 
+@ApiTags('Activities')
 @Controller('activities')
 @UseGuards(AuthGuard, PermissionsGuard)
+@ApiBearerAuth('JWT-auth')
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
   @Post()
   @Permissions(PERMISSIONS.ACTIVITY_CREATE)
+  @ApiCreate(
+    'Create activity',
+    'Create a new activity (task, call, meeting, or note)',
+  )
   create(
     @Body() createActivityDto: CreateActivityDto,
     @Request() req: RequestWithUser,
@@ -36,26 +50,34 @@ export class ActivitiesController {
 
   @Get()
   @Permissions(PERMISSIONS.ACTIVITY_READ)
+  @ApiList(
+    'Get all activities',
+    'Retrieve activities with pagination and filtering by type (TASK, CALL, MEETING, NOTE)',
+  )
   findAll(
     @Query() pagination: PaginationDto,
     @Query('type') type?: string,
     @Request() req: RequestWithUser = {} as RequestWithUser,
   ) {
-    return this.activitiesService.findAll(
-      req.user.companyId,
-      pagination,
-      type,
-    );
+    return this.activitiesService.findAll(req.user.companyId, pagination, type);
   }
 
   @Get(':id')
   @Permissions(PERMISSIONS.ACTIVITY_READ)
+  @ApiGetById(
+    'Get activity by ID',
+    'Retrieve detailed activity information including related contact and deal',
+  )
   findOne(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.activitiesService.findOne(id, req.user.companyId);
   }
 
   @Patch(':id')
   @Permissions(PERMISSIONS.ACTIVITY_UPDATE)
+  @ApiUpdate(
+    'Update activity',
+    'Update activity details including status (SCHEDULED, COMPLETED, CANCELLED)',
+  )
   update(
     @Param('id') id: string,
     @Body() updateActivityDto: UpdateActivityDto,
@@ -70,6 +92,10 @@ export class ActivitiesController {
 
   @Delete(':id')
   @Permissions(PERMISSIONS.ACTIVITY_DELETE)
+  @ApiDelete(
+    'Delete activity',
+    'Permanently delete an activity and remove from calendar',
+  )
   remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.activitiesService.remove(id, req.user.companyId);
   }

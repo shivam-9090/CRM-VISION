@@ -1,0 +1,35 @@
+# Snyk (https://snyk.io) policy file
+
+version: v1.25.0
+
+# Ignore specific vulnerabilities
+# Format:
+# ignore:
+#   'SNYK-VULNERABILITY-ID':
+#     - '*':
+#         reason: 'Explanation of why this is ignored'
+#         expires: '2025-12-31T00:00:00.000Z'
+
+# Language settings
+language-settings:
+  javascript:
+    # Enable deep dependency analysis
+    deep-analysis: true
+
+# Patches (auto-applied by Snyk)
+patch: {}
+
+# Ignore settings
+ignore: {}
+
+# Excluded directories (don't scan these)
+exclude:
+  global:
+    - node_modules
+    - dist
+    - build
+    - coverage
+    - .next
+    - .vercel
+    - uploads
+    - backups

@@ -112,9 +112,13 @@ export class ImportService {
         const stage = row['Stage'] as DealStage;
         if (
           stage &&
-          !['LEAD', 'QUALIFIED', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST'].includes(
-            stage,
-          )
+          ![
+            'LEAD',
+            'QUALIFIED',
+            'NEGOTIATION',
+            'CLOSED_WON',
+            'CLOSED_LOST',
+          ].includes(stage)
         ) {
           result.failed++;
           result.errors.push(
@@ -125,7 +129,10 @@ export class ImportService {
 
         // Validate priority
         const priority = row['Priority'] as Priority;
-        if (priority && !['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(priority)) {
+        if (
+          priority &&
+          !['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(priority)
+        ) {
           result.failed++;
           result.errors.push(
             `Invalid priority for deal ${row['Title']}: ${priority}`,
@@ -150,14 +157,12 @@ export class ImportService {
           data: {
             title: row['Title'],
             value: row['Value'] ? parseFloat(row['Value']) : 0,
-            stage: (stage as DealStage) || 'LEAD',
-            priority: (priority as Priority) || 'MEDIUM',
+            stage: stage || 'LEAD',
+            priority: priority || 'MEDIUM',
             expectedCloseDate: row['Expected Close Date']
               ? new Date(row['Expected Close Date'])
               : null,
-            closedAt: row['Closed At']
-              ? new Date(row['Closed At'])
-              : null,
+            closedAt: row['Closed At'] ? new Date(row['Closed At']) : null,
             contactId,
             companyId,
           },
@@ -203,7 +208,10 @@ export class ImportService {
 
         // Validate type
         const type = row['Type'] as ActivityType;
-        if (type && !['CALL', 'MEETING', 'TASK', 'EMAIL', 'NOTE'].includes(type)) {
+        if (
+          type &&
+          !['CALL', 'MEETING', 'TASK', 'EMAIL', 'NOTE'].includes(type)
+        ) {
           result.failed++;
           result.errors.push(
             `Invalid type for activity ${row['Title']}: ${type}`,
@@ -264,8 +272,8 @@ export class ImportService {
         const activityData: any = {
           title: row['Title'],
           description: row['Description'] || null,
-          type: (type as ActivityType) || 'TASK',
-          status: (status as ActivityStatus) || 'SCHEDULED',
+          type: type || 'TASK',
+          status: status || 'SCHEDULED',
           scheduledDate: new Date(row['Scheduled Date']),
           companyId,
         };

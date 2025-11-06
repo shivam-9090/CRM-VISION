@@ -33,8 +33,10 @@ export class NotificationsGateway
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
-      
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
+
       if (!token) {
         console.log('⚠️ WebSocket connection rejected: No token provided');
         client.emit('error', { message: 'Authentication required' });
@@ -49,12 +51,16 @@ export class NotificationsGateway
       } catch (err) {
         if (err.name === 'TokenExpiredError') {
           console.log('⚠️ WebSocket connection rejected: Token expired');
-          client.emit('error', { message: 'Token expired. Please login again.' });
+          client.emit('error', {
+            message: 'Token expired. Please login again.',
+          });
         } else if (err.name === 'JsonWebTokenError') {
           console.log('⚠️ WebSocket connection rejected: Invalid token');
           client.emit('error', { message: 'Invalid token' });
         } else {
-          console.log('⚠️ WebSocket connection rejected: Token verification failed');
+          console.log(
+            '⚠️ WebSocket connection rejected: Token verification failed',
+          );
           client.emit('error', { message: 'Authentication failed' });
         }
         client.disconnect();
@@ -106,19 +112,24 @@ export class NotificationsGateway
         }
       }
     }
-    console.log(`🔌 WebSocket disconnected: ${client.id}${userId ? ` (User: ${userId})` : ''}`);
+    console.log(
+      `🔌 WebSocket disconnected: ${client.id}${userId ? ` (User: ${userId})` : ''}`,
+    );
   }
 
   @SubscribeMessage('getUnreadCount')
   async handleGetUnreadCount(@ConnectedSocket() client: Socket) {
     const userId = client.data.userId;
     const companyId = client.data.companyId;
-    
+
     if (!userId || !companyId) {
       return { event: 'error', data: 'Unauthorized' };
     }
 
-    const count = await this.notificationsService.getUnreadCount(userId, companyId);
+    const count = await this.notificationsService.getUnreadCount(
+      userId,
+      companyId,
+    );
     return { event: 'unreadCount', data: count };
   }
 
@@ -159,7 +170,10 @@ export class NotificationsGateway
     this.emitToUser(userId, 'notification', notification);
 
     // Also update unread count
-    const unreadCount = await this.notificationsService.getUnreadCount(userId, companyId);
+    const unreadCount = await this.notificationsService.getUnreadCount(
+      userId,
+      companyId,
+    );
     this.emitToUser(userId, 'unreadCount', unreadCount);
 
     return notification;

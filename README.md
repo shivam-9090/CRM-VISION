@@ -153,10 +153,18 @@ A modern, full-stack CRM system built with cutting-edge technologies. Features i
 
 ### DevOps & Infrastructure
 - **Containerization**: Docker & Docker Compose
-- **CI/CD**: GitHub Actions (planned)
+- **CI/CD**: GitHub Actions
+  - Continuous Integration (tests, linting, security scans)
+  - Continuous Deployment (automated Docker builds)
+  - Dependency Security Scanning (Dependabot, Trivy, Snyk)
 - **Database Migrations**: Prisma Migrate
 - **Deployment**: Docker containers
 - **Monitoring**: Sentry for error tracking
+- **Security**: 
+  - Automated vulnerability scanning (npm audit, Trivy, OSS Gadget)
+  - License compliance checking
+  - Dependency auto-updates via Dependabot
+  - Rate limiting and Redis-backed throttling
 
 ### Development Tools
 - **Linting**: ESLint 9
@@ -638,7 +646,42 @@ npm run test:cov
 
 # Run E2E tests
 npm run test:e2e
+
+# Security scanning
+npm run security:audit       # Run npm audit
+npm run security:check       # Check for vulnerabilities & outdated packages
+npm run deps:update          # Update dependencies
+npm run deps:check           # Check for available updates
 ```
+
+### Security Scanning
+
+The project includes comprehensive automated security scanning:
+
+```bash
+# Backend security audit
+cd backend
+npm run security:audit
+npm run security:audit:fix   # Auto-fix vulnerabilities
+
+# Frontend security audit
+cd frontend
+npm run security:audit
+npm run security:audit:fix
+
+# Check all dependencies
+npm run deps:check
+```
+
+**Automated Scans (GitHub Actions):**
+- ✅ **npm audit** - Runs on every push/PR, daily at 2 AM UTC
+- ✅ **Trivy** - Scans dependencies and Docker images
+- ✅ **Snyk** - Enterprise security scanning (optional)
+- ✅ **OSS Gadget** - Backdoor and typosquatting detection
+- ✅ **License Compliance** - Blocks forbidden licenses (GPL, AGPL)
+- ✅ **Dependabot** - Weekly automated dependency updates
+
+See [DEPENDENCY_SECURITY.md](DEPENDENCY_SECURITY.md) for full details.
 
 ### Frontend Tests
 
@@ -698,28 +741,46 @@ Or use tools like:
 ### Environment-Specific Configuration
 
 **Production Checklist:**
-- [ ] Change `JWT_SECRET` to a strong random value
+- [ ] Change `JWT_SECRET` to a strong random value (64+ characters)
 - [ ] Use production database credentials
 - [ ] Enable HTTPS/SSL
 - [ ] Set `NODE_ENV=production`
 - [ ] Configure CORS for your domain
-- [ ] Set up database backups
+- [ ] Set up database backups (see scripts/)
 - [ ] Configure Sentry for error tracking
-- [ ] Enable rate limiting
+- [ ] Enable rate limiting (already configured)
 - [ ] Set up monitoring and logging
 - [ ] Change default admin password
+- [ ] Review security scan results (no HIGH/CRITICAL vulnerabilities)
+- [ ] Configure Snyk token for enhanced security scanning (optional)
+- [ ] Set up automated backup schedule (see DATABASE_BACKUP_STRATEGY.md)
+- [ ] Verify environment variables (see ENVIRONMENT_VARIABLES.md)
+- [ ] Review audit logs configuration
 
 ### Backup Strategy
 
-Use the provided backup scripts:
+Use the provided cross-platform backup scripts:
 
 ```bash
-# Backup database
+# Linux/macOS
 ./scripts/backup-database.sh
 
-# On Windows
+# Windows
 .\scripts\backup-database.ps1
+
+# Verify backups
+./scripts/verify-backup.sh
+
+# Restore from backup
+./scripts/restore-database.sh /path/to/backup.sql
 ```
+
+See [DATABASE_BACKUP_STRATEGY.md](DATABASE_BACKUP_STRATEGY.md) for:
+- Automated backup scheduling
+- S3/cloud storage integration
+- Backup verification procedures
+- Point-in-time recovery (WAL archiving)
+- Restore testing procedures
 
 ---
 
@@ -794,21 +855,40 @@ CRM-VISION/
 │   └── tsconfig.json
 │
 ├── scripts/                    # Utility scripts
-│   ├── backup-database.sh     # Database backup (Linux)
-│   └── backup-database.ps1    # Database backup (Windows)
+│   ├── backup-database.sh     # Database backup (Linux/macOS)
+│   ├── backup-database.ps1    # Database backup (Windows)
+│   ├── restore-database.sh    # Database restore
+│   ├── restore-database.ps1   # Database restore (Windows)
+│   ├── verify-backup.sh       # Backup verification
+│   ├── setup-backup-cron.sh   # Automated backup scheduling
+│   └── backups/               # Local backup storage
+│
+├── .github/                    # GitHub Actions CI/CD
+│   ├── workflows/
+│   │   ├── ci.yml             # Continuous Integration
+│   │   ├── deploy.yml         # Deployment workflow
+│   │   ├── security-scan.yml  # Comprehensive security scanning
+│   │   ├── dependencies.yml   # Dependency updates
+│   │   └── dependabot-auto-merge.yml  # Auto-merge safe updates
+│   └── dependabot.yml         # Dependabot configuration
 │
 ├── infra/                      # Infrastructure as Code
 │   ├── main.tf                # Terraform config
 │   └── render.yaml            # Render.com config
 │
-├── .github/                    # GitHub Actions (planned)
-│
 ├── docker-compose.yml          # Development Docker Compose
 ├── docker-compose.prod.yml     # Production Docker Compose
 ├── .env.example                # Environment template
 ├── .gitignore
+├── .trivyignore                # Trivy ignore rules
+├── .snyk                       # Snyk policy file
 ├── README.md                   # This file
-└── SYSTEM_STATUS_REPORT.md     # System status documentation
+├── ALL_TASKS_SUMMARY.md        # Project tasks tracking
+├── DATABASE_BACKUP_STRATEGY.md # Backup documentation
+├── DEPENDENCY_SECURITY.md      # Security scanning docs
+├── DOCKER_GUIDE.md             # Docker usage guide
+├── ENVIRONMENT_VARIABLES.md    # Environment vars documentation
+└── SECURITY_HEADERS.md         # Security headers guide
 ```
 
 ---
@@ -870,7 +950,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you have any questions or need help, please:
 
 1. Check the [documentation](#-api-documentation)
-2. Review [System Status Report](SYSTEM_STATUS_REPORT.md)
+2. Review project documentation:
+   - [ALL_TASKS_SUMMARY.md](ALL_TASKS_SUMMARY.md) - Project progress tracking
+   - [DEPENDENCY_SECURITY.md](DEPENDENCY_SECURITY.md) - Security scanning guide
+   - [DATABASE_BACKUP_STRATEGY.md](DATABASE_BACKUP_STRATEGY.md) - Backup procedures
+   - [ENVIRONMENT_VARIABLES.md](backend/ENVIRONMENT_VARIABLES.md) - Env vars guide
+   - [DOCKER_GUIDE.md](DOCKER_GUIDE.md) - Docker usage
 3. Open an [issue](https://github.com/shivam-9090/CRM-VISION/issues)
 4. Contact: [Your Email]
 
@@ -879,7 +964,7 @@ If you have any questions or need help, please:
 ## 🎯 Roadmap
 
 ### Current Version (v1.0)
-- ✅ Authentication & Authorization
+- ✅ Authentication & Authorization (JWT + Refresh Tokens + 2FA)
 - ✅ Contact Management
 - ✅ Deal Pipeline
 - ✅ Activity Tracking
@@ -887,6 +972,15 @@ If you have any questions or need help, please:
 - ✅ Global Search
 - ✅ File Attachments
 - ✅ Comments & Collaboration
+- ✅ Audit Logging
+- ✅ Email Notifications
+- ✅ Real-time Updates (WebSocket)
+- ✅ Data Export (CSV)
+- ✅ Security Scanning (Dependabot, Trivy, Snyk)
+- ✅ Automated Backups
+- ✅ Rate Limiting & Redis Caching
+- ✅ Input Validation & Sanitization
+- ✅ RBAC with Granular Permissions
 
 ### Future Enhancements (v1.1+)
 - [ ] Mobile app (React Native)
@@ -912,12 +1006,30 @@ Current Status: **Production Ready** ✅
 
 - Backend: **100% Functional**
 - Frontend: **100% Functional**
-- Database: **Stable**
-- Tests: **17/17 Passing**
-- Security: **Implemented**
+- Database: **Stable with automated backups**
+- Tests: **Passing** (60% coverage target)
+- Security: **Comprehensive scanning implemented**
+  - ✅ Dependabot - Weekly automated updates
+  - ✅ npm audit - Fail on HIGH/CRITICAL
+  - ✅ Trivy - Filesystem & Docker scanning
+  - ✅ Snyk - Optional enterprise scanning
+  - ✅ License compliance - GPL/AGPL blocking
+- CI/CD: **Fully automated** (GitHub Actions)
 - Documentation: **Complete**
 
-Last Updated: November 4, 2025
+**Completed Security Tasks (1-10):**
+1. ✅ Refresh Token System
+2. ✅ Unit Test Coverage Analysis
+3. ✅ CI/CD Pipeline Setup
+4. ✅ Application Monitoring & Logging (Sentry + Winston)
+5. ✅ Database Backup Strategy (Cross-platform scripts + WAL)
+6. ✅ API Rate Limiting (Redis-backed)
+7. ✅ HTTPS & Security Headers (Helmet + CSP)
+8. ✅ Input Validation Enhancement (DTOs + Sanitization)
+9. ✅ Environment Variables Security (Validation + Docs)
+10. ✅ Dependency Security Scanning (Multi-tool approach)
+
+Last Updated: November 6, 2025
 
 ---
 

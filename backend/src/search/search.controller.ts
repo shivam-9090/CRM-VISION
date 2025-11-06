@@ -1,6 +1,9 @@
 import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SearchService, SearchResult } from './search.service';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
+import { PERMISSIONS } from '../auth/constants/permissions.constants';
 
 interface RequestWithUser {
   user: {
@@ -11,7 +14,7 @@ interface RequestWithUser {
 }
 
 @Controller('search')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
@@ -20,6 +23,7 @@ export class SearchController {
    * GET /api/search?q=john&types[]=contacts&types[]=deals&limit=20
    */
   @Get()
+  @Permissions(PERMISSIONS.SEARCH_ALL)
   async globalSearch(
     @Query('q') query: string,
     @Query('types') types: string | string[],
@@ -54,6 +58,7 @@ export class SearchController {
    * GET /api/search/suggestions?q=jo
    */
   @Get('suggestions')
+  @Permissions(PERMISSIONS.SEARCH_ALL)
   async getSearchSuggestions(
     @Query('q') query: string,
     @Request() req: RequestWithUser,
@@ -66,6 +71,7 @@ export class SearchController {
    * GET /api/search/contacts?q=john&limit=20
    */
   @Get('contacts')
+  @Permissions(PERMISSIONS.SEARCH_CONTACTS, PERMISSIONS.SEARCH_ALL)
   async searchContacts(
     @Query('q') query: string,
     @Query('limit') limit: string,
@@ -81,6 +87,7 @@ export class SearchController {
   }
 
   @Get('deals')
+  @Permissions(PERMISSIONS.SEARCH_DEALS, PERMISSIONS.SEARCH_ALL)
   async searchDeals(
     @Query('q') query: string,
     @Query('limit') limit: string,
@@ -96,6 +103,7 @@ export class SearchController {
   }
 
   @Get('companies')
+  @Permissions(PERMISSIONS.SEARCH_COMPANIES, PERMISSIONS.SEARCH_ALL)
   async searchCompanies(
     @Query('q') query: string,
     @Query('limit') limit: string,
@@ -111,6 +119,7 @@ export class SearchController {
   }
 
   @Get('activities')
+  @Permissions(PERMISSIONS.SEARCH_ACTIVITIES, PERMISSIONS.SEARCH_ALL)
   async searchActivities(
     @Query('q') query: string,
     @Query('limit') limit: string,

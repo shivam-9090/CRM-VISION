@@ -99,11 +99,13 @@ export class UserService {
     const sanitizedData: any = {};
 
     if (updateUserDto.name !== undefined) {
-      sanitizedData.name = this.sanitizer.sanitizeText(updateUserDto.name) || undefined;
+      sanitizedData.name =
+        this.sanitizer.sanitizeText(updateUserDto.name) || undefined;
     }
 
     if (updateUserDto.phone !== undefined) {
-      sanitizedData.phone = this.sanitizer.sanitizeText(updateUserDto.phone) ?? undefined;
+      sanitizedData.phone =
+        this.sanitizer.sanitizeText(updateUserDto.phone) ?? undefined;
     }
 
     if (updateUserDto.role !== undefined) {
@@ -216,7 +218,9 @@ export class UserService {
     });
 
     if (existingInvite) {
-      throw new ConflictException('An active invitation already exists for this email');
+      throw new ConflictException(
+        'An active invitation already exists for this email',
+      );
     }
 
     // Generate invitation token
@@ -237,7 +241,7 @@ export class UserService {
 
     // Send invitation email
     const inviteUrl = `${process.env.FRONTEND_URL}/auth/accept-invite?token=${token}`;
-    
+
     try {
       await this.emailService.sendInvitationEmail(email, inviteUrl, role);
     } catch (error) {

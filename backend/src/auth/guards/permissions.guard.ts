@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
 import {
@@ -18,15 +23,23 @@ export class PermissionsGuard implements CanActivate {
       context.getHandler(),
     );
 
+    // DEFAULT DENY POLICY: If no permissions specified, deny access
+    // This ensures all endpoints explicitly declare their permission requirements
+    // To make an endpoint public, use @Public() decorator (future enhancement)
     if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true;
+      this.logger.warn(
+        `PermissionsGuard: No permissions specified for ${context.getClass().name}.${context.getHandler().name} - DENYING ACCESS (default deny policy)`,
+      );
+      return false; // Changed from true to false for security
     }
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
     if (!user || !user.role) {
-      this.logger.warn('PermissionsGuard: request missing user or role, denying access');
+      this.logger.warn(
+        'PermissionsGuard: request missing user or role, denying access',
+      );
       return false;
     }
 
@@ -34,12 +47,15 @@ export class PermissionsGuard implements CanActivate {
     // Merge role defaults with any explicit user permissions so that:
     // - Users with no custom permissions inherit role defaults
     // - Users with custom permissions get the union of custom + role defaults
-    const rolePerms: string[] = DEFAULT_ROLE_PERMISSIONS[user.role as Role] || [];
+    const rolePerms: string[] =
+      DEFAULT_ROLE_PERMISSIONS[user.role as Role] || [];
     let userPermissions: string[] = [];
 
     if (Array.isArray(user.permissions) && user.permissions.length > 0) {
       // Merge and dedupe explicit user permissions with role defaults
-      userPermissions = Array.from(new Set([...user.permissions, ...rolePerms]));
+      userPermissions = Array.from(
+        new Set([...user.permissions, ...rolePerms]),
+      );
     } else {
       // No explicit permissions stored for this user -> use role defaults
       userPermissions = rolePerms;

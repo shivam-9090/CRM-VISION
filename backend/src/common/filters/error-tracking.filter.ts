@@ -92,13 +92,13 @@ export class ErrorTrackingFilter implements ExceptionFilter {
   private sanitizeHeaders(headers: any): Record<string, any> {
     const sanitized = { ...headers };
     const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key'];
-    
+
     for (const header of sensitiveHeaders) {
       if (sanitized[header]) {
         sanitized[header] = '[REDACTED]';
       }
     }
-    
+
     return sanitized;
   }
 
@@ -111,14 +111,20 @@ export class ErrorTrackingFilter implements ExceptionFilter {
     }
 
     const sanitized = { ...body };
-    const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'refreshToken'];
-    
+    const sensitiveFields = [
+      'password',
+      'token',
+      'secret',
+      'apiKey',
+      'refreshToken',
+    ];
+
     for (const field of sensitiveFields) {
       if (sanitized[field]) {
         sanitized[field] = '[REDACTED]';
       }
     }
-    
+
     return sanitized;
   }
 }

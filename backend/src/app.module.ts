@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bull';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -19,6 +20,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
+import { EmailModule } from './email/email.module';
 import { GlobalExceptionFilter } from './common/global-exception.filter';
 import { RedisModule } from './redis/redis.module';
 import { CommonModule } from './common/common.module';
@@ -30,6 +32,18 @@ import { ForceHttpsMiddleware } from './common/middlewares/force-https.middlewar
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    // Bull queue infrastructure (Redis-based job queue)
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+          password: configService.get<string>('REDIS_PASSWORD'),
+        },
+      }),
+      inject: [ConfigService],
     }),
     // Global rate limiting with Redis-based storage
     // Development: 200 req/min (in-memory fallback)
@@ -59,7 +73,8 @@ import { ForceHttpsMiddleware } from './common/middlewares/force-https.middlewar
       }),
     }),
     RedisModule,
-    CommonModule, // Global module with SanitizerService, EmailService, SentryService
+    CommonModule, // Global module with SanitizerService, SentryService, LoggerService
+    EmailModule, // Email queue with templates, retries, and delivery tracking
     PrismaModule,
     AuthModule,
     CompaniesModule,

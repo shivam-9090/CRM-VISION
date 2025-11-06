@@ -90,7 +90,7 @@ export class EmailService {
   ): Promise<void> {
     try {
       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
-      
+
       const mailOptions = {
         from: process.env.EMAIL_FROM || 'noreply@crm-system.com',
         to: email,
@@ -220,7 +220,11 @@ export class EmailService {
     }
   }
 
-  async sendInvitationEmail(email: string, inviteUrl: string, role: string): Promise<void> {
+  async sendInvitationEmail(
+    email: string,
+    inviteUrl: string,
+    role: string,
+  ): Promise<void> {
     try {
       const mailOptions = {
         from: process.env.EMAIL_FROM || 'noreply@crm-system.com',

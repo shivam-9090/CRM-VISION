@@ -9,6 +9,9 @@ import { validateEnvironment } from './config/env.validation';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { Request, Response, NextFunction } from 'express';
+import { PrismaService } from './prisma/prisma.service';
+import { UnifiedExceptionFilter } from './common/filters/unified-exception.filter';
+import { SentryService } from './common/sentry.service';
 
 async function bootstrap() {
   // Validate environment variables before starting the app
@@ -30,6 +33,14 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const prismaService = app.get(PrismaService);
+  const sentryService = app.get(SentryService);
+
+  // Apply unified exception filter globally for standardized error handling
+  app.useGlobalFilters(new UnifiedExceptionFilter(sentryService));
+
+  // Enable graceful shutdown for Prisma
+  prismaService.enableShutdownHooks(app);
 
   // Enhanced security headers with Helmet
   const isProduction = configService.get('NODE_ENV') === 'production';
@@ -148,20 +159,73 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('CRM System API')
     .setDescription(
-      'Comprehensive CRM system with user management, companies, contacts, deals, and activities',
+      `Comprehensive CRM system with user management, companies, contacts, deals, and activities.
+      
+**Features:**
+- 🔐 JWT-based authentication with refresh tokens
+- 👥 User and company management with role-based access control
+- 🏢 Company and contact management
+- 💼 Deal pipeline and activity tracking
+- 📧 Email service with templating and queueing
+- 📊 Analytics and reporting
+- 💬 Comments and attachments
+- 🔍 Global search functionality
+- 📥 Data export capabilities
+- 📝 Audit logging
+
+**Authentication:**
+All authenticated endpoints require a Bearer token in the Authorization header.
+To get a token, use the /api/auth/login endpoint.
+
+**Rate Limiting:**
+- Production: 100 requests per minute
+- Development: 200 requests per minute
+
+**Pagination:**
+List endpoints support pagination with query parameters:
+- page: Page number (starts from 1)
+- limit: Items per page (max 100)
+- search: Search query
+- sortBy: Field to sort by
+- sortOrder: asc or desc`,
     )
-    .setVersion('1.0')
+    .setVersion('1.0.0')
+    .setContact(
+      'CRM System Support',
+      'https://github.com/shivam-9090/CRM-VISION',
+      'support@crm-system.com',
+    )
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
+    .addServer('http://localhost:3001', 'Local Development Server')
+    .addServer('http://192.168.x.x:3001', 'Local Network Server')
+    .addServer('https://api.production.com', 'Production Server')
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
         name: 'JWT',
-        description: 'Enter JWT token',
+        description:
+          'Enter JWT access token obtained from /api/auth/login endpoint',
         in: 'header',
       },
       'JWT-auth',
     )
+    .addTag('Authentication', 'User authentication and authorization endpoints')
+    .addTag('Users', 'User management and profile operations')
+    .addTag('Companies', 'Company management operations')
+    .addTag('Contacts', 'Contact management operations')
+    .addTag('Deals', 'Deal pipeline and management operations')
+    .addTag('Activities', 'Activity tracking (tasks, calls, meetings, notes)')
+    .addTag('Comments', 'Comment system for resources')
+    .addTag('Attachments', 'File attachment management')
+    .addTag('Email', 'Email service and queue management')
+    .addTag('Analytics', 'Analytics and reporting endpoints')
+    .addTag('Search', 'Global search functionality')
+    .addTag('Export', 'Data export capabilities')
+    .addTag('Audit Log', 'Audit trail and activity logging')
+    .addTag('Notifications', 'User notification management')
+    .addTag('Health', 'System health and status checks')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -174,9 +238,10 @@ async function bootstrap() {
     `,
   });
 
-  const port = configService.get('PORT') || 3001;
+  const port = configService.get<number>('PORT') || 3001;
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend server running on port ${port}`);
+  console.log(`✨ Error handling: Unified exception filter with error codes`);
   console.log(
     `🔒 Rate limiting enabled: ${configService.get('NODE_ENV') === 'production' ? '100' : '200'} requests per minute`,
   );
@@ -185,8 +250,12 @@ async function bootstrap() {
   console.log(`📄 Pagination: Enabled on all list endpoints (max 100/page)`);
   console.log(`❤️  Health check: Available at /api/health`);
   console.log(`⏱️  Request timeout: 30 seconds`);
+  const poolSize = configService.get<number>('DB_POOL_SIZE', 10);
+  const poolTimeout = configService.get<number>('DB_POOL_TIMEOUT', 20);
+  console.log(
+    `🔗 Connection pool: ${poolSize} connections, ${poolTimeout}s timeout`,
+  );
   if (isProduction) {
-    console.log(`🔗 Connection pooling: 10 connections, 20s timeout`);
     console.log(`🛡️  HTTPS enforced with HSTS (max-age: 1 year)`);
     console.log(`🔒 Security headers: CSP, Frame Guard, No Sniff enabled`);
     console.log(`⚠️  HTTP requests will be redirected to HTTPS`);

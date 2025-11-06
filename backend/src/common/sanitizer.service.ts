@@ -9,7 +9,7 @@ export class SanitizerService {
    */
   sanitizeText(text: string | null | undefined): string | null {
     if (!text) return null;
-    
+
     return sanitizeHtml(text, {
       allowedTags: [], // No HTML tags allowed
       allowedAttributes: {},
@@ -23,12 +23,12 @@ export class SanitizerService {
    */
   sanitizeRichText(text: string | null | undefined): string | null {
     if (!text) return null;
-    
+
     // Allow safe formatting tags only
     return sanitizeHtml(text, {
       allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
       allowedAttributes: {
-        'a': ['href', 'title'],
+        a: ['href', 'title'],
       },
       allowedSchemes: ['http', 'https', 'mailto'],
       // Remove any script tags or dangerous attributes
@@ -41,8 +41,10 @@ export class SanitizerService {
    */
   sanitizeArray(items: string[] | null | undefined): string[] | null {
     if (!items || !Array.isArray(items)) return null;
-    
-    return items.map(item => this.sanitizeText(item)).filter(Boolean) as string[];
+
+    return items
+      .map((item) => this.sanitizeText(item))
+      .filter(Boolean) as string[];
   }
 
   /**
@@ -60,7 +62,8 @@ export class SanitizerService {
     for (const field of fieldsToSanitize) {
       const value = sanitized[field];
       if (value && typeof value === 'string') {
-        sanitized[field] = (this.sanitizeText(value) ?? undefined) as T[keyof T];
+        sanitized[field] = (this.sanitizeText(value) ??
+          undefined) as T[keyof T];
       }
     }
 

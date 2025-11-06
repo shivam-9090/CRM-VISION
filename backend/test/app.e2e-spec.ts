@@ -24,9 +24,7 @@ describe('CRM API (e2e)', () => {
 
   describe('Health Check', () => {
     it('/health (GET)', () => {
-      return request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200);
+      return request(app.getHttpServer()).get('/api/health').expect(200);
     });
   });
 
@@ -78,9 +76,7 @@ describe('CRM API (e2e)', () => {
     });
 
     it('should reject requests without token', () => {
-      return request(app.getHttpServer())
-        .get('/api/auth/me')
-        .expect(401);
+      return request(app.getHttpServer()).get('/api/auth/me').expect(401);
     });
   });
 

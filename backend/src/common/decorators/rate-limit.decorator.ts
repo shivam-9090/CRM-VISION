@@ -28,22 +28,22 @@ export interface RateLimitConfig {
 export const RateLimitTiers = {
   /** Very strict: 3 requests per minute (password reset, forgot password) */
   STRICT: { limit: 3, ttl: 60000, description: 'Strict (3/min)' },
-  
+
   /** Auth endpoints: 5 requests per minute (login, register) */
   AUTH: { limit: 5, ttl: 60000, description: 'Auth (5/min)' },
-  
+
   /** Moderate: 10 requests per minute (token refresh, verification) */
   MODERATE: { limit: 10, ttl: 60000, description: 'Moderate (10/min)' },
-  
+
   /** Standard API: 100 requests per minute (default for authenticated endpoints) */
   STANDARD: { limit: 100, ttl: 60000, description: 'Standard (100/min)' },
-  
+
   /** Generous: 200 requests per minute (development/hot-reload) */
   GENEROUS: { limit: 200, ttl: 60000, description: 'Generous (200/min)' },
-  
+
   /** Read-only: 300 requests per minute (GET endpoints, analytics) */
   READ_ONLY: { limit: 300, ttl: 60000, description: 'Read-only (300/min)' },
-  
+
   /** Premium tier: 500 requests per minute (paid users, enterprise) */
   PREMIUM: { limit: 500, ttl: 60000, description: 'Premium (500/min)' },
 };

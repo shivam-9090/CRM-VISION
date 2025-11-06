@@ -152,26 +152,37 @@ jobs:
         continue-on-error: true
 
   # ========================
-  # Security Scanning
+  # Security Scanning (Quick Check)
   # ========================
   security-scan:
-    name: Security Scan
+    name: Quick Security Scan
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies (Backend)
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install dependencies (Frontend)
+        working-directory: ./frontend
+        run: npm ci
+
       - name: Run npm audit (Backend)
         working-directory: ./backend
-        run: |
-          npm audit --audit-level=high || echo "⚠️ Vulnerabilities found"
+        run: npm run security:audit || echo "⚠️ Vulnerabilities found"
         continue-on-error: true
 
       - name: Run npm audit (Frontend)
         working-directory: ./frontend
-        run: |
-          npm audit --audit-level=high || echo "⚠️ Vulnerabilities found"
+        run: npm run security:audit || echo "⚠️ Vulnerabilities found"
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner
@@ -182,12 +193,25 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
+          exit-code: '0'
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
         if: always()
+
+      - name: Comment on PR if vulnerabilities found
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Security vulnerabilities detected** - Check the [full security scan workflow](https://github.com/${{ github.repository }}/actions/workflows/security-scan.yml) for details.'
+            })
 
   # ========================
   # Build Docker Images

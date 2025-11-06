@@ -21,13 +21,15 @@ export class LoggerService implements NestLoggerService {
     const consoleFormat = winston.format.combine(
       winston.format.colorize(),
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-      winston.format.printf(({ timestamp, level, message, context, ...meta }) => {
-        let msg = `${timestamp} [${context || 'Application'}] ${level}: ${message}`;
-        if (Object.keys(meta).length > 0) {
-          msg += ` ${JSON.stringify(meta)}`;
-        }
-        return msg;
-      }),
+      winston.format.printf(
+        ({ timestamp, level, message, context, ...meta }) => {
+          let msg = `${timestamp} [${context || 'Application'}] ${level}: ${message}`;
+          if (Object.keys(meta).length > 0) {
+            msg += ` ${JSON.stringify(meta)}`;
+          }
+          return msg;
+        },
+      ),
     );
 
     // Create transports
@@ -80,7 +82,7 @@ export class LoggerService implements NestLoggerService {
 
   error(message: string, trace?: string, context?: string) {
     this.logger.error(message, { trace, context });
-    
+
     // Send to Sentry
     if (trace) {
       this.sentryService.captureException(new Error(message), context, {
@@ -113,8 +115,15 @@ export class LoggerService implements NestLoggerService {
   /**
    * Log HTTP request
    */
-  logRequest(method: string, url: string, statusCode: number, duration: number, userId?: string) {
-    const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
+  logRequest(
+    method: string,
+    url: string,
+    statusCode: number,
+    duration: number,
+    userId?: string,
+  ) {
+    const level =
+      statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
     this.logger.log(level, `${method} ${url} ${statusCode} ${duration}ms`, {
       context: 'HTTP',
       method,
@@ -147,7 +156,12 @@ export class LoggerService implements NestLoggerService {
   /**
    * Log authentication event
    */
-  logAuth(event: string, userId?: string, success: boolean = true, details?: Record<string, any>) {
+  logAuth(
+    event: string,
+    userId?: string,
+    success: boolean = true,
+    details?: Record<string, any>,
+  ) {
     const level = success ? 'info' : 'warn';
     this.logger.log(level, `Auth: ${event}`, {
       context: 'Authentication',
@@ -168,7 +182,13 @@ export class LoggerService implements NestLoggerService {
   /**
    * Log business event
    */
-  logBusinessEvent(event: string, entityType: string, entityId: string, userId: string, action: string) {
+  logBusinessEvent(
+    event: string,
+    entityType: string,
+    entityId: string,
+    userId: string,
+    action: string,
+  ) {
     this.logger.info(`Business: ${action} ${entityType}`, {
       context: 'Business',
       event,
@@ -189,8 +209,13 @@ export class LoggerService implements NestLoggerService {
   /**
    * Log security event
    */
-  logSecurity(event: string, severity: 'low' | 'medium' | 'high' | 'critical', details: Record<string, any>) {
-    const level = severity === 'critical' || severity === 'high' ? 'error' : 'warn';
+  logSecurity(
+    event: string,
+    severity: 'low' | 'medium' | 'high' | 'critical',
+    details: Record<string, any>,
+  ) {
+    const level =
+      severity === 'critical' || severity === 'high' ? 'error' : 'warn';
     this.logger.log(level, `Security: ${event}`, {
       context: 'Security',
       event,
@@ -199,7 +224,12 @@ export class LoggerService implements NestLoggerService {
     });
 
     // Always send security events to Sentry
-    const sentryLevel = severity === 'critical' ? 'fatal' : severity === 'high' ? 'error' : 'warning';
+    const sentryLevel =
+      severity === 'critical'
+        ? 'fatal'
+        : severity === 'high'
+          ? 'error'
+          : 'warning';
     this.sentryService.captureMessage(`Security Event: ${event}`, sentryLevel, {
       severity,
       ...details,

@@ -127,7 +127,12 @@ export class CommentsService {
     });
   }
 
-  async remove(id: string, userId: string, companyId: string, userRole: string) {
+  async remove(
+    id: string,
+    userId: string,
+    companyId: string,
+    userRole: string,
+  ) {
     const comment = await this.findOne(id, companyId);
 
     // Allow deletion by comment author or admin

@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SanitizerService } from '../common/sanitizer.service';
-import { REDIS_CLIENT } from '../redis/redis.module';
-import Redis from 'ioredis';
+import { RedisService } from '../redis/redis.service';
+import type Redis from 'ioredis';
 import { CreateDealDto } from './dto/create-deal.dto';
 import { UpdateDealDto } from './dto/update-deal.dto';
 import { FilterDealDto } from './dto/filter-deal.dto';
@@ -11,11 +11,15 @@ import { PaginatedResponse } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class DealsService {
+  private readonly redis: Redis;
+
   constructor(
     private prisma: PrismaService,
     private sanitizer: SanitizerService,
-    @Inject(REDIS_CLIENT) private readonly redis: Redis,
-  ) {}
+    private redisService: RedisService,
+  ) {
+    this.redis = this.redisService.getClient();
+  }
 
   // ✅ Reusable include config - prevents code duplication & over-fetching
   private getDealIncludes(): Prisma.DealInclude {
@@ -165,7 +169,14 @@ export class DealsService {
     companyId: string,
     filters: FilterDealDto = {},
   ): Promise<PaginatedResponse<Deal>> {
-    const { page = 1, limit = 50, stage, priority, assignedToId, search } = filters;
+    const {
+      page = 1,
+      limit = 50,
+      stage,
+      priority,
+      assignedToId,
+      search,
+    } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause with filters
@@ -239,13 +250,18 @@ export class DealsService {
         dataToUpdate.title = sanitizedTitle ?? undefined;
       }
       if (updateDealDto.notes !== undefined) {
-        const sanitizedNotes = this.sanitizer.sanitizeRichText(updateDealDto.notes);
+        const sanitizedNotes = this.sanitizer.sanitizeRichText(
+          updateDealDto.notes,
+        );
         dataToUpdate.notes = sanitizedNotes ?? undefined;
       }
 
-      if (updateDealDto.value !== undefined) dataToUpdate.value = updateDealDto.value;
-      if (updateDealDto.priority !== undefined) dataToUpdate.priority = updateDealDto.priority;
-      if (updateDealDto.leadSource !== undefined) dataToUpdate.leadSource = updateDealDto.leadSource;
+      if (updateDealDto.value !== undefined)
+        dataToUpdate.value = updateDealDto.value;
+      if (updateDealDto.priority !== undefined)
+        dataToUpdate.priority = updateDealDto.priority;
+      if (updateDealDto.leadSource !== undefined)
+        dataToUpdate.leadSource = updateDealDto.leadSource;
       if (updateDealDto.lastContactDate !== undefined) {
         dataToUpdate.lastContactDate = updateDealDto.lastContactDate
           ? new Date(updateDealDto.lastContactDate)
@@ -280,7 +296,9 @@ export class DealsService {
       // Update assignedTo if changed
       if (updateDealDto.assignedToId !== undefined) {
         if (updateDealDto.assignedToId) {
-          dataToUpdate.assignedTo = { connect: { id: updateDealDto.assignedToId } };
+          dataToUpdate.assignedTo = {
+            connect: { id: updateDealDto.assignedToId },
+          };
         } else {
           dataToUpdate.assignedTo = { disconnect: true };
         }
@@ -527,7 +545,11 @@ export class DealsService {
   }
 
   // ✅ NEW: Bulk update deals
-  async bulkUpdate(dealIds: string[], updateData: Partial<UpdateDealDto>, companyId: string) {
+  async bulkUpdate(
+    dealIds: string[],
+    updateData: Partial<UpdateDealDto>,
+    companyId: string,
+  ) {
     const dataToUpdate: any = {};
 
     if (updateData.stage) dataToUpdate.stage = updateData.stage;
@@ -537,7 +559,10 @@ export class DealsService {
     }
 
     // Handle closedAt for stage changes
-    if (updateData.stage === 'CLOSED_WON' || updateData.stage === 'CLOSED_LOST') {
+    if (
+      updateData.stage === 'CLOSED_WON' ||
+      updateData.stage === 'CLOSED_LOST'
+    ) {
       dataToUpdate.closedAt = new Date();
     } else if (updateData.stage) {
       dataToUpdate.closedAt = null;
@@ -607,17 +632,25 @@ export class DealsService {
       deal.leadSource || '',
       deal.leadScore || '',
       deal.company?.name || '',
-      deal.contact ? `"${deal.contact.firstName} ${deal.contact.lastName}"` : '',
+      deal.contact
+        ? `"${deal.contact.firstName} ${deal.contact.lastName}"`
+        : '',
       deal.assignedTo?.name || '',
-      deal.expectedCloseDate ? new Date(deal.expectedCloseDate).toISOString().split('T')[0] : '',
+      deal.expectedCloseDate
+        ? new Date(deal.expectedCloseDate).toISOString().split('T')[0]
+        : '',
       deal.closedAt ? new Date(deal.closedAt).toISOString().split('T')[0] : '',
-      deal.lastContactDate ? new Date(deal.lastContactDate).toISOString().split('T')[0] : '',
+      deal.lastContactDate
+        ? new Date(deal.lastContactDate).toISOString().split('T')[0]
+        : '',
       deal.notes ? `"${deal.notes.replace(/"/g, '""')}"` : '',
       new Date(deal.createdAt).toISOString().split('T')[0],
     ]);
 
     // Combine headers and rows
-    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join(
+      '\n',
+    );
 
     return csv;
   }

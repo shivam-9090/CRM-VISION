@@ -66,11 +66,11 @@ export class ActivitiesService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    
+
     if (companyId) {
       where.companyId = companyId;
     }
-    
+
     if (type) {
       where.type = type;
     }
@@ -128,7 +128,7 @@ export class ActivitiesService {
 
   async findOne(id: string, companyId?: string) {
     const where: any = { id };
-    
+
     if (companyId) {
       where.companyId = companyId;
     }
@@ -249,13 +249,13 @@ export class ActivitiesService {
 
   async remove(id: string, companyId?: string) {
     const where: any = { id };
-    
+
     if (companyId) {
       where.companyId = companyId;
     }
 
     const activity = await this.prisma.activity.findFirst({ where });
-    
+
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }

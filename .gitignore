@@ -127,8 +127,7 @@ backend/uploads/*
 *.crt
 **/.ssh/
 
-# Database dumps and backups
-*.sql
+# Database dumps and backups (but NOT Prisma migrations)
 *.dump
 scripts/backups/*
 !scripts/backups/.gitkeep
@@ -136,6 +135,10 @@ backup/*
 !backup/.gitkeep
 backups/*
 !backups/.gitkeep
+# Exclude SQL dumps and backups, but allow Prisma migrations
+*.sql
+!backend/prisma/migrations/**/*.sql
+!frontend/prisma/migrations/**/*.sql
 
 # Environment-specific docker files
 docker-compose.override.yml
