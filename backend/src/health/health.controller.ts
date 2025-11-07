@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../redis/cache.service';
 import { ApiPublicEndpoint } from '../common/swagger/swagger-decorators';
+import { QueryPerformanceInterceptor } from '../common/interceptors/query-performance.interceptor';
 
 @ApiTags('Health')
 @Controller('health')
@@ -77,6 +78,9 @@ export class HealthController {
       // Check Redis cache
       const cacheInfo = await this.cache.getInfo();
 
+      // Get query performance metrics
+      const performanceMetrics = QueryPerformanceInterceptor.getMetrics();
+
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
@@ -95,6 +99,16 @@ export class HealthController {
           stats: cacheInfo.stats,
           hitRatio: `${(cacheInfo.hitRatio * 100).toFixed(2)}%`,
           redis: cacheInfo.info || null,
+        },
+        performance: {
+          totalRequests: performanceMetrics.totalRequests,
+          slowQueries: performanceMetrics.slowQueries,
+          slowQueryPercentage: `${performanceMetrics.slowQueryPercentage}%`,
+          averageResponseTime: `${performanceMetrics.averageResponseTime}ms`,
+          p50ResponseTime: `${performanceMetrics.p50ResponseTime}ms`,
+          p95ResponseTime: `${performanceMetrics.p95ResponseTime}ms`,
+          p99ResponseTime: `${performanceMetrics.p99ResponseTime}ms`,
+          sampleSize: performanceMetrics.sampleSize,
         },
         environment: process.env.NODE_ENV || 'development',
       };

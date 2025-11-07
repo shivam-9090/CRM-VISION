@@ -47,7 +47,9 @@ export class ContactsService {
       this.prisma.contact.findMany({
         where: { companyId },
         include: {
-          company: true,
+          company: {
+            select: { id: true, name: true }, // ✅ Only fetch needed fields
+          },
         },
         skip,
         take: limit,
@@ -72,29 +74,53 @@ export class ContactsService {
   }
 
   async findOne(id: string, companyId: string) {
-    const contact = await this.prisma.contact.findFirst({
-      where: {
-        id,
-        companyId, // Ensure contact belongs to user's company
-      },
-      include: {
-        company: true,
-        deals: {
-          where: {
-            companyId, // Also filter deals by company
+    // ✅ OPTIMIZED: Paginate deals and optimize selects
+    const [contact, dealCount] = await Promise.all([
+      this.prisma.contact.findFirst({
+        where: {
+          id,
+          companyId, // Ensure contact belongs to user's company
+        },
+        include: {
+          company: {
+            select: { id: true, name: true }, // ✅ Only needed fields
           },
-          include: {
-            company: true,
+          deals: {
+            where: {
+              companyId, // Also filter deals by company
+            },
+            select: {
+              id: true,
+              title: true,
+              value: true,
+              stage: true,
+              priority: true,
+              expectedCloseDate: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 10, // ✅ Only fetch 10 most recent
           },
         },
-      },
-    });
+      }),
+      this.prisma.deal.count({
+        where: { contactId: id, companyId },
+      }),
+    ]);
 
     if (!contact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
 
-    return contact;
+    // Return with metadata
+    return {
+      ...contact,
+      _meta: {
+        totalDeals: dealCount,
+        showingDeals: contact.deals?.length || 0,
+      },
+    };
   }
 
   async update(

@@ -67,43 +67,115 @@ export class CompaniesService {
   }
 
   async findUserCompany(companyId: string) {
-    const company = await this.prisma.company.findUnique({
-      where: { id: companyId },
-      include: {
-        contacts: true,
-        deals: true,
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
+    // ✅ OPTIMIZED: Fetch paginated contacts/deals with counts
+    const [company, contactCount, dealCount] = await Promise.all([
+      this.prisma.company.findUnique({
+        where: { id: companyId },
+        include: {
+          contacts: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 10, // ✅ Only fetch 10 most recent
+          },
+          deals: {
+            select: {
+              id: true,
+              title: true,
+              value: true,
+              stage: true,
+              priority: true,
+              expectedCloseDate: true,
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 10, // ✅ Only fetch 10 most recent
+          },
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.contact.count({ where: { companyId } }),
+      this.prisma.deal.count({ where: { companyId } }),
+    ]);
 
     if (!company) {
       throw new NotFoundException(`Company not found`);
     }
 
-    return [company]; // Return as array to match findAll format
+    // Return with metadata
+    return [
+      {
+        ...company,
+        _meta: {
+          totalContacts: contactCount,
+          totalDeals: dealCount,
+          showingContacts: company.contacts?.length || 0,
+          showingDeals: company.deals?.length || 0,
+        },
+      },
+    ];
   }
 
   async findOne(id: string) {
-    const company = await this.prisma.company.findUnique({
-      where: { id },
-      include: {
-        contacts: true,
-        deals: true,
-      },
-    });
+    // ✅ OPTIMIZED: Fetch paginated contacts/deals with counts
+    const [company, contactCount, dealCount] = await Promise.all([
+      this.prisma.company.findUnique({
+        where: { id },
+        include: {
+          contacts: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 10, // ✅ Only fetch 10 most recent
+          },
+          deals: {
+            select: {
+              id: true,
+              title: true,
+              value: true,
+              stage: true,
+              priority: true,
+              expectedCloseDate: true,
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 10, // ✅ Only fetch 10 most recent
+          },
+        },
+      }),
+      this.prisma.contact.count({ where: { companyId: id } }),
+      this.prisma.deal.count({ where: { companyId: id } }),
+    ]);
 
     if (!company) {
       throw new NotFoundException(`Company with ID ${id} not found`);
     }
 
-    return company;
+    // Return with metadata
+    return {
+      ...company,
+      _meta: {
+        totalContacts: contactCount,
+        totalDeals: dealCount,
+        showingContacts: company.contacts?.length || 0,
+        showingDeals: company.deals?.length || 0,
+      },
+    };
   }
 
   async update(id: string, updateCompanyDto: UpdateCompanyDto) {

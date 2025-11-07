@@ -8,7 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
 
@@ -28,6 +28,7 @@ export class NotificationsGateway
 
   constructor(
     private jwtService: JwtService,
+    @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
   ) {}
 

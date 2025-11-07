@@ -29,14 +29,18 @@ model User {
   twoFactorSecret      String?
   twoFactorEnabled     Boolean   @default(false)
   permissions          Json?     @default("{}")
-  assignedDeals        Deal[]
-  assignedActivities   Activity[] @relation("AssignedActivities")
-  comments             Comment[]
-  auditLogs            AuditLog[]
-  notifications        Notification[]
-  refreshTokens        RefreshToken[]
-  company              Company?  @relation(fields: [companyId], references: [id])
+  assignedDeals               Deal[]
+  assignedActivities          Activity[] @relation("AssignedActivities")
+  comments                    Comment[]
+  auditLogs                   AuditLog[]
+  notifications               Notification[]
+  refreshTokens               RefreshToken[]
+  notificationPreferences     NotificationPreference?
+  pushSubscriptions           PushSubscription[]
+  company                     Company?  @relation(fields: [companyId], references: [id])
 
+  @@index([companyId, email]) // ✅ For finding users by company + email
+  @@index([lastLoginAt]) // ✅ For "recently active users" queries
   @@map("users")
 }
 
@@ -66,7 +70,10 @@ model Company {
   comments    Comment[]
   auditLogs   AuditLog[]
   notifications Notification[]
+  exportTemplates ExportTemplate[]
+  exportJobs  ExportJob[]
 
+  @@index([name]) // ✅ For company search/autocomplete
   @@map("companies")
 }
 
@@ -86,6 +93,9 @@ model Contact {
   @@index([companyId])
   @@index([email])
   @@index([companyId, email])
+  @@index([firstName]) // ✅ For contact search
+  @@index([lastName]) // ✅ For contact search
+  @@index([companyId, firstName, lastName]) // ✅ Composite for filtered search
   @@map("contacts")
 }
 
@@ -146,6 +156,8 @@ model Activity {
   @@index([contactId])
   @@index([dealId])
   @@index([assignedToId])
+  @@index([title]) // ✅ For activity search
+  @@index([companyId, title]) // ✅ Composite for filtered search
   @@map("activities")
 }
 
@@ -221,23 +233,79 @@ model Attachment {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  type      NotificationType
-  title     String
-  message   String
+  id         String           @id @default(cuid())
+  type       NotificationType
+  title      String
+  message    String
   entityType String?
   entityId   String?
-  isRead    Boolean          @default(false)
-  userId    String
-  companyId String
-  createdAt DateTime         @default(now())
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  isRead     Boolean          @default(false)
+  isMuted    Boolean          @default(false)
+  snoozedUntil DateTime?
+  groupKey   String?          // For grouping similar notifications
+  groupCount Int              @default(1) // Count of grouped notifications
+  userId     String
+  companyId  String
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([userId, groupKey])
   @@index([companyId])
   @@index([createdAt])
+  @@index([snoozedUntil])
   @@map("notifications")
+}
+
+model NotificationPreference {
+  id             String           @id @default(cuid())
+  userId         String           @unique
+  
+  // Channel preferences for each notification type
+  emailEnabled   Boolean          @default(true)
+  pushEnabled    Boolean          @default(true)
+  inAppEnabled   Boolean          @default(true)
+  
+  // Type-specific preferences (JSON object mapping NotificationType to enabled channels)
+  typePreferences Json            @default("{}")
+  
+  // Sound and visual preferences
+  soundEnabled   Boolean          @default(true)
+  soundType      String           @default("default") // "default", "subtle", "none"
+  
+  // Quiet hours (24-hour format)
+  quietHoursEnabled Boolean        @default(false)
+  quietHoursStart   String?        // e.g., "22:00"
+  quietHoursEnd     String?        // e.g., "08:00"
+  
+  // Muted entities (JSON array of {entityType, entityId})
+  mutedEntities  Json             @default("[]")
+  
+  // Grouping preferences
+  groupingEnabled Boolean          @default(true)
+  groupingWindow  Int              @default(300) // seconds (5 minutes)
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notification_preferences")
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique
+  keys       Json     // {p256dh: string, auth: string}
+  userAgent  String?  // Browser/device info
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 enum Role {
@@ -325,4 +393,56 @@ enum NotificationType {
   COMMENT_ADDED
   MENTION
   SYSTEM
+}
+
+model ExportTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  entityType  String   // contacts, deals, activities, companies
+  fields      Json     // Selected fields to export
+  filters     Json?    // Default filters (date range, status, etc.)
+  format      String   @default("csv") // csv, excel, json, xml
+  userId      String
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  exportJobs  ExportJob[]
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("export_templates")
+}
+
+model ExportJob {
+  id            String    @id @default(cuid())
+  entityType    String    // contacts, deals, activities, companies
+  format        String    // csv, excel, json, xml
+  status        String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  schedule      String?   // once, daily, weekly, monthly
+  filters       Json?     // Date range, status filters, etc.
+  fields        Json?     // Selected fields
+  templateId    String?
+  fileUrl       String?   // S3 or local path to generated file
+  fileName      String?
+  fileSize      Int?
+  totalRecords  Int?
+  progress      Int       @default(0) // Percentage 0-100
+  errorMessage  String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  expiresAt     DateTime? // File expiration (24 hours after completion)
+  userId        String
+  companyId     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  template      ExportTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("export_jobs")
 }

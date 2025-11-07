@@ -19,8 +19,7 @@ BEGIN
     setweight(to_tsvector('english', coalesce(NEW."firstName", '')), 'A') ||
     setweight(to_tsvector('english', coalesce(NEW."lastName", '')), 'A') ||
     setweight(to_tsvector('english', coalesce(NEW.email, '')), 'B') ||
-    setweight(to_tsvector('english', coalesce(NEW.phone, '')), 'C') ||
-    setweight(to_tsvector('english', coalesce(NEW.position, '')), 'D');
+    setweight(to_tsvector('english', coalesce(NEW.phone, '')), 'C');
   RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
@@ -35,8 +34,7 @@ UPDATE "contacts" SET "search_vector" =
   setweight(to_tsvector('english', coalesce("firstName", '')), 'A') ||
   setweight(to_tsvector('english', coalesce("lastName", '')), 'A') ||
   setweight(to_tsvector('english', coalesce(email, '')), 'B') ||
-  setweight(to_tsvector('english', coalesce(phone, '')), 'C') ||
-  setweight(to_tsvector('english', coalesce(position, '')), 'D');
+  setweight(to_tsvector('english', coalesce(phone, '')), 'C');
 
 -- ============================================
 -- DEALS TABLE - Full-Text Search
@@ -50,8 +48,8 @@ CREATE OR REPLACE FUNCTION deals_search_vector_update() RETURNS trigger AS $$
 BEGIN
   NEW.search_vector :=
     setweight(to_tsvector('english', coalesce(NEW.title, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(NEW.description, '')), 'B') ||
-    setweight(to_tsvector('english', coalesce(NEW.stage, '')), 'C');
+    setweight(to_tsvector('english', coalesce(NEW.notes, '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(NEW.stage::text, '')), 'C');
   RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
@@ -62,8 +60,8 @@ FOR EACH ROW EXECUTE FUNCTION deals_search_vector_update();
 
 UPDATE "deals" SET "search_vector" = 
   setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-  setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-  setweight(to_tsvector('english', coalesce(stage, '')), 'C');
+  setweight(to_tsvector('english', coalesce(notes, '')), 'B') ||
+  setweight(to_tsvector('english', coalesce(stage::text, '')), 'C');
 
 -- ============================================
 -- COMPANIES TABLE - Full-Text Search
@@ -77,9 +75,7 @@ CREATE OR REPLACE FUNCTION companies_search_vector_update() RETURNS trigger AS $
 BEGIN
   NEW.search_vector :=
     setweight(to_tsvector('english', coalesce(NEW.name, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(NEW.description, '')), 'B') ||
-    setweight(to_tsvector('english', coalesce(NEW.industry, '')), 'C') ||
-    setweight(to_tsvector('english', coalesce(NEW.website, '')), 'D');
+    setweight(to_tsvector('english', coalesce(NEW.description, '')), 'B');
   RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
@@ -90,9 +86,7 @@ FOR EACH ROW EXECUTE FUNCTION companies_search_vector_update();
 
 UPDATE "companies" SET "search_vector" = 
   setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
-  setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-  setweight(to_tsvector('english', coalesce(industry, '')), 'C') ||
-  setweight(to_tsvector('english', coalesce(website, '')), 'D');
+  setweight(to_tsvector('english', coalesce(description, '')), 'B');
 
 -- ============================================
 -- ACTIVITIES TABLE - Full-Text Search
@@ -107,7 +101,7 @@ BEGIN
   NEW.search_vector :=
     setweight(to_tsvector('english', coalesce(NEW.title, '')), 'A') ||
     setweight(to_tsvector('english', coalesce(NEW.description, '')), 'B') ||
-    setweight(to_tsvector('english', coalesce(NEW.type, '')), 'C');
+    setweight(to_tsvector('english', coalesce(NEW.type::text, '')), 'C');
   RETURN NEW;
 END
 $$ LANGUAGE plpgsql;
@@ -119,7 +113,7 @@ FOR EACH ROW EXECUTE FUNCTION activities_search_vector_update();
 UPDATE "activities" SET "search_vector" = 
   setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
   setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-  setweight(to_tsvector('english', coalesce(type, '')), 'C');
+  setweight(to_tsvector('english', coalesce(type::text, '')), 'C');
 
 -- ============================================
 -- PERFORMANCE NOTES

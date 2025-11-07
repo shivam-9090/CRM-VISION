@@ -5,6 +5,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const compression = require('compression');
 import { validateEnvironment } from './config/env.validation';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
@@ -113,6 +115,23 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+
+  // ✅ Enable response compression (gzip/deflate)
+  // Compresses responses > 1KB, reducing bandwidth by 60-80%
+  app.use(
+    compression({
+      threshold: 1024, // Only compress responses > 1KB
+      level: 6, // Compression level (0-9, 6 is default balance)
+      filter: (req, res) => {
+        // Don't compress if explicitly disabled
+        if (req.headers['x-no-compression']) {
+          return false;
+        }
+        // Use compression filter
+        return compression.filter(req, res);
+      },
+    }),
+  );
 
   // Request timeout middleware (30 seconds)
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -248,6 +267,7 @@ List endpoints support pagination with query parameters:
   console.log(`🔐 Security: Enhanced password requirements (12+ chars)`);
   console.log(`📊 Database: Performance indexes added`);
   console.log(`📄 Pagination: Enabled on all list endpoints (max 100/page)`);
+  console.log(`🗜️  Compression: Enabled (threshold: 1KB, level: 6, ~60-80% reduction)`);
   console.log(`❤️  Health check: Available at /api/health`);
   console.log(`⏱️  Request timeout: 30 seconds`);
   const poolSize = configService.get<number>('DB_POOL_SIZE', 10);

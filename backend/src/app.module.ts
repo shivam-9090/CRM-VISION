@@ -2,7 +2,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
-import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -27,6 +27,7 @@ import { CommonModule } from './common/common.module';
 import { RedisThrottlerStorage } from './common/redis-throttler.storage';
 import { RateLimitHeadersMiddleware } from './common/middlewares/rate-limit-headers.middleware';
 import { ForceHttpsMiddleware } from './common/middlewares/force-https.middleware';
+import { QueryPerformanceInterceptor } from './common/interceptors/query-performance.interceptor';
 
 @Module({
   imports: [
@@ -101,6 +102,10 @@ import { ForceHttpsMiddleware } from './common/middlewares/force-https.middlewar
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter, // Global exception handling with Sentry
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: QueryPerformanceInterceptor, // Global query performance monitoring
     },
   ],
 })

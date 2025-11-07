@@ -325,4 +325,133 @@ export class EmailService {
       timestamp: job.timestamp,
     }));
   }
+
+  /**
+   * Send export ready notification email (direct send, not queued)
+   */
+  async sendExportReadyEmail(
+    to: string,
+    exportDetails: {
+      fileName: string;
+      fileSize: number;
+      totalRecords: number;
+      format: string;
+      entityType: string;
+      downloadUrl: string;
+    },
+  ): Promise<void> {
+    const formattedSize = this.formatBytes(exportDetails.fileSize);
+    const expirationTime = '24 hours';
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Your Export is Ready! 📊</h2>
+          
+          <p>Your export has been successfully processed and is ready for download.</p>
+          
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #374151;">Export Details:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;"><strong>Entity Type:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${this.capitalize(exportDetails.entityType)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;"><strong>Format:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${exportDetails.format.toUpperCase()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;"><strong>Records:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${exportDetails.totalRecords.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;"><strong>File Size:</strong></td>
+                <td style="padding: 8px 0; text-align: right;">${formattedSize}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280;"><strong>File Name:</strong></td>
+                <td style="padding: 8px 0; text-align: right; word-break: break-all;">${exportDetails.fileName}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${exportDetails.downloadUrl}" 
+               style="background-color: #2563eb; color: white; padding: 12px 30px; 
+                      text-decoration: none; border-radius: 6px; display: inline-block; 
+                      font-weight: bold;">
+              Download Export
+            </a>
+          </div>
+          
+          <p style="color: #ef4444; font-size: 14px; text-align: center;">
+            ⚠️ This file will be available for ${expirationTime}
+          </p>
+          
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          
+          <p style="color: #6b7280; font-size: 12px; text-align: center;">
+            This is an automated message from your CRM system.
+          </p>
+        </div>
+      `;
+    
+    const text = `
+Your Export is Ready!
+
+Your export has been successfully processed and is ready for download.
+
+Export Details:
+- Entity Type: ${this.capitalize(exportDetails.entityType)}
+- Format: ${exportDetails.format.toUpperCase()}
+- Records: ${exportDetails.totalRecords.toLocaleString()}
+- File Size: ${formattedSize}
+- File Name: ${exportDetails.fileName}
+
+Download Link: ${exportDetails.downloadUrl}
+
+⚠️ This file will be available for ${expirationTime}
+
+---
+This is an automated message from your CRM system.
+      `.trim();
+
+    // Send directly using nodemailer (not queued for immediate delivery)
+    try {
+      await this.transporter.sendMail({
+        from: this.configService.get<string>('SMTP_FROM', 'noreply@crm-system.com'),
+        to,
+        subject: `Your ${this.capitalize(exportDetails.entityType)} Export is Ready`,
+        html,
+        text,
+      });
+
+      this.logger.log(`✅ Export ready email sent to ${to}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send export ready email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Format bytes to human-readable string
+   */
+  private formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Capitalize first letter
+   */
+  private capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 }
