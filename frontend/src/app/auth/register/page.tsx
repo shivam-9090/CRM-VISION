@@ -73,8 +73,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 12) {
-      setError('Password must be at least 12 characters long');
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
       setLoading(false);
       return;
     }
@@ -240,8 +240,8 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  minLength={12}
-                  placeholder="Min 12 characters with uppercase, lowercase, number & special character"
+                  minLength={6}
+                  placeholder="Min 6 characters with uppercase, lowercase, number & special character"
                 />
 
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">

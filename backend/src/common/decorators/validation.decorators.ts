@@ -151,7 +151,7 @@ export class IsStrongPasswordConstraint
   validate(password: string): boolean {
     if (!password) return false;
 
-    const minLength = 12;
+    const minLength = 6;
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /\d/.test(password);
@@ -167,7 +167,7 @@ export class IsStrongPasswordConstraint
   }
 
   defaultMessage(): string {
-    return 'Password must be at least 12 characters and contain uppercase, lowercase, number, and special character';
+    return 'Password must be at least 6 characters and contain uppercase, lowercase, number, and special character';
   }
 }
 

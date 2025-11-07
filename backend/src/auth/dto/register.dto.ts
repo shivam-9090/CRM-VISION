@@ -25,7 +25,7 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
-  @MinLength(12, { message: 'Password must be at least 12 characters long' })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
   @IsStrongPassword({
     message:
