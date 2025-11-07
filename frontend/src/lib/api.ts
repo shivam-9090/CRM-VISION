@@ -72,6 +72,7 @@ api.interceptors.response.use(
           status: error.response?.status || 'No response',
           url: `${error.config?.baseURL || API_URL}${error.config?.url || ''}`,
           message: error.response?.data?.message || error.message || 'Unknown error',
+          data: error.response?.data || null,
           method: error.config?.method?.toUpperCase() || 'UNKNOWN',
         };
         

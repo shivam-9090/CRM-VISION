@@ -60,12 +60,6 @@ export default function LoginPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      setLoading(false);
-      return;
-    }
-
     try {
       // Make login API call - the backend will set httpOnly cookie
       const response = await api.post('/auth/login', {
@@ -98,13 +92,19 @@ export default function LoginPage() {
     } catch (err: unknown) {
       console.error('Login error:', err);
       if (err && typeof err === 'object' && 'response' in err) {
-        const response = (err as { response?: { data?: { message?: string | string[] } } }).response;
-        if (response?.data?.message && Array.isArray(response.data.message)) {
-          setError(response.data.message.join(', '));
-        } else if (response?.data?.message) {
-          setError(response.data.message as string);
+        const response = (err as { response?: { data?: { message?: string | string[]; error?: { message?: string | string[] } } } }).response;
+        
+        // Handle different error response formats from backend
+        const errorMessage = response?.data?.error?.message || response?.data?.message;
+        
+        if (errorMessage && Array.isArray(errorMessage)) {
+          // Backend validation errors (array of messages)
+          setError(errorMessage.join(', '));
+        } else if (errorMessage && typeof errorMessage === 'string') {
+          // Single error message
+          setError(errorMessage);
         } else {
-          setError('Login failed. Please check your credentials.');
+          setError('Login failed. Please check your credentials and try again.');
         }
       } else {
         setError('Login failed. Please check your network connection.');

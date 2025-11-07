@@ -73,14 +73,20 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (formData.password.length < 12) {
+      setError('Password must be at least 12 characters long');
       setLoading(false);
       return;
     }
 
-    if (!/(?=.*[a-z])(?=.*[A-Z])|(?=.*\d)/.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter, lowercase letter, or number');
+    // Check for uppercase, lowercase, number, and special character
+    const hasUpperCase = /[A-Z]/.test(formData.password);
+    const hasLowerCase = /[a-z]/.test(formData.password);
+    const hasNumber = /\d/.test(formData.password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      setError('Password must contain at least one uppercase letter, lowercase letter, number, and special character');
       setLoading(false);
       return;
     }
@@ -136,17 +142,24 @@ export default function RegisterPage() {
       // Use replace instead of push to prevent going back to register
       router.replace('/dashboard');
     } catch (err: unknown) {
+      console.error('Registration error:', err);
       if (err && typeof err === 'object' && 'response' in err) {
-        const response = (err as { response?: { data?: { message?: string | string[] } } }).response;
-        if (response?.data?.message && Array.isArray(response.data.message)) {
-          setError(response.data.message.join(', '));
-        } else if (response?.data?.message) {
-          setError(response.data.message as string);
+        const response = (err as { response?: { data?: { message?: string | string[]; error?: { message?: string | string[] } } } }).response;
+        
+        // Handle different error response formats from backend
+        const errorMessage = response?.data?.error?.message || response?.data?.message;
+        
+        if (errorMessage && Array.isArray(errorMessage)) {
+          // Backend validation errors (array of messages)
+          setError(errorMessage.join(', '));
+        } else if (errorMessage && typeof errorMessage === 'string') {
+          // Single error message
+          setError(errorMessage);
         } else {
-          setError('Registration failed');
+          setError('Registration failed. Please check your information and try again.');
         }
       } else {
-        setError('Registration failed');
+        setError('Registration failed. Please check your network connection.');
       }
     } finally {
       setLoading(false);
@@ -227,8 +240,8 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  minLength={6}
-                  placeholder="Create a secure password (min 6 characters, include uppercase/lowercase/number)"
+                  minLength={12}
+                  placeholder="Min 12 characters with uppercase, lowercase, number & special character"
                 />
 
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
