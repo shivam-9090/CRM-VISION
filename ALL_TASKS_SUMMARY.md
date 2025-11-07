@@ -152,12 +152,13 @@ This file consolidates all 28 tasks, their status, descriptions, key files, comm
 - Key files: `frontend/next.config.ts` (webpack optimizations), `frontend/src/lib/web-vitals.ts` (Core Web Vitals monitoring), `frontend/public/sw.js` (service worker with caching), `frontend/src/lib/service-worker.ts` (SW registration), `frontend/src/app/offline/page.tsx` (offline fallback), `frontend/public/manifest.json` (PWA manifest), `frontend/src/lib/performance.ts` (performance utilities)
 - Commit: 33bb344
 
-25. Database Migration Strategy Documentation
-- Status: not-started
+25. ✅ Database Migration Strategy Documentation
+- Status: completed
 - Description: Zero-downtime migration patterns and checklist.
+- Commit: (completed in previous session)
 
-26. Disaster Recovery Plan
-- Status: not-started
+26. 🔄 Disaster Recovery Plan
+- Status: in-progress
 - Description: DR plan referencing backup scripts.
 
 27. Frontend Accessibility (A11y) Audit
