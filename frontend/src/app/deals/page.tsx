@@ -724,147 +724,85 @@ export default function DealsPage() {
         )}
 
         {/* Analytics Dashboard */}
-        {showAnalytics && myStats && (
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-gray-800">My Deals Overview</h2>
-              <button
-                onClick={() => setShowAnalytics(!showAnalytics)}
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                Hide Stats
-              </button>
+        {showAnalytics && myStats && pipelineStats && (() => {
+          // Calculate totals from all deals in pipelineStats
+          const totalDeals = pipelineStats.reduce((sum, stat) => sum + stat.count, 0);
+          const wonDeals = pipelineStats.find(s => s.stage === 'WON')?.count || 0;
+          const lostDeals = pipelineStats.find(s => s.stage === 'LOST')?.count || 0;
+          const inProgressDeals = pipelineStats
+            .filter(s => s.stage !== 'WON' && s.stage !== 'LOST')
+            .reduce((sum, stat) => sum + stat.count, 0);
+          const winRate = (wonDeals + lostDeals) > 0 ? Math.round((wonDeals / (wonDeals + lostDeals)) * 100) : 0;
+          
+          return (
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-lg font-semibold text-gray-800">All Deals Overview</h2>
+                <button
+                  onClick={() => setShowAnalytics(!showAnalytics)}
+                  className="text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Hide Stats
+                </button>
+              </div>
+              {totalDeals === 0 ? (
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+                  <p className="font-medium">No deals in the system yet</p>
+                  <p className="text-sm mt-1">
+                    Create a new deal to get started!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 gap-4 mb-4">
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-md hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-blue-600 font-semibold">Total Deals</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-blue-700">{totalDeals}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-300 shadow-md hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-green-600 font-semibold">Won</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-green-700">{wonDeals}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300 shadow-md hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-yellow-700 font-semibold">In Progress</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-yellow-700">{inProgressDeals}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-300 shadow-md hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-red-600 font-semibold">Lost</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-red-700">{lostDeals}</div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-md hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-purple-600 font-semibold">Win Rate</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-purple-700">{winRate}%</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
-            {myStats.total === 0 ? (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
-                <p className="font-medium">No deals assigned to you yet</p>
-                <p className="text-sm mt-1">
-                  Create a new deal and it will be automatically assigned to you, or 
-                  <button 
-                    onClick={async () => {
-                      setAssigningDeals(true);
-                      try {
-                        // Get current user from localStorage
-                        const userData = localStorage.getItem('user');
-                        if (!userData) {
-                          alert('Failed to get current user. Please refresh and try again.');
-                          return;
-                        }
-                        const user = JSON.parse(userData);
-                        
-                        console.log('Current user:', user);
-                        console.log('Total deals to assign:', deals.length);
-                        
-                        // Update all deals without assignedTo to current user
-                        const unassignedDeals = deals.filter(d => !d.assignedTo);
-                        console.log('Unassigned deals:', unassignedDeals.length);
-                        
-                        if (unassignedDeals.length === 0) {
-                          alert('No unassigned deals found. Try creating a new deal.');
-                          return;
-                        }
-                        
-                        // Update deals one by one
-                        let successCount = 0;
-                        let skipCount = 0;
-                        for (const deal of unassignedDeals) {
-                          console.log(`Assigning deal ${deal.id} to user ${user.id}`);
-                          console.log('Deal object:', deal);
-                          try {
-                            const response = await api.patch(`/deals/${deal.id}`, { assignedToId: user.id });
-                            console.log(`✅ Deal ${deal.id} assigned successfully:`, response.data);
-                            successCount++;
-                          } catch (dealError: any) {
-                            // Handle 404 errors gracefully (deal may have been deleted)
-                            if (dealError.response?.status === 404) {
-                              console.warn(`⚠️ Deal ${deal.id} not found (may have been deleted), skipping...`);
-                              skipCount++;
-                              continue; // Skip to next deal
-                            }
-                            // For other errors, log and continue
-                            console.error(`❌ Failed to assign deal ${deal.id}:`, dealError.response?.data || dealError.message);
-                            skipCount++;
-                          }
-                        }
-                        
-                        console.log(`Assignment complete: ${successCount} assigned, ${skipCount} skipped`);
-                        
-                        // Refresh data
-                        await fetchDeals();
-                        await fetchAnalytics();
-                        
-                        if (successCount > 0) {
-                          alert(`Successfully assigned ${successCount} deal${successCount !== 1 ? 's' : ''} to you!${skipCount > 0 ? ` (${skipCount} skipped)` : ''}`);
-                        } else if (skipCount > 0) {
-                          alert(`No deals were assigned. ${skipCount} deal${skipCount !== 1 ? 's' : ''} could not be processed (may have been deleted).`);
-                        } else {
-                          alert('No deals were processed.');
-                        }
-                      } catch (error: any) {
-                        console.error('Failed to assign deals:', error);
-                        const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
-                        alert(`Failed to assign deals: ${errorMessage}. Check console for details.`);
-                      } finally {
-                        setAssigningDeals(false);
-                      }
-                    }}
-                    disabled={assigningDeals}
-                    className="text-blue-600 hover:text-blue-800 underline ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {assigningDeals ? 'assigning...' : 'click here to assign all existing deals to yourself'}
-                  </button>.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-5 gap-4 mb-4">
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-blue-600 font-semibold">Total Deals</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-blue-700">{myStats.total}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-300 shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-green-600 font-semibold">Won</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-green-700">{myStats.won}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300 shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-yellow-700 font-semibold">In Progress</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-yellow-700">{myStats.inProgress}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-300 shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-red-600 font-semibold">Lost</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-red-700">{myStats.lost}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-purple-600 font-semibold">Win Rate</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-purple-700">{myStats.winRate}%</div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {!showAnalytics && myStats && (
           <button
