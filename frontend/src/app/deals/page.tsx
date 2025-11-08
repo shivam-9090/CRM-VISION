@@ -1009,7 +1009,7 @@ export default function DealsPage() {
                         <div 
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className={`bg-white flex-1 p-2 grid grid-cols-1 gap-3 overflow-y-auto border-l border-r border-b border-gray-200 ${
+                          className={`bg-white flex-1 p-2 flex flex-col gap-3 overflow-y-auto border-l border-r border-b border-gray-200 ${
                             snapshot.isDraggingOver ? 'bg-blue-50' : ''
                           }`}
                         >
@@ -1019,11 +1019,12 @@ export default function DealsPage() {
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`${column.cardColor} rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-200 w-full aspect-square flex flex-col justify-between ${
+                                  className={`${column.cardColor} rounded-lg p-2.5 shadow-sm hover:shadow-md transition-all duration-200 w-full flex flex-col ${
                                     snapshot.isDragging ? 'shadow-xl ring-2 ring-blue-400' : ''
                                   }`}
+                                  style={{ minHeight: '280px', maxHeight: '280px' }}
                                 >
-                                  <div className="flex-1 overflow-hidden">
+                                  <div className="flex-1 flex flex-col overflow-hidden">
                                     {/* ✅ NEW: Drag Handle + Checkbox */}
                                     <div className="flex justify-between items-center mb-1.5">
                                       <div {...provided.dragHandleProps} className="cursor-move text-gray-400 hover:text-gray-600">
@@ -1089,7 +1090,7 @@ export default function DealsPage() {
                                   </div>
                                   
                                   {/* Actions - Always at bottom */}
-                                  <div className="flex gap-2 pt-2 border-t border-gray-300">
+                                  <div className="flex gap-2 pt-2 mt-auto border-t border-gray-300">
                                     <button 
                                       onClick={() => handleEdit(deal)}
                                       className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs font-medium"
