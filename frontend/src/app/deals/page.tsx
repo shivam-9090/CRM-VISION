@@ -765,28 +765,45 @@ export default function DealsPage() {
                         }
                         
                         // Update deals one by one
+                        let successCount = 0;
+                        let skipCount = 0;
                         for (const deal of unassignedDeals) {
                           console.log(`Assigning deal ${deal.id} to user ${user.id}`);
                           console.log('Deal object:', deal);
                           try {
                             const response = await api.patch(`/deals/${deal.id}`, { assignedToId: user.id });
                             console.log(`✅ Deal ${deal.id} assigned successfully:`, response.data);
+                            successCount++;
                           } catch (dealError: any) {
+                            // Handle 404 errors gracefully (deal may have been deleted)
+                            if (dealError.response?.status === 404) {
+                              console.warn(`⚠️ Deal ${deal.id} not found (may have been deleted), skipping...`);
+                              skipCount++;
+                              continue; // Skip to next deal
+                            }
+                            // For other errors, log and continue
                             console.error(`❌ Failed to assign deal ${deal.id}:`, dealError.response?.data || dealError.message);
-                            throw dealError; // Re-throw to stop the loop
+                            skipCount++;
                           }
                         }
                         
-                        console.log('All deals assigned successfully');
+                        console.log(`Assignment complete: ${successCount} assigned, ${skipCount} skipped`);
                         
                         // Refresh data
                         await fetchDeals();
                         await fetchAnalytics();
                         
-                        alert(`Successfully assigned ${unassignedDeals.length} deals to you!`);
-                      } catch (error) {
+                        if (successCount > 0) {
+                          alert(`Successfully assigned ${successCount} deal${successCount !== 1 ? 's' : ''} to you!${skipCount > 0 ? ` (${skipCount} skipped)` : ''}`);
+                        } else if (skipCount > 0) {
+                          alert(`No deals were assigned. ${skipCount} deal${skipCount !== 1 ? 's' : ''} could not be processed (may have been deleted).`);
+                        } else {
+                          alert('No deals were processed.');
+                        }
+                      } catch (error: any) {
                         console.error('Failed to assign deals:', error);
-                        alert('Failed to assign deals. Check console for details.');
+                        const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+                        alert(`Failed to assign deals: ${errorMessage}. Check console for details.`);
                       } finally {
                         setAssigningDeals(false);
                       }
