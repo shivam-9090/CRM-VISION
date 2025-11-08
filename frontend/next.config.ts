@@ -81,7 +81,23 @@ const nextConfig: NextConfig = {
   // Development optimizations
   ...(process.env.NODE_ENV === 'development' && {
     productionBrowserSourceMaps: false,
+    // Fast refresh optimizations
+    reactStrictMode: true,
   }),
+  
+  // Enable fast refresh and polling for Docker
+  ...(process.env.DOCKER_ENV === 'true' || process.env.WATCHPACK_POLLING === 'true' ? {
+    webpack: (config, { dev }) => {
+      if (dev) {
+        config.watchOptions = {
+          poll: 1000, // Check for changes every second
+          aggregateTimeout: 300, // Delay before rebuilding
+          ignored: ['**/node_modules', '**/.git', '**/.next'],
+        };
+      }
+      return config;
+    },
+  } : {}),
 };
 
 // Disable Next.js telemetry

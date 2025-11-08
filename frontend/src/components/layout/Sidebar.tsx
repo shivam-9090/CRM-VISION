@@ -52,8 +52,9 @@ export default function Sidebar() {
             >
               <Icon 
                 className={`mr-3 h-5 w-5 transition-colors ${
-                  isActive ? 'text-white !important' : 'text-gray-500 group-hover:text-black'
+                  isActive ? 'text-white' : 'text-gray-500 group-hover:text-black'
                 }`}
+                style={isActive ? { color: 'white' } : undefined}
                 aria-hidden="true"
               />
               {item.name}

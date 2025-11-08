@@ -59,6 +59,9 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: ${PORT:-3001}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # Fast reload optimization
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     ports:
       - "3001:3001"
     depends_on:
@@ -67,11 +70,15 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./backend/src:/app/src
-      - ./backend/prisma:/app/prisma
-      - ./backend/package.json:/app/package.json
-      - ./backend/tsconfig.json:/app/tsconfig.json
-      - ./backend/nest-cli.json:/app/nest-cli.json
+      # Optimized volume mounts for faster hot-reload
+      - ./backend/src:/app/src:delegated
+      - ./backend/prisma:/app/prisma:delegated
+      - ./backend/package.json:/app/package.json:delegated
+      - ./backend/tsconfig.json:/app/tsconfig.json:delegated
+      - ./backend/nest-cli.json:/app/nest-cli.json:delegated
+      # Exclude node_modules for better performance
+      - /app/node_modules
+      - /app/dist
     networks:
       - crm-network
     healthcheck:
@@ -95,18 +102,26 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3000
+      # Fast reload optimization for Next.js
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "3000:3000"
     depends_on:
       - backend
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/package.json:/app/package.json
-      - ./frontend/next.config.ts:/app/next.config.ts
-      - ./frontend/tsconfig.json:/app/tsconfig.json
-      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
-      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs
+      # Optimized volume mounts for faster hot-reload
+      - ./frontend/src:/app/src:delegated
+      - ./frontend/public:/app/public:delegated
+      - ./frontend/package.json:/app/package.json:delegated
+      - ./frontend/next.config.ts:/app/next.config.ts:delegated
+      - ./frontend/tsconfig.json:/app/tsconfig.json:delegated
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:delegated
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs:delegated
+      # Exclude node_modules and .next for better performance
+      - /app/node_modules
+      - /app/.next
     networks:
       - crm-network
     healthcheck:
