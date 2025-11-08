@@ -128,7 +128,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run ESLint
         working-directory: ./frontend
@@ -173,7 +173,7 @@ jobs:
 
       - name: Install dependencies (Frontend)
         working-directory: ./frontend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run npm audit (Backend)
         working-directory: ./backend
