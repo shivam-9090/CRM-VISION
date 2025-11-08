@@ -727,10 +727,10 @@ export default function DealsPage() {
         {showAnalytics && myStats && pipelineStats && (() => {
           // Calculate totals from all deals in pipelineStats
           const totalDeals = pipelineStats.reduce((sum, stat) => sum + stat.count, 0);
-          const wonDeals = pipelineStats.find(s => s.stage === 'WON')?.count || 0;
-          const lostDeals = pipelineStats.find(s => s.stage === 'LOST')?.count || 0;
+          const wonDeals = pipelineStats.find(s => s.stage === 'CLOSED_WON')?.count || 0;
+          const lostDeals = pipelineStats.find(s => s.stage === 'CLOSED_LOST')?.count || 0;
           const inProgressDeals = pipelineStats
-            .filter(s => s.stage !== 'WON' && s.stage !== 'LOST')
+            .filter(s => s.stage !== 'CLOSED_WON' && s.stage !== 'CLOSED_LOST')
             .reduce((sum, stat) => sum + stat.count, 0);
           const winRate = (wonDeals + lostDeals) > 0 ? Math.round((wonDeals / (wonDeals + lostDeals)) * 100) : 0;
           
