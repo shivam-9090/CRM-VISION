@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -27,6 +28,7 @@ const ACTIVITY_STATUS = [
 
 export default function CreateActivityPage() {
   const router = useRouter();
+  const { invalidateOnActivityChange } = useInvalidateQueries();
   const [formData, setFormData] = useState({
     title: '',
     type: 'TASK',
@@ -51,6 +53,8 @@ export default function CreateActivityPage() {
 
     try {
       await api.post('/activities', formData);
+      // ✅ Invalidate cache to refresh dashboard and activities list in real-time
+      invalidateOnActivityChange();
       router.push('/activities');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {

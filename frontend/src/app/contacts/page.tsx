@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -26,6 +27,7 @@ interface Contact {
 
 export default function ContactsPage() {
   const router = useRouter();
+  const { invalidateOnContactChange } = useInvalidateQueries();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,6 +74,8 @@ export default function ContactsPage() {
     try {
       await api.delete(`/contacts/${id}`);
       setContacts(contacts.filter(contact => contact.id !== id));
+      // ✅ Invalidate cache to refresh dashboard and contacts list in real-time
+      invalidateOnContactChange();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete contact';
       setError(errorMessage);

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -25,6 +26,7 @@ interface Company {
 
 export default function CompaniesPage() {
   const router = useRouter();
+  const { invalidateOnCompanyChange } = useInvalidateQueries();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -74,6 +76,8 @@ export default function CompaniesPage() {
     try {
       await api.delete(`/companies/${id}`);
       setCompanies(companies.filter(company => company.id !== id));
+      // ✅ Invalidate cache to refresh dashboard and companies list in real-time
+      invalidateOnCompanyChange();
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const response = (err as { response?: { data?: { message?: string } } }).response;

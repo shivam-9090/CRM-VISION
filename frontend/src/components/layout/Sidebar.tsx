@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '@/lib/auth';
-import { LayoutDashboard, Building2, Users, Briefcase, Calendar, User, LogOut, Download } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Calendar, User, LogOut, Download, UserCog } from 'lucide-react';
 import NotificationBell from '../NotificationBell';
+import { getStoredUser } from '@/lib/auth-utils';
+import { useEffect, useState } from 'react';
 
-const navigation = [
+// Base navigation items available to all users
+const baseNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Companies', href: '/companies', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Deals', href: '/deals', icon: Briefcase },
   { name: 'Activities', href: '/activities', icon: Calendar },
@@ -16,8 +18,30 @@ const navigation = [
   { name: 'Profile', href: '/profile', icon: User },
 ];
 
+// Manager/Admin-only navigation items
+const managerNavigation = [
+  { name: 'Employees', href: '/employees', icon: UserCog, roles: ['MANAGER', 'ADMIN'] },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const [navigation, setNavigation] = useState(baseNavigation);
+
+  // Check user role and add manager-only items
+  useEffect(() => {
+    const user = getStoredUser();
+    if (user && (user.role === 'MANAGER' || user.role === 'ADMIN')) {
+      // Insert Employees link before Profile (after Export/Import)
+      const navWithEmployees = [
+        ...baseNavigation.slice(0, -1), // All items except Profile
+        ...managerNavigation, // Add Employees
+        baseNavigation[baseNavigation.length - 1] // Add Profile at the end
+      ];
+      setNavigation(navWithEmployees);
+    } else {
+      setNavigation(baseNavigation);
+    }
+  }, []);
 
   return (
     <aside 

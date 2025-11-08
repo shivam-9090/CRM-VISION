@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { Role } from '@prisma/client';
 
 export class InviteUserDto {
@@ -9,4 +9,9 @@ export class InviteUserDto {
   @IsNotEmpty()
   @IsEnum(Role)
   role: Role;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6, { message: 'Custom password must be at least 6 characters long' })
+  customPassword?: string;
 }

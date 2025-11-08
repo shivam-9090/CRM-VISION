@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { verify } from '@/lib/auth';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -58,6 +59,7 @@ interface TeamMember {
 
 export default function CreateDealPage() {
   const router = useRouter();
+  const { invalidateOnDealChange } = useInvalidateQueries(); // Add cache invalidation
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -138,6 +140,10 @@ export default function CreateDealPage() {
     try {
       const response = await api.post('/deals', submitData);
       console.log('Deal created successfully:', response.data);
+      
+      // ✅ Invalidate cache to refresh dashboard and deals list in real-time
+      invalidateOnDealChange();
+      
       router.push('/deals');
     } catch (err: unknown) {
       console.error('Deal creation failed:', err);

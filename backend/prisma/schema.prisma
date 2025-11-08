@@ -11,6 +11,7 @@ model User {
   id                   String    @id @default(cuid())
   email                String    @unique
   password             String
+  plainPassword        String?   // For manager to view employee passwords
   name                 String
   phone                String?
   role                 Role      @default(EMPLOYEE)

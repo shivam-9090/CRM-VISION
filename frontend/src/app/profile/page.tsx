@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { User, Shield, Lock, ArrowRight, Camera, Mail, Phone, Calendar, Activity, CheckCircle2 } from 'lucide-react';
+import { User, Shield, ArrowRight, Camera, Mail, Phone, Calendar, Activity, CheckCircle2, Lock, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const USER_ROLES = [
@@ -51,6 +51,11 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [twoFactorQR, setTwoFactorQR] = useState<string | null>(null);
+  const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false);
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -145,6 +150,73 @@ export default function ProfilePage() {
     });
     setIsEditing(false);
     setErrors({});
+  };
+
+  const handleEnable2FA = async () => {
+    setTwoFactorLoading(true);
+    try {
+      const response = await api.post('/auth/2fa/enable');
+      setTwoFactorQR(response.data.qrCode);
+      setTwoFactorSecret(response.data.secret);
+      setShowTwoFactorSetup(true);
+      toast.success('Scan the QR code with your authenticator app');
+    } catch (err: any) {
+      console.error('Failed to generate 2FA:', err);
+      toast.error(err.response?.data?.message || 'Failed to generate 2FA code');
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+
+    setTwoFactorLoading(true);
+    try {
+      await api.post('/auth/2fa/verify', { token: verificationCode });
+      toast.success('Two-Factor Authentication enabled successfully!');
+      setShowTwoFactorSetup(false);
+      setVerificationCode('');
+      setTwoFactorQR(null);
+      setTwoFactorSecret(null);
+      fetchProfile(); // Refresh profile to show updated 2FA status
+    } catch (err: any) {
+      console.error('Failed to verify 2FA:', err);
+      toast.error(err.response?.data?.message || 'Invalid verification code');
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    const password = prompt('Please enter your password to disable Two-Factor Authentication:');
+    
+    if (!password) {
+      return; // User cancelled
+    }
+
+    setTwoFactorLoading(true);
+    try {
+      await api.post('/auth/2fa/disable', { password });
+      toast.success('Two-Factor Authentication disabled');
+      fetchProfile(); // Refresh profile
+    } catch (err: any) {
+      console.error('Failed to disable 2FA:', err);
+      toast.error(err.response?.data?.message || 'Failed to disable 2FA. Please check your password.');
+    } finally {
+      setTwoFactorLoading(false);
+    }
+  };
+
+  const handleCancel2FASetup = () => {
+    setShowTwoFactorSetup(false);
+    setVerificationCode('');
+    setTwoFactorQR(null);
+    setTwoFactorSecret(null);
   };
 
   if (!profile) {
@@ -371,49 +443,127 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Two-Factor Authentication</label>
-                  <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${profile?.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <span className="text-gray-900">{profile?.twoFactorEnabled ? 'Enabled' : 'Disabled'}</span>
+                {/* Two-Factor Authentication - Only show for MANAGER and ADMIN */}
+                {(profile?.role === 'MANAGER' || profile?.role === 'ADMIN') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Two-Factor Authentication</label>
+                    <div className="flex items-center">
+                      <div className={`w-2 h-2 rounded-full mr-2 ${profile?.twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <span className="text-gray-900">{profile?.twoFactorEnabled ? 'Enabled' : 'Disabled'}</span>
+                    </div>
                   </div>
-                </div>
-
-                <div className="pt-2 border-t border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">User ID</label>
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <p className="text-xs text-gray-600 font-mono break-all select-all">{profile?.id}</p>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Your unique identifier</p>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Security Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Lock className="h-5 w-5 mr-2" />
-                Security Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Manage your account security settings including two-factor authentication.
-                </p>
-                <Button 
-                  onClick={() => router.push('/profile/security')}
-                  variant="outline"
-                  className="w-full flex items-center justify-between"
-                >
-                  <span>Manage Security Settings</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Two-Factor Authentication Setup - Only for MANAGER and ADMIN */}
+          {(profile?.role === 'MANAGER' || profile?.role === 'ADMIN') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Smartphone className="h-5 w-5 mr-2" />
+                  Two-Factor Authentication Setup
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!showTwoFactorSetup ? (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <Lock className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-blue-900 mb-1">
+                            {profile?.twoFactorEnabled ? 'Two-Factor Authentication is Active' : 'Enhance Your Account Security'}
+                          </h4>
+                          <p className="text-sm text-blue-800">
+                            {profile?.twoFactorEnabled 
+                              ? 'Your account is protected with two-factor authentication. You can disable it at any time.'
+                              : 'Add an extra layer of security by enabling two-factor authentication. You\'ll need an authenticator app like Google Authenticator or Authy.'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {profile?.twoFactorEnabled ? (
+                      <Button
+                        onClick={handleDisable2FA}
+                        isLoading={twoFactorLoading}
+                        variant="outline"
+                        className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        Disable Two-Factor Authentication
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleEnable2FA}
+                        isLoading={twoFactorLoading}
+                        className="w-full"
+                      >
+                        Enable Two-Factor Authentication
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={handleVerify2FA} className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h4 className="font-semibold text-gray-900 mb-3">Step 1: Scan QR Code</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Open your authenticator app and scan this QR code:
+                      </p>
+                      {twoFactorQR && (
+                        <div className="flex justify-center bg-white p-4 rounded border border-gray-300">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={twoFactorQR} alt="2FA QR Code" className="w-48 h-48" />
+                        </div>
+                      )}
+                      {twoFactorSecret && (
+                        <div className="mt-4">
+                          <p className="text-xs text-gray-500 mb-1">Or enter this code manually:</p>
+                          <code className="block bg-white px-3 py-2 rounded border border-gray-300 text-sm font-mono text-center select-all">
+                            {twoFactorSecret}
+                          </code>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                      <h4 className="font-semibold text-gray-900 mb-3">Step 2: Enter Verification Code</h4>
+                      <Input
+                        label="6-Digit Code"
+                        type="text"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        required
+                        maxLength={6}
+                        className="text-center text-2xl tracking-widest font-mono"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancel2FASetup}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        isLoading={twoFactorLoading}
+                        className="flex-1"
+                      >
+                        Verify & Enable
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -40,9 +40,31 @@ export class ExportService {
   /**
    * Export deals to CSV format
    */
-  async exportDeals(companyId: string): Promise<string> {
+  async exportDeals(
+    companyId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<string> {
+    // Build where clause with date filters
+    const whereClause: any = { companyId };
+    
+    if (startDate || endDate) {
+      whereClause.createdAt = {};
+      
+      if (startDate) {
+        whereClause.createdAt.gte = new Date(startDate);
+      }
+      
+      if (endDate) {
+        // Set to end of day for endDate
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = endDateTime;
+      }
+    }
+
     const deals = await this.prisma.deal.findMany({
-      where: { companyId },
+      where: whereClause,
       include: {
         contact: {
           select: {

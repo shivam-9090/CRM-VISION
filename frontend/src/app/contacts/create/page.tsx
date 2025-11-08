@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -18,6 +19,7 @@ interface Company {
 
 export default function CreateContactPage() {
   const router = useRouter();
+  const { invalidateOnContactChange } = useInvalidateQueries();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -103,6 +105,8 @@ export default function CreateContactPage() {
       };
       
       await api.post('/contacts', cleanFormData);
+      // ✅ Invalidate cache to refresh dashboard and contacts list in real-time
+      invalidateOnContactChange();
       router.push('/contacts');
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {

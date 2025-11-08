@@ -32,6 +32,14 @@ export class AuthService {
   async register(registerDto: RegisterDto, res: Response) {
     const { email, password, name, role, companyId, phone } = registerDto;
 
+    // 🔒 IMPORTANT: Public registration only allows MANAGER role (company owners)
+    // Employees must be added by their manager through the employee management system
+    if (role && role !== 'MANAGER' && role !== 'ADMIN') {
+      throw new BadRequestException(
+        'Public registration is only available for company managers. Employees must be added by their company manager.',
+      );
+    }
+
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -52,7 +60,7 @@ export class AuthService {
     const result = await this.prisma.$transaction(async (prisma) => {
       let userCompanyId = companyId;
 
-      // If no company ID provided, create a new company
+      // If no company ID provided, create a new company (manager is creating their company)
       if (!userCompanyId) {
         const company = await prisma.company.create({
           data: {
@@ -63,13 +71,13 @@ export class AuthService {
         userCompanyId = company.id;
       }
 
-      // Create user with company
+      // Create user with company - force MANAGER role for public registration
       const user = await prisma.user.create({
         data: {
           email,
           password: hashedPassword,
           name,
-          role: role,
+          role: role || 'MANAGER', // Default to MANAGER for company owners
           companyId: userCompanyId,
           phone: phone || null,
           isVerified: false,

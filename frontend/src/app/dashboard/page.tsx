@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
+import { queryKeys } from '@/lib/query-keys';
 import Sidebar from '@/components/layout/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Building2, Users, Briefcase, DollarSign, TrendingUp, Calendar, Clock } from 'lucide-react';
@@ -12,61 +14,53 @@ export default function DashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [dashboardData, setDashboardData] = useState({
-    totalCompanies: 0,
-    totalContacts: 0,
-    activeDeals: 0,
-    totalRevenue: 0,
-    recentActivities: [],
-    loading: true
-  });
 
-  const fetchDashboardData = async () => {
-    try {
-      console.log('📊 Fetching dashboard data...');
+  // Fetch dashboard data using React Query with automatic refetching
+  const { data: dashboardData, isLoading, refetch } = useQuery({
+    queryKey: queryKeys.dashboard.stats,
+    queryFn: async () => {
+      console.log('📊 Fetching dashboard data with React Query...');
       
       // Fetch all data in parallel
-      const [companiesRes, contactsRes, dealsRes, dealsStatsRes, activitiesRes] = await Promise.all([
+      const [companiesRes, contactsRes, pipelineStatsRes, activitiesRes] = await Promise.all([
         api.get('/companies'),
         api.get('/contacts'),
-        api.get('/deals'),
-        api.get('/deals/stats/my-deals'),
+        api.get('/deals/stats/pipeline'),
         api.get('/activities')
       ]);
 
-      // Calculate metrics
-      const totalCompanies = companiesRes.data.length || 0;
-      const totalContacts = contactsRes.data.length || 0;
+      console.log('📊 Raw API responses:', {
+        companies: companiesRes.data,
+        contacts: contactsRes.data,
+        pipelineStats: pipelineStatsRes.data,
+      });
+
+      // Calculate metrics - handle different response formats
+      const companiesData = companiesRes.data.data || companiesRes.data || [];
+      const contactsData = contactsRes.data.data || contactsRes.data || [];
+      const totalCompanies = Array.isArray(companiesData) ? companiesData.length : 0;
+      const totalContacts = Array.isArray(contactsData) ? contactsData.length : 0;
       
-      // Handle paginated deals response
-      const dealsData = dealsRes.data.data || dealsRes.data || [];
-      const activeDeals = dealsData.filter((deal: any) => 
-        !['CLOSED_WON', 'CLOSED_LOST'].includes(deal.stage)
-      ).length || 0;
+      // Use pipeline stats endpoint for accurate deal counts
+      const pipelineStats = Array.isArray(pipelineStatsRes.data) ? pipelineStatsRes.data : [];
       
-      // Calculate revenue from closed won deals
-      const totalRevenue = dealsData
-        .filter((deal: any) => deal.stage === 'CLOSED_WON')
-        .reduce((sum: number, deal: any) => {
-          // Ensure deal.value is treated as a number, not string
-          const dealValue = typeof deal.value === 'string' ? parseFloat(deal.value) : (deal.value || 0);
-          return sum + dealValue;
-        }, 0);
+      // Calculate active deals (not CLOSED_WON or CLOSED_LOST) and total revenue
+      let activeDeals = 0;
+      let totalRevenue = 0;
+      
+      pipelineStats.forEach((stat: any) => {
+        if (stat.stage === 'CLOSED_WON') {
+          totalRevenue += stat.totalValue || 0;
+        } else if (stat.stage !== 'CLOSED_LOST') {
+          activeDeals += stat.count || 0;
+        }
+      });
 
       // Handle paginated activities response - get recent activities (last 5)
       const activitiesData = activitiesRes.data.data || activitiesRes.data || [];
       const recentActivities = Array.isArray(activitiesData) ? activitiesData.slice(0, 5) : [];
 
-      setDashboardData({
-        totalCompanies,
-        totalContacts,
-        activeDeals,
-        totalRevenue,
-        recentActivities,
-        loading: false
-      });
-
-      console.log('📊 Dashboard data loaded:', {
+      console.log('📊 Dashboard data calculated:', {
         totalCompanies,
         totalContacts,
         activeDeals,
@@ -74,11 +68,21 @@ export default function DashboardPage() {
         recentActivities: recentActivities.length
       });
 
-    } catch (error) {
-      console.error('📊 Error fetching dashboard data:', error);
-      setDashboardData(prev => ({ ...prev, loading: false }));
-    }
-  };
+      return {
+        totalCompanies,
+        totalContacts,
+        activeDeals,
+        totalRevenue,
+        recentActivities,
+      };
+    },
+    enabled: isAuthorized, // Only fetch when authorized
+    refetchInterval: 30000, // Auto-refetch every 30 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    staleTime: 10000, // Consider data stale after 10 seconds
+    gcTime: 0, // Don't cache data - always fetch fresh
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -105,8 +109,7 @@ export default function DashboardPage() {
           if (isValid) {
             console.log('📊 Dashboard: Valid token, showing dashboard');
             setIsAuthorized(true);
-            // Fetch dashboard data
-            await fetchDashboardData();
+            // Data will be fetched automatically by React Query
           } else {
             console.log('📊 Dashboard: Invalid token, redirecting to login');
             router.replace('/auth/login');
@@ -150,7 +153,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Companies</p>
                   <p className="text-3xl font-bold text-black">
-                    {dashboardData.loading ? '...' : dashboardData.totalCompanies.toLocaleString()}
+                    {isLoading ? '...' : dashboardData?.totalCompanies.toLocaleString() || '0'}
                   </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
@@ -170,7 +173,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Contacts</p>
                   <p className="text-3xl font-bold text-black">
-                    {dashboardData.loading ? '...' : dashboardData.totalContacts.toLocaleString()}
+                    {isLoading ? '...' : dashboardData?.totalContacts.toLocaleString() || '0'}
                   </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
@@ -190,7 +193,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Active Deals</p>
                   <p className="text-3xl font-bold text-black">
-                    {dashboardData.loading ? '...' : dashboardData.activeDeals.toLocaleString()}
+                    {isLoading ? '...' : dashboardData?.activeDeals.toLocaleString() || '0'}
                   </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
@@ -210,7 +213,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
                   <p className="text-3xl font-bold text-black">
-                    {dashboardData.loading ? '...' : `$${dashboardData.totalRevenue.toLocaleString()}`}
+                    {isLoading ? '...' : `$${dashboardData?.totalRevenue.toLocaleString() || '0'}`}
                   </p>
                   <p className="text-xs text-gray-500 mt-1 flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" />
@@ -235,12 +238,12 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {dashboardData.loading ? (
+              {isLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   <p className="text-gray-500">Loading activities...</p>
                 </div>
-              ) : dashboardData.recentActivities.length > 0 ? (
+              ) : dashboardData?.recentActivities && dashboardData.recentActivities.length > 0 ? (
                 <div className="space-y-3">
                   {dashboardData.recentActivities.map((activity: any) => (
                     <div key={activity.id} className="flex items-center p-3 bg-gray-50 rounded-lg">

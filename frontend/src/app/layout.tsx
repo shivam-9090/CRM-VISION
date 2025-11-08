@@ -1,9 +1,16 @@
 import './globals.css';
-import { AuthProvider } from '@/lib/auth-provider';
+import { Providers } from './providers';
 import { WebSocketProvider } from '@/lib/websocket-provider';
 import { Toaster } from 'react-hot-toast';
 import SkipLink from '@/components/ui/SkipLink';
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'CRM System',
@@ -23,9 +30,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body suppressHydrationWarning={true}>
+      <body className={inter.className} suppressHydrationWarning={true}>
         <SkipLink href="#main-content">Skip to main content</SkipLink>
-        <AuthProvider>
+        <Providers>
           <WebSocketProvider>
             <div id="main-content">
               {children}
@@ -41,7 +48,7 @@ export default function RootLayout({
               }}
             />
           </WebSocketProvider>
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   )

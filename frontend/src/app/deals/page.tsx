@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Select from '@/components/ui/Select';
+import ExportModal from '@/components/deals/ExportModal';
 import { Plus, Edit, Trash2, Calendar, X, Download, Grip, LayoutGrid, List } from 'lucide-react';
 
 interface Deal {
@@ -100,6 +102,7 @@ const STAGE_OPTIONS = Object.entries(DEAL_STAGE_CONFIG).map(([value, config]) =>
 
 export default function DealsPage() {
   const router = useRouter();
+  const { invalidateOnDealChange } = useInvalidateQueries(); // Add cache invalidation hook
   const [deals, setDeals] = useState<Deal[]>([]);
   const [organizedDeals, setOrganizedDeals] = useState<StageColumn[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,8 +123,8 @@ export default function DealsPage() {
   const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   
-  // ✅ NEW: Export loading state
-  const [exportLoading, setExportLoading] = useState(false);
+  // ✅ NEW: Export modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [assigningDeals, setAssigningDeals] = useState(false);
   
   // Analytics state
@@ -140,7 +143,11 @@ export default function DealsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDeals, setTotalDeals] = useState(0);
-  const limit = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(100); // ✅ Max allowed by backend is 100
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [infiniteScrollEnabled] = useState(true); // ✅ Re-enable for deals beyond 100
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false); // Track if initial data has loaded
   
   // ✅ NEW: View mode state (card/list)
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
@@ -153,29 +160,6 @@ export default function DealsPage() {
     notes: '',
     priority: ''
   });
-
-  // Check authentication
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (typeof window !== 'undefined') {
-        const hasToken = hasAuthToken();
-        
-        if (hasToken) {
-          console.log('💼 Deals: Local token found, verifying with backend...');
-          const isValid = await verifyAuthToken();
-          
-          if (!isValid) {
-            console.log('💼 Deals: Invalid token, redirecting to login');
-            router.push('/auth/login');
-          }
-        } else {
-          console.log('💼 Deals: No token found, redirecting to login');
-          router.push('/auth/login');
-        }
-      }
-    };
-    checkAuth();
-  }, [router]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -196,38 +180,88 @@ export default function DealsPage() {
       // Build query params
       const params = new URLSearchParams();
       params.append('page', currentPage.toString());
-      params.append('limit', limit.toString());
+      params.append('limit', itemsPerPage.toString());
       
       if (filters.stage) params.append('stage', filters.stage);
       if (filters.priority) params.append('priority', filters.priority);
       if (filters.search) params.append('search', filters.search);
       
+      console.log('🔄 Fetching deals with params:', params.toString());
+      
       const response = await api.get(`/deals?${params.toString()}`);
       
+      console.log('✅ Deals response:', response.data);
+      
       // Handle paginated response
-      const fetchedDeals = response.data.data || response.data;
+  const fetchedDeals = response.data.data || response.data;
       const meta = response.data.meta;
       
       if (meta) {
         setTotalPages(meta.totalPages);
         setTotalDeals(meta.total);
       }
-      
-      setDeals(fetchedDeals);
-      
-      // Organize deals by stage
-      const organized = STAGE_COLUMNS.map(column => ({
-        ...column,
-        deals: fetchedDeals.filter((deal: Deal) => deal.stage === column.key)
-      }));
-      setOrganizedDeals(organized);
+
+      // If loading a page > 1, append results instead of replacing
+      if (currentPage > 1) {
+        setDeals((prev) => {
+          const combined = [...prev, ...fetchedDeals];
+          // Re-organize based on combined
+          const organized = STAGE_COLUMNS.map(column => ({
+            ...column,
+            deals: combined.filter((deal: Deal) => deal.stage === column.key)
+          }));
+          setOrganizedDeals(organized);
+          return combined;
+        });
+      } else {
+        setDeals(fetchedDeals);
+        const organized = STAGE_COLUMNS.map(column => ({
+          ...column,
+          deals: fetchedDeals.filter((deal: Deal) => deal.stage === column.key)
+        }));
+        setOrganizedDeals(organized);
+      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch deals';
       setError(errorMessage);
     } finally {
+      // Distinguish initial loading vs loading more
       setLoading(false);
+      setLoadingMore(false);
+      
+      // Mark initial load as complete after first successful fetch
+      if (!initialLoadComplete) {
+        setInitialLoadComplete(true);
+      }
     }
-  }, [currentPage, limit, filters]);
+  }, [currentPage, itemsPerPage, filters, initialLoadComplete]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!infiniteScrollEnabled) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !loadingMore && !loading && currentPage < totalPages) {
+          setLoadingMore(true);
+          setCurrentPage((p) => p + 1);
+        }
+      });
+    }, {
+      root: null,
+      rootMargin: '300px',
+      threshold: 0.1
+    });
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentinelRef.current, loadingMore, loading, currentPage, totalPages, infiniteScrollEnabled]);
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -274,26 +308,40 @@ export default function DealsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]); // Only run on mount and when router changes
 
-  // Refetch when filters or page changes (debounced for search)
+  // Refetch when filters change (debounced for search) - RESET page to 1
   useEffect(() => {
-    if (!loading) {
-      const timeoutId = setTimeout(() => {
-        fetchDeals();
-      }, 300); // Debounce search by 300ms to prevent too many API calls
-      
-      return () => clearTimeout(timeoutId);
+    // Skip until initial data has loaded
+    if (!initialLoadComplete) {
+      return;
     }
+    
+    const timeoutId = setTimeout(() => {
+      console.log('🔍 Filter changed, resetting to page 1 and clearing deals...', filters);
+      setCurrentPage(1); // Reset to page 1 when filters change
+      setDeals([]); // Clear existing deals to avoid append issues
+    }, 300); // Debounce search by 300ms
+    
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, currentPage, limit]); // Only depend on the actual filter values, not the function
+  }, [filters.stage, filters.priority, filters.search, itemsPerPage]); // Only depend on filter values
+  
+  // Refetch when currentPage changes (including filter-triggered resets to page 1)
+  useEffect(() => {
+    // Only fetch after initial load is complete
+    if (initialLoadComplete) {
+      fetchDeals();
+    }
+  }, [currentPage, fetchDeals, initialLoadComplete]); // Fetch when page changes
 
   const handleApplyFilters = () => {
     setCurrentPage(1); // Reset to first page when filtering
-    fetchDeals();
+    setDeals([]); // Clear existing deals before fetching with new filters
   };
 
   const handleClearFilters = () => {
     setFilters({ stage: '', priority: '', search: '' });
     setCurrentPage(1);
+    setDeals([]); // Clear existing deals when filters are cleared
   };
 
   const handleDelete = async (id: string) => {
@@ -302,6 +350,9 @@ export default function DealsPage() {
     try {
       await api.delete(`/deals/${id}`);
       setDeals(deals.filter(deal => deal.id !== id));
+      
+      // ✅ Invalidate dashboard and deals cache to refresh real-time data
+      invalidateOnDealChange();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete deal';
       setError(errorMessage);
@@ -340,6 +391,9 @@ export default function DealsPage() {
         deals: serverUpdatedDeals.filter((deal: Deal) => deal.stage === column.key)
       }));
       setOrganizedDeals(serverOrganized);
+      
+      // ✅ Invalidate cache to refresh dashboard and analytics in real-time
+      invalidateOnDealChange();
       
       // Refresh analytics after stage change
       fetchAnalytics();
@@ -406,6 +460,9 @@ export default function DealsPage() {
         deals: updatedDeals.filter((deal: Deal) => deal.stage === column.key)
       }));
       setOrganizedDeals(organized);
+      
+      // ✅ Invalidate cache to refresh dashboard and analytics in real-time
+      invalidateOnDealChange();
       
       // Refresh analytics
       fetchAnalytics();
@@ -491,6 +548,9 @@ export default function DealsPage() {
       setDeals(remainingDeals);
       setSelectedDeals(new Set());
       
+      // ✅ Invalidate cache to refresh dashboard in real-time
+      invalidateOnDealChange();
+      
       // Refresh data
       await fetchDeals();
       await fetchAnalytics();
@@ -514,6 +574,9 @@ export default function DealsPage() {
       });
 
       setSelectedDeals(new Set());
+      
+      // ✅ Invalidate cache to refresh dashboard in real-time
+      invalidateOnDealChange();
       
       // Refresh data
       await fetchDeals();
@@ -539,6 +602,9 @@ export default function DealsPage() {
 
       setSelectedDeals(new Set());
       
+      // ✅ Invalidate cache to refresh dashboard in real-time
+      invalidateOnDealChange();
+      
       // Refresh data
       await fetchDeals();
       await fetchAnalytics();
@@ -547,37 +613,6 @@ export default function DealsPage() {
       setError(errorMessage);
     } finally {
       setBulkActionLoading(false);
-    }
-  };
-
-  // ✅ NEW: Export to CSV
-  const handleExportCSV = async () => {
-    setExportLoading(true);
-    try {
-      // Build query params (same as filters)
-      const params = new URLSearchParams();
-      if (filters.stage) params.append('stage', filters.stage);
-      if (filters.priority) params.append('priority', filters.priority);
-      if (filters.search) params.append('search', filters.search);
-
-      const response = await api.get(`/deals/export/csv?${params.toString()}`, {
-        responseType: 'blob' // Important for file download
-      });
-
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `deals-export-${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to export deals';
-      setError(errorMessage);
-    } finally {
-      setExportLoading(false);
     }
   };
 
@@ -649,12 +684,11 @@ export default function DealsPage() {
             
             {/* ✅ Export CSV Button */}
             <Button 
-              onClick={handleExportCSV}
-              disabled={exportLoading}
+              onClick={() => setExportModalOpen(true)}
               variant="secondary"
             >
               <Download className="h-4 w-4 mr-2" />
-              {exportLoading ? 'Exporting...' : 'Export CSV'}
+              Export CSV
             </Button>
             <Link href="/deals/create">
               <Button>
@@ -1220,57 +1254,85 @@ export default function DealsPage() {
             </div>
             )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-6">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
-                >
-                  Previous
-                </button>
-                
+            {/* Infinite-scroll sentinel (observed by IntersectionObserver) */}
+            <div ref={sentinelRef} aria-hidden className="w-full h-6" />
+
+            {/* Pagination (hidden when infinite scroll is enabled) */}
+            {!infiniteScrollEnabled && totalPages > 1 && (
+              <div className="flex justify-between items-center mt-6 px-4">
+                {/* Left side: Items per page selector */}
                 <div className="flex items-center gap-2">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1 rounded ${
-                          currentPage === pageNum
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                  <span className="text-sm text-gray-600">Show:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1); // Reset to first page when changing items per page
+                    }}
+                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={6}>6 per page</option>
+                    <option value={12}>12 per page</option>
+                    <option value={24}>24 per page</option>
+                    <option value={50}>50 per page</option>
+                  </select>
+                  <span className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalDeals)} of {totalDeals} deals
+                  </span>
                 </div>
-                
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
-                >
-                  Next
-                </button>
-                
-                <span className="text-sm text-gray-600 ml-2">
+
+                {/* Center: Page navigation */}
+                <div className="flex items-center gap-4">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 rounded ${
+                            currentPage === pageNum
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 hover:bg-gray-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+
+                {/* Right side: Page info */}
+                <div className="text-sm text-gray-600">
                   Page {currentPage} of {totalPages}
-                </span>
+                </div>
               </div>
             )}
           </>
@@ -1665,6 +1727,12 @@ export default function DealsPage() {
           </div>
         </div>
       )}
+
+      {/* Export Modal */}
+      <ExportModal 
+        isOpen={exportModalOpen} 
+        onClose={() => setExportModalOpen(false)} 
+      />
     </div>
   );
 }

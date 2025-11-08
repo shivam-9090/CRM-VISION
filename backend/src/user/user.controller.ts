@@ -116,4 +116,118 @@ export class UserController {
   ) {
     return this.userService.inviteUser(inviteUserDto, req.user.companyId);
   }
+
+  // ==================== EMPLOYEE MANAGEMENT ENDPOINTS ====================
+  // Only accessible by MANAGER and ADMIN roles
+
+  @Post('employees')
+  @Permissions(PERMISSIONS.USER_CREATE, PERMISSIONS.USER_INVITE)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCreate(
+    'Add employee to company',
+    'Manager/Admin can add a new employee to their company. Creates employee with EMPLOYEE role.',
+  )
+  addEmployee(
+    @Body() addEmployeeDto: InviteUserDto,
+    @Request() req: RequestWithUser,
+  ) {
+    // Only MANAGER and ADMIN can add employees
+    if (req.user.role !== Role.MANAGER && req.user.role !== Role.ADMIN) {
+      throw new ForbiddenException(
+        'Only managers and admins can add employees',
+      );
+    }
+    return this.userService.addEmployee(addEmployeeDto, req.user.companyId);
+  }
+
+  @Get('employees/list')
+  @Permissions(PERMISSIONS.USER_READ)
+  @ApiOperation({
+    summary: 'Get all employees in company',
+    description:
+      'Manager/Admin can view all employees in their company (excludes managers and admins)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of employees retrieved successfully',
+  })
+  getEmployees(@Request() req: RequestWithUser) {
+    // Only MANAGER and ADMIN can view employee list
+    if (req.user.role !== Role.MANAGER && req.user.role !== Role.ADMIN) {
+      throw new ForbiddenException(
+        'Only managers and admins can view employee list',
+      );
+    }
+    return this.userService.getEmployees(req.user.companyId);
+  }
+
+  @Patch('employees/:id')
+  @Permissions(PERMISSIONS.USER_UPDATE)
+  @ApiUpdate(
+    'Update employee',
+    'Manager/Admin can update employee information',
+  )
+  updateEmployee(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req: RequestWithUser,
+  ) {
+    // Only MANAGER and ADMIN can update employees
+    if (req.user.role !== Role.MANAGER && req.user.role !== Role.ADMIN) {
+      throw new ForbiddenException(
+        'Only managers and admins can update employees',
+      );
+    }
+    return this.userService.updateEmployee(
+      id,
+      updateUserDto,
+      req.user.companyId,
+    );
+  }
+
+  @Delete('employees/:id')
+  @Permissions(PERMISSIONS.USER_DELETE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiDelete(
+    'Remove employee',
+    'Manager/Admin can remove an employee from the company',
+  )
+  removeEmployee(@Param('id') id: string, @Request() req: RequestWithUser) {
+    // Only MANAGER and ADMIN can remove employees
+    if (req.user.role !== Role.MANAGER && req.user.role !== Role.ADMIN) {
+      throw new ForbiddenException(
+        'Only managers and admins can remove employees',
+      );
+    }
+    return this.userService.removeEmployee(
+      id,
+      req.user.companyId,
+      req.user.id,
+    );
+  }
+
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Change user password',
+    description: 'Allow users to change their own password',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid current password or validation error',
+  })
+  changePassword(
+    @Body() changePasswordDto: { currentPassword: string; newPassword: string },
+    @Request() req: RequestWithUser,
+  ) {
+    return this.userService.changePassword(
+      req.user.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
+  }
 }

@@ -293,4 +293,264 @@ export class UserService {
 
     return user;
   }
+
+  // ==================== EMPLOYEE MANAGEMENT METHODS ====================
+
+  /**
+   * Add a new employee to the company
+   * Only MANAGER and ADMIN can add employees
+   * @param addEmployeeDto - Employee details
+   * @param companyId - Company ID
+   * @returns Created employee user
+   */
+  async addEmployee(addEmployeeDto: InviteUserDto, companyId: string) {
+    const { email, role, customPassword } = addEmployeeDto;
+
+    // Validate email
+    if (!email || !email.includes('@')) {
+      throw new BadRequestException('Valid email is required');
+    }
+
+    // Force EMPLOYEE role (managers can't create other managers via this endpoint)
+    const employeeRole = 'EMPLOYEE';
+
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      throw new ConflictException(
+        'User with this email already exists in the system',
+      );
+    }
+
+    // Use custom password if provided, otherwise generate temporary password
+    const plainPassword = customPassword || randomBytes(16).toString('hex');
+    const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+    // Create employee user
+    const employee = await this.prisma.user.create({
+      data: {
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        plainPassword: plainPassword, // Store plain password for manager access
+        name: addEmployeeDto.email.split('@')[0], // Temporary name from email
+        role: employeeRole,
+        companyId,
+        isVerified: false, // Employee must verify email
+        verificationToken: randomBytes(32).toString('hex'),
+        verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        isVerified: true,
+      },
+    });
+
+    // Send welcome email with login credentials
+    try {
+      await this.emailService.sendInvitationEmail(
+        email,
+        `${process.env.FRONTEND_URL}/auth/login`,
+        employeeRole,
+      );
+    } catch (error) {
+      console.error('Failed to send employee welcome email:', error);
+      // Don't throw - employee is still created
+    }
+
+    return {
+      ...employee,
+      temporaryPassword: plainPassword, // Return password for manager to share
+      message: customPassword
+        ? 'Employee added successfully with custom password.'
+        : 'Employee added successfully. Please share the temporary password with them.',
+    };
+  }
+
+  /**
+   * Get all employees in the company (excludes MANAGER and ADMIN roles)
+   * @param companyId - Company ID
+   * @returns List of employees
+   */
+  async getEmployees(companyId: string) {
+    const employees = await this.prisma.user.findMany({
+      where: {
+        companyId,
+        role: 'EMPLOYEE', // Only get employees, not managers or admins
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
+        isVerified: true,
+        plainPassword: true, // Include plain password for manager access
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      employees,
+      total: employees.length,
+    };
+  }
+
+  /**
+   * Update employee information
+   * @param id - Employee ID
+   * @param updateUserDto - Updated data
+   * @param companyId - Company ID for authorization
+   * @returns Updated employee
+   */
+  async updateEmployee(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    companyId: string,
+  ) {
+    // Verify employee exists and belongs to company
+    const employee = await this.prisma.user.findFirst({
+      where: {
+        id,
+        companyId,
+        role: 'EMPLOYEE',
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found in your company');
+    }
+
+    // Sanitize inputs
+    const sanitizedData: any = {};
+    if (updateUserDto.name) {
+      sanitizedData.name = this.sanitizer.sanitizeText(updateUserDto.name);
+    }
+    if (updateUserDto.phone) {
+      sanitizedData.phone = this.sanitizer.sanitizeText(updateUserDto.phone);
+    }
+    // Prevent role changes through this endpoint
+    delete updateUserDto.role;
+
+    // Update employee
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: sanitizedData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Remove employee from company
+   * @param id - Employee ID
+   * @param companyId - Company ID
+   * @param currentUserId - Current user ID (can't delete self)
+   * @returns void
+   */
+  async removeEmployee(
+    id: string,
+    companyId: string,
+    currentUserId: string,
+  ) {
+    // Can't remove yourself
+    if (id === currentUserId) {
+      throw new BadRequestException('You cannot remove yourself');
+    }
+
+    // Verify employee exists and belongs to company
+    const employee = await this.prisma.user.findFirst({
+      where: {
+        id,
+        companyId,
+        role: 'EMPLOYEE',
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found in your company');
+    }
+
+    // Delete employee
+    await this.prisma.user.delete({
+      where: { id },
+    });
+
+    return { message: 'Employee removed successfully' };
+  }
+
+  /**
+   * Change user password
+   * @param userId - User ID
+   * @param currentPassword - Current password for verification
+   * @param newPassword - New password to set
+   * @returns Success message
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    // Get user with password
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        password: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Validate new password
+    if (newPassword.length < 6) {
+      throw new BadRequestException(
+        'New password must be at least 6 characters long',
+      );
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password in database
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        password: hashedPassword,
+        plainPassword: null, // Clear plain password when user changes it
+      },
+    });
+
+    return { message: 'Password changed successfully' };
+  }
 }

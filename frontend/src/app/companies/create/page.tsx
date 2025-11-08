@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -12,6 +13,7 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function CreateCompanyPage() {
   const router = useRouter();
+  const { invalidateOnCompanyChange } = useInvalidateQueries();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -33,6 +35,8 @@ export default function CreateCompanyPage() {
 
     try {
       await api.post('/companies', formData);
+      // ✅ Invalidate cache to refresh dashboard and companies list in real-time
+      invalidateOnCompanyChange();
       router.push('/companies');
     } catch (err: any) {
       if (err.response?.data?.errors) {

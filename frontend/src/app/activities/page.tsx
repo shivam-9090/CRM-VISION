@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
+import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
 import api from '@/lib/api';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
@@ -77,6 +78,7 @@ const STATUS_FILTER_OPTIONS = [
 export default function ActivitiesPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const { invalidateOnActivityChange } = useInvalidateQueries();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,6 +204,8 @@ export default function ActivitiesPage() {
     try {
       await api.delete(`/activities/${id}`);
       setActivities(activities.filter(activity => activity.id !== id));
+      // ✅ Invalidate cache to refresh dashboard and activities list in real-time
+      invalidateOnActivityChange();
       toast.success('Activity deleted successfully');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete activity';
@@ -216,6 +220,8 @@ export default function ActivitiesPage() {
       setActivities(activities.map(activity => 
         activity.id === id ? { ...activity, status: newStatus } : activity
       ));
+      // ✅ Invalidate cache to refresh dashboard and activities list in real-time
+      invalidateOnActivityChange();
       toast.success(`Activity marked as ${newStatus.toLowerCase()}`);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update activity';
@@ -238,6 +244,8 @@ export default function ActivitiesPage() {
       );
       setActivities(activities.filter(activity => !selectedActivities.includes(activity.id)));
       setSelectedActivities([]);
+      // ✅ Invalidate cache to refresh dashboard and activities list in real-time
+      invalidateOnActivityChange();
       toast.success(`${selectedActivities.length} activities deleted`);
     } catch (err) {
       toast.error('Failed to delete some activities');
@@ -258,6 +266,8 @@ export default function ActivitiesPage() {
         selectedActivities.includes(activity.id) ? { ...activity, status: newStatus } : activity
       ));
       setSelectedActivities([]);
+      // ✅ Invalidate cache to refresh dashboard and activities list in real-time
+      invalidateOnActivityChange();
       toast.success(`${selectedActivities.length} activities updated`);
     } catch (err) {
       toast.error('Failed to update some activities');

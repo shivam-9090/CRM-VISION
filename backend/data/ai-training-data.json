@@ -1,0 +1,164 @@
+{
+  "deals": [
+    {
+      "title": "Enterprise Software License - Tech Corp",
+      "value": 50000,
+      "stage": "CLOSED_WON",
+      "priority": "HIGH",
+      "activities_count": 12,
+      "contact": "John Smith",
+      "company": "Tech Corp Inc",
+      "pattern": "High engagement with 12 activities shows consistent follow-up and strong commitment from both parties"
+    },
+    {
+      "title": "Cloud Migration Project - StartupXYZ",
+      "value": 35000,
+      "stage": "CLOSED_WON",
+      "priority": "MEDIUM",
+      "activities_count": 8,
+      "contact": "Sarah Johnson",
+      "company": "StartupXYZ",
+      "pattern": "Quick decision cycle with 8 touchpoints, clear ROI demonstrated, decision maker engaged"
+    },
+    {
+      "title": "Marketing Automation Platform - GrowthCo",
+      "value": 45000,
+      "stage": "CLOSED_WON",
+      "priority": "HIGH",
+      "activities_count": 10,
+      "contact": "Emily Chen",
+      "company": "GrowthCo",
+      "pattern": "Multiple demos, stakeholder buy-in, successful pilot program led to full commitment"
+    },
+    {
+      "title": "Consulting Services - BigCo",
+      "value": 75000,
+      "stage": "CLOSED_LOST",
+      "priority": "LOW",
+      "activities_count": 3,
+      "contact": "Mike Davis",
+      "company": "BigCo Industries",
+      "pattern": "Low engagement with only 3 activities, pricing concerns not addressed, insufficient follow-up"
+    },
+    {
+      "title": "CRM Implementation - LocalBiz",
+      "value": 25000,
+      "stage": "CLOSED_LOST",
+      "priority": "MEDIUM",
+      "activities_count": 5,
+      "contact": "Tom Wilson",
+      "company": "LocalBiz LLC",
+      "pattern": "Limited budget, competitor offer was lower, decision delayed multiple times"
+    }
+  ],
+  "wonDeals": [
+    {
+      "title": "Enterprise Software License - Tech Corp",
+      "value": 50000,
+      "stage": "CLOSED_WON",
+      "priority": "HIGH",
+      "activities": [
+        {"type": "CALL", "title": "Initial discovery call"},
+        {"type": "EMAIL", "title": "Follow-up with product info"},
+        {"type": "MEETING", "title": "Product demonstration"},
+        {"type": "EMAIL", "title": "Proposal sent"},
+        {"type": "CALL", "title": "Pricing discussion"},
+        {"type": "MEETING", "title": "Contract negotiation"}
+      ],
+      "contact": {"firstName": "John", "lastName": "Smith"},
+      "company": {"name": "Tech Corp Inc"}
+    },
+    {
+      "title": "Cloud Migration Project - StartupXYZ",
+      "value": 35000,
+      "stage": "CLOSED_WON",
+      "priority": "MEDIUM",
+      "activities": [
+        {"type": "EMAIL", "title": "Introduction email"},
+        {"type": "CALL", "title": "Needs assessment"},
+        {"type": "MEETING", "title": "Solution demo"},
+        {"type": "EMAIL", "title": "Case studies shared"},
+        {"type": "CALL", "title": "Final questions"},
+        {"type": "MEETING", "title": "Contract signing"}
+      ],
+      "contact": {"firstName": "Sarah", "lastName": "Johnson"},
+      "company": {"name": "StartupXYZ"}
+    }
+  ],
+  "lostDeals": [
+    {
+      "title": "Consulting Services - BigCo",
+      "value": 75000,
+      "stage": "CLOSED_LOST",
+      "priority": "LOW",
+      "activities": [
+        {"type": "EMAIL", "title": "Initial outreach"},
+        {"type": "CALL", "title": "Brief intro call"},
+        {"type": "EMAIL", "title": "Proposal sent - no response"}
+      ],
+      "contact": {"firstName": "Mike", "lastName": "Davis"},
+      "company": {"name": "BigCo Industries"}
+    },
+    {
+      "title": "CRM Implementation - LocalBiz",
+      "value": 25000,
+      "stage": "CLOSED_LOST",
+      "priority": "MEDIUM",
+      "activities": [
+        {"type": "CALL", "title": "Discovery call"},
+        {"type": "MEETING", "title": "Product demo"},
+        {"type": "EMAIL", "title": "Pricing proposal"},
+        {"type": "CALL", "title": "Follow-up - went to voicemail"},
+        {"type": "EMAIL", "title": "Final attempt - chose competitor"}
+      ],
+      "contact": {"firstName": "Tom", "lastName": "Wilson"},
+      "company": {"name": "LocalBiz LLC"}
+    }
+  ],
+  "emailActivities": [
+    {
+      "type": "EMAIL",
+      "title": "Post-demo follow-up",
+      "description": "Hi John,\n\nThank you for taking the time to join our product demonstration yesterday. I hope you found it valuable and got a clear understanding of how our solution can address your team's workflow challenges.\n\nAs discussed, here are the key benefits for Tech Corp:\n- Reduce manual data entry by 60% through automation\n- Improve team collaboration with real-time updates\n- Increase deal visibility for better forecasting\n\nI've attached case studies from similar companies in your industry who achieved an average 40% increase in sales productivity.\n\nWould you be available for a brief call on Thursday at 2 PM to discuss next steps and answer any questions?\n\nLooking forward to hearing from you.\n\nBest regards,\nSales Team",
+      "deal": {"stage": "QUALIFIED", "title": "Enterprise Software License"},
+      "contact": {"firstName": "John", "lastName": "Smith"},
+      "company": {"name": "Tech Corp Inc"}
+    },
+    {
+      "type": "EMAIL",
+      "title": "Proposal follow-up",
+      "description": "Hi Sarah,\n\nI wanted to follow up on the proposal I sent last week for our Cloud Migration solution.\n\nI understand you may have questions about pricing or implementation timeline. I'm happy to schedule a call to discuss:\n- Flexible payment options\n- Phased implementation approach\n- ROI projections specific to StartupXYZ\n\nSeveral of our clients started with a pilot program which gave them confidence before full commitment. Would this be of interest?\n\nI'm available Tuesday or Wednesday afternoon this week. What works best for you?\n\nBest regards,\nSales Team",
+      "deal": {"stage": "NEGOTIATION", "title": "Cloud Migration Project"},
+      "contact": {"firstName": "Sarah", "lastName": "Johnson"},
+      "company": {"name": "StartupXYZ"}
+    }
+  ],
+  "contacts": [
+    {
+      "firstName": "John",
+      "lastName": "Smith",
+      "email": "john.smith@techcorp.com",
+      "company": {"name": "Tech Corp Inc"},
+      "deals": [{"stage": "CLOSED_WON", "value": 50000}],
+      "activities": [{"type": "CALL"}, {"type": "EMAIL"}, {"type": "MEETING"}]
+    },
+    {
+      "firstName": "Sarah",
+      "lastName": "Johnson",
+      "email": "sarah.j@startupxyz.com",
+      "company": {"name": "StartupXYZ"},
+      "deals": [{"stage": "CLOSED_WON", "value": 35000}],
+      "activities": [{"type": "EMAIL"}, {"type": "CALL"}, {"type": "MEETING"}]
+    }
+  ],
+  "statistics": {
+    "totalDeals": 5,
+    "wonDeals": 3,
+    "lostDeals": 2,
+    "activeDeals": 0,
+    "totalContacts": 5,
+    "totalActivities": 15,
+    "emailActivities": 2,
+    "totalCompanies": 5
+  }
+}

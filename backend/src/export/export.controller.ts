@@ -62,13 +62,28 @@ export class ExportController {
    */
   @Get('deals')
   @Permissions(PERMISSIONS.DATA_EXPORT, PERMISSIONS.DEAL_EXPORT)
-  async exportDeals(@Req() req: RequestWithUser, @Res() res: Response) {
-    const csv = await this.exportService.exportDeals(req.user.companyId);
+  async exportDeals(
+    @Req() req: RequestWithUser,
+    @Res() res: Response,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const csv = await this.exportService.exportDeals(
+      req.user.companyId,
+      startDate,
+      endDate,
+    );
+
+    // Generate filename based on date range
+    const dateRange =
+      startDate && endDate
+        ? `${startDate}_to_${endDate}`
+        : new Date().toISOString().split('T')[0];
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=deals-${new Date().toISOString().split('T')[0]}.csv`,
+      `attachment; filename=deals_export_${dateRange}.csv`,
     );
     res.send(csv);
   }
