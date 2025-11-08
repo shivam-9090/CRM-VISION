@@ -20,7 +20,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col w-72 bg-white min-h-screen border-r border-gray-200 shadow-sm">
+    <aside 
+      className="flex flex-col w-72 bg-white min-h-screen border-r border-gray-200 shadow-sm"
+      aria-label="Main navigation"
+    >
       {/* Header */}
       <div className="flex items-center justify-between h-20 px-6 border-b border-gray-200">
         <div className="text-center flex-1">
@@ -31,7 +34,7 @@ export default function Sidebar() {
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-8 space-y-2">
+      <nav className="flex-1 px-4 py-8 space-y-2" aria-label="Primary navigation">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -39,15 +42,20 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 ${
+              aria-label={`${item.name} ${isActive ? '(current page)' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                 isActive
                   ? 'bg-black text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-black'
               }`}
             >
-              <Icon className={`mr-3 h-5 w-5 transition-colors ${
-                isActive ? 'text-white !important' : 'text-gray-500 group-hover:text-black'
-              }`} />
+              <Icon 
+                className={`mr-3 h-5 w-5 transition-colors ${
+                  isActive ? 'text-white !important' : 'text-gray-500 group-hover:text-black'
+                }`}
+                aria-hidden="true"
+              />
               {item.name}
             </Link>
           );
@@ -58,12 +66,13 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-200">
         <button
           onClick={logout}
-          className="w-full group flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 transform hover:scale-105"
+          aria-label="Logout from application"
+          className="w-full group flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
         >
-          <LogOut className="mr-3 h-5 w-5 text-gray-500 group-hover:text-red-600 transition-colors" />
+          <LogOut className="mr-3 h-5 w-5 text-gray-500 group-hover:text-red-600 transition-colors" aria-hidden="true" />
           Logout
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
