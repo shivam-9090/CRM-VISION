@@ -3,11 +3,16 @@ import { AuthProvider } from '@/lib/auth-provider';
 import { WebSocketProvider } from '@/lib/websocket-provider';
 import { Toaster } from 'react-hot-toast';
 import SkipLink from '@/components/ui/SkipLink';
+import type { Metadata, Viewport } from 'next';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'CRM System',
   description: 'Modern CRM application for managing customers and deals',
-  viewport: 'width=device-width, initial-scale=1',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: '#3b82f6',
 }
 
