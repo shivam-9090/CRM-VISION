@@ -9,7 +9,7 @@ import api from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { UserPlus, Building2, Sparkles, Shield, Users, Zap } from 'lucide-react';
+import { UserPlus, Building2, Sparkles, Shield, Users, Zap, ArrowLeft } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -181,6 +181,15 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex">
+      {/* Back to Home Button */}
+      <Link 
+        href="/" 
+        className="fixed top-6 left-6 z-50 flex items-center space-x-2 px-4 py-2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
+      >
+        <ArrowLeft className="w-4 h-4 text-gray-700 group-hover:text-blue-600 transition-colors" />
+        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Back to Home</span>
+      </Link>
+
       {/* Left side - Registration Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">

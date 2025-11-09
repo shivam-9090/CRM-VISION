@@ -7,7 +7,7 @@ import { hasAuthToken, storeAuthData } from '@/lib/auth-utils';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { LogIn, Building2, Sparkles } from 'lucide-react';
+import { LogIn, Building2, Sparkles, ArrowLeft } from 'lucide-react';
 import TwoFactorVerify from '@/components/TwoFactorVerify';
 import api from '@/lib/api';
 
@@ -162,6 +162,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
+      {/* Back to Home Button */}
+      <Link 
+        href="/" 
+        className="fixed top-6 left-6 z-50 flex items-center space-x-2 px-4 py-2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
+      >
+        <ArrowLeft className="w-4 h-4 text-gray-700 group-hover:text-blue-600 transition-colors" />
+        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Back to Home</span>
+      </Link>
+
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 relative overflow-hidden">
         <div className="absolute inset-0 bg-black/10"></div>
