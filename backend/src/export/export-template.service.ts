@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateScheduledExportDto } from './dto/scheduled-export.dto';
 
@@ -131,7 +135,9 @@ export class ExportTemplateService {
       where: { id: template.id },
       data: {
         ...(data.name && { name: data.name }),
-        ...(data.description !== undefined && { description: data.description }),
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
         ...(data.fields && { fields: data.fields }),
         ...(data.filters && { filters: data.filters }),
         ...(data.format && { format: data.format }),

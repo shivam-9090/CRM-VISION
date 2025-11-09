@@ -29,7 +29,7 @@ export class NotificationGroupingService {
    * Generate a group key for notifications
    * Format: TYPE:ENTITY_TYPE:ENTITY_ID
    * Example: DEAL_CREATED:Deal:123
-   * 
+   *
    * @returns groupKey string or null if type is not groupable
    */
   generateGroupKey(
@@ -53,7 +53,7 @@ export class NotificationGroupingService {
   /**
    * Find an existing notification that can be grouped with a new notification
    * Looks for notifications with the same groupKey within the specified time window
-   * 
+   *
    * @param userId - User ID to check
    * @param groupKey - Group key to match
    * @param windowSeconds - Time window in seconds (notifications older than this are not grouped)
@@ -97,7 +97,7 @@ export class NotificationGroupingService {
 
   /**
    * Update a grouped notification with new count and message
-   * 
+   *
    * @param notificationId - Notification ID to update
    * @param newCount - New group count
    * @returns Updated notification
@@ -131,7 +131,7 @@ export class NotificationGroupingService {
 
   /**
    * Generate a grouped message based on notification type and count
-   * 
+   *
    * @param type - Notification type
    * @param count - Number of grouped notifications
    * @returns Formatted message string
@@ -142,15 +142,19 @@ export class NotificationGroupingService {
       return '';
     }
 
-    const messages: Partial<Record<NotificationType, (count: number) => string>> = {
+    const messages: Partial<
+      Record<NotificationType, (count: number) => string>
+    > = {
       [NotificationType.DEAL_CREATED]: (n) => `${n} new deals created`,
       [NotificationType.DEAL_UPDATED]: (n) => `${n} deals updated`,
       [NotificationType.DEAL_ASSIGNED]: (n) => `${n} deals assigned to you`,
-      [NotificationType.DEAL_STATUS_CHANGED]: (n) => `${n} deal statuses changed`,
+      [NotificationType.DEAL_STATUS_CHANGED]: (n) =>
+        `${n} deal statuses changed`,
       [NotificationType.CONTACT_CREATED]: (n) => `${n} new contacts added`,
       [NotificationType.CONTACT_UPDATED]: (n) => `${n} contacts updated`,
       [NotificationType.ACTIVITY_CREATED]: (n) => `${n} new activities created`,
-      [NotificationType.ACTIVITY_ASSIGNED]: (n) => `${n} activities assigned to you`,
+      [NotificationType.ACTIVITY_ASSIGNED]: (n) =>
+        `${n} activities assigned to you`,
       [NotificationType.ACTIVITY_DUE_SOON]: (n) => `${n} activities due soon`,
       [NotificationType.COMMENT_ADDED]: (n) => `${n} new comments added`,
       [NotificationType.MENTION]: (n) => `${n} new mentions`,
@@ -169,7 +173,7 @@ export class NotificationGroupingService {
   /**
    * Get URL for a grouped notification
    * Returns a general list view when multiple items are grouped
-   * 
+   *
    * @param type - Notification type
    * @param entityType - Entity type (if specific entity)
    * @returns URL path
@@ -208,7 +212,7 @@ export class NotificationGroupingService {
 
   /**
    * Calculate grouping window based on user preferences
-   * 
+   *
    * @param userPreferredWindow - User's preferred grouping window in seconds (from preferences)
    * @returns Grouping window in seconds
    */

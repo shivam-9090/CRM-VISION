@@ -40,7 +40,9 @@ export class ExportProcessor {
 
     try {
       // Get full job details with template
-      const fullJob = await this.exportJobService['prisma'].exportJob.findUnique({
+      const fullJob = await this.exportJobService[
+        'prisma'
+      ].exportJob.findUnique({
         where: { id: jobId },
         include: { template: true },
       });
@@ -51,7 +53,7 @@ export class ExportProcessor {
 
       // Get fields from job or template
       const rawFields = fullJob.fields || fullJob.template?.fields || [];
-      
+
       // Ensure fields is an array
       const fieldsArray = Array.isArray(rawFields) ? rawFields : [];
 
@@ -73,7 +75,9 @@ export class ExportProcessor {
       });
 
       // Get async generator for the entity type (fields need to be string array for streaming)
-      const fieldNames = fieldsArray.map((f: any) => (typeof f === 'string' ? f : f.value || f.label));
+      const fieldNames = fieldsArray.map((f: any) =>
+        typeof f === 'string' ? f : f.value || f.label,
+      );
       const options = { fields: fieldNames, startDate, endDate };
       let dataGenerator: AsyncGenerator<any>;
       let totalRecords = 0;
@@ -118,7 +122,7 @@ export class ExportProcessor {
           );
           const chunks: Buffer[] = [];
           for await (const chunk of stream) {
-            chunks.push(chunk as any);
+            chunks.push(chunk);
             totalRecords++;
           }
           fileContent = Buffer.concat(chunks);

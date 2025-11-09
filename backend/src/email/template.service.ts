@@ -107,9 +107,7 @@ export class TemplateService {
       const compiled = await this.compileTemplate(template, format);
       const rendered = compiled(context);
 
-      this.logger.log(
-        `Template rendered successfully: ${template}.${format}`,
-      );
+      this.logger.log(`Template rendered successfully: ${template}.${format}`);
       return rendered;
     } catch (error) {
       this.logger.error(

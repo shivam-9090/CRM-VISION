@@ -34,9 +34,7 @@ export class FileStorageService {
       await mkdir(this.storagePath, { recursive: true });
       this.logger.log(`📁 Export storage directory: ${this.storagePath}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to create storage directory: ${error.message}`,
-      );
+      this.logger.error(`Failed to create storage directory: ${error.message}`);
     }
   }
 
@@ -159,9 +157,7 @@ export class FileStorageService {
             this.logger.log(`🗑️  Expired file deleted: ${file}`);
           }
         } catch (error) {
-          this.logger.error(
-            `Error processing file ${file}: ${error.message}`,
-          );
+          this.logger.error(`Error processing file ${file}: ${error.message}`);
         }
       }
 
@@ -259,6 +255,6 @@ export class FileStorageService {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 }

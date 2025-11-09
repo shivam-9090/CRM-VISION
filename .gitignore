@@ -87,6 +87,7 @@ node_modules/.prisma/
 # Local database volumes
 postgres_data/
 redis_data/
+nginx_logs/
 
 # File uploads (backend)
 backend/uploads/*

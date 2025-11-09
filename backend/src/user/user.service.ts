@@ -465,11 +465,7 @@ export class UserService {
    * @param currentUserId - Current user ID (can't delete self)
    * @returns void
    */
-  async removeEmployee(
-    id: string,
-    companyId: string,
-    currentUserId: string,
-  ) {
+  async removeEmployee(id: string, companyId: string, currentUserId: string) {
     // Can't remove yourself
     if (id === currentUserId) {
       throw new BadRequestException('You cannot remove yourself');
@@ -545,7 +541,7 @@ export class UserService {
     // Update password in database
     await this.prisma.user.update({
       where: { id: userId },
-      data: { 
+      data: {
         password: hashedPassword,
         plainPassword: null, // Clear plain password when user changes it
       },

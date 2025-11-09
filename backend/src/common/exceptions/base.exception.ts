@@ -26,7 +26,8 @@ export class BaseException extends HttpException {
     private readonly details?: any,
     statusCode?: HttpStatus,
   ) {
-    const message = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES[ErrorCode.UNKNOWN_ERROR];
+    const message =
+      ERROR_MESSAGES[errorCode] || ERROR_MESSAGES[ErrorCode.UNKNOWN_ERROR];
     super(
       {
         success: false,

@@ -41,7 +41,10 @@ export class NotificationsController {
 
   @Get()
   @Permissions(PERMISSIONS.NOTIFICATION_READ)
-  async findAll(@Req() req: any, @Query() query: PaginatedNotificationsQueryDto) {
+  async findAll(
+    @Req() req: any,
+    @Query() query: PaginatedNotificationsQueryDto,
+  ) {
     const userId = req.user['sub'];
     const companyId = req.user['companyId'];
     return this.notificationsService.findAll(userId, companyId, {
@@ -178,10 +181,7 @@ export class NotificationsController {
 
   @Patch('preferences')
   @Permissions(PERMISSIONS.NOTIFICATION_UPDATE)
-  async updatePreferences(
-    @Req() req: any,
-    @Body() dto: UpdatePreferencesDto,
-  ) {
+  async updatePreferences(@Req() req: any, @Body() dto: UpdatePreferencesDto) {
     const userId = req.user['sub'];
     return this.preferencesService.updatePreferences(userId, dto);
   }
@@ -194,11 +194,7 @@ export class NotificationsController {
     @Body() dto: ToggleChannelDto,
   ) {
     const userId = req.user['sub'];
-    return this.preferencesService.toggleChannel(
-      userId,
-      channel,
-      dto.enabled,
-    );
+    return this.preferencesService.toggleChannel(userId, channel, dto.enabled);
   }
 
   @Post('preferences/types/:type')

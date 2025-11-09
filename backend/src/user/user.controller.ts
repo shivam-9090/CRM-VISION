@@ -163,10 +163,7 @@ export class UserController {
 
   @Patch('employees/:id')
   @Permissions(PERMISSIONS.USER_UPDATE)
-  @ApiUpdate(
-    'Update employee',
-    'Manager/Admin can update employee information',
-  )
+  @ApiUpdate('Update employee', 'Manager/Admin can update employee information')
   updateEmployee(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -199,11 +196,7 @@ export class UserController {
         'Only managers and admins can remove employees',
       );
     }
-    return this.userService.removeEmployee(
-      id,
-      req.user.companyId,
-      req.user.id,
-    );
+    return this.userService.removeEmployee(id, req.user.companyId, req.user.id);
   }
 
   @Patch('change-password')

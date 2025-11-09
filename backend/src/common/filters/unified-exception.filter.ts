@@ -136,8 +136,9 @@ export class UnifiedExceptionFilter implements ExceptionFilter {
     }
 
     // Unknown/Unhandled errors
-    const error = exception instanceof Error ? exception : new Error('Unknown error');
-    
+    const error =
+      exception instanceof Error ? exception : new Error('Unknown error');
+
     return {
       success: false,
       error: {
@@ -195,7 +196,8 @@ export class UnifiedExceptionFilter implements ExceptionFilter {
       case 'P2011': // Null constraint violation
       case 'P2012': // Missing required value
         code = ErrorCode.VALIDATION_FAILED;
-        message = 'Validation error: ' + exception.meta?.cause || exception.message;
+        message =
+          'Validation error: ' + exception.meta?.cause || exception.message;
         statusCode = HttpStatus.BAD_REQUEST;
         break;
 
@@ -326,7 +328,9 @@ export class UnifiedExceptionFilter implements ExceptionFilter {
       });
 
       this.sentryService.captureException(
-        exception instanceof Error ? exception : new Error(errorResponse.error.message),
+        exception instanceof Error
+          ? exception
+          : new Error(errorResponse.error.message),
         'UnifiedExceptionFilter',
         {
           errorCode: errorResponse.error.code,

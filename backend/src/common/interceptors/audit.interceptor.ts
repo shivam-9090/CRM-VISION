@@ -40,9 +40,7 @@ export class AuditInterceptor implements NestInterceptor {
     }
 
     const method = context.getHandler().name;
-    const action = this.determineAction(
-      auditOptions.action || method,
-    ) as AuditAction;
+    const action = this.determineAction(auditOptions.action || method);
 
     // Capture entity ID from request parameters
     const entityId =
@@ -143,7 +141,9 @@ export class AuditInterceptor implements NestInterceptor {
 
     // Default to uppercase if it matches AuditAction
     const upperAction = methodOrAction.toUpperCase();
-    if (['CREATE', 'UPDATE', 'DELETE', 'VIEW', 'EXPORT'].includes(upperAction)) {
+    if (
+      ['CREATE', 'UPDATE', 'DELETE', 'VIEW', 'EXPORT'].includes(upperAction)
+    ) {
       return upperAction as AuditAction;
     }
 

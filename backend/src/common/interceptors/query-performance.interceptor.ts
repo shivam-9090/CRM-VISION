@@ -10,7 +10,7 @@ import { tap } from 'rxjs/operators';
 
 /**
  * Query Performance Interceptor
- * 
+ *
  * Monitors API endpoint performance and logs slow queries.
  * Helps identify performance bottlenecks and optimization opportunities.
  */

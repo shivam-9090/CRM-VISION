@@ -25,7 +25,7 @@ export class ExportStreamingService {
     options: ExportOptions = {},
   ): AsyncGenerator<any> {
     const { startDate, endDate } = options;
-    
+
     const batchSize = 1000;
     let skip = 0;
     let hasMore = true;
@@ -86,7 +86,7 @@ export class ExportStreamingService {
     options: ExportOptions = {},
   ): AsyncGenerator<any> {
     const { startDate, endDate } = options;
-    
+
     const batchSize = 1000;
     let skip = 0;
     let hasMore = true;
@@ -160,7 +160,7 @@ export class ExportStreamingService {
     options: ExportOptions = {},
   ): AsyncGenerator<any> {
     const { startDate, endDate } = options;
-    
+
     const batchSize = 1000;
     let skip = 0;
     let hasMore = true;
@@ -326,27 +326,31 @@ export class ExportStreamingService {
 
     const headers = Object.keys(data[0]);
     const csvRows: string[] = [];
-    
+
     // Add header row
     csvRows.push(headers.join(','));
-    
+
     // Add data rows
     for (const row of data) {
-      const values = headers.map(header => {
+      const values = headers.map((header) => {
         const value = row[header];
         // Handle values that contain commas, quotes, or newlines
         if (value === null || value === undefined) {
           return '';
         }
         const stringValue = String(value);
-        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        if (
+          stringValue.includes(',') ||
+          stringValue.includes('"') ||
+          stringValue.includes('\n')
+        ) {
           return `"${stringValue.replace(/"/g, '""')}"`;
         }
         return stringValue;
       });
       csvRows.push(values.join(','));
     }
-    
+
     return csvRows.join('\n');
   }
 
@@ -365,7 +369,7 @@ export class ExportStreamingService {
 
     // Get headers from first row
     const headers = Object.keys(data[0]);
-    
+
     // Add headers
     worksheet.columns = headers.map((header) => ({
       header,
@@ -402,7 +406,7 @@ export class ExportStreamingService {
   async generateXML(data: any[], entityType: string): Promise<string> {
     const rootElement = `${entityType}_export`;
     const itemElement = entityType.slice(0, -1); // Remove 's' to get singular form
-    
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootElement}>\n`;
 
     for (const item of data) {

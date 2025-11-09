@@ -105,13 +105,12 @@ export class NotificationsService {
   private async sendNotification(notification: any) {
     try {
       // Get enabled channels for this notification type
-      const enabledChannels =
-        await this.preferencesService.getEnabledChannels(
-          notification.userId,
-          notification.type,
-          notification.entityType,
-          notification.entityId,
-        );
+      const enabledChannels = await this.preferencesService.getEnabledChannels(
+        notification.userId,
+        notification.type,
+        notification.entityType,
+        notification.entityId,
+      );
 
       this.logger.debug(
         `Enabled channels for user ${notification.userId}: ${enabledChannels.join(', ')}`,
@@ -161,7 +160,9 @@ export class NotificationsService {
       // This would integrate with the existing email service
       if (enabledChannels.includes('email')) {
         // await this.emailService.sendNotificationEmail(notification);
-        this.logger.debug(`Email notification queued for user ${notification.userId}`);
+        this.logger.debug(
+          `Email notification queued for user ${notification.userId}`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -356,11 +357,7 @@ export class NotificationsService {
   /**
    * Unsnooze a notification (clear snoozedUntil field)
    */
-  async unsnoozeNotification(
-    id: string,
-    userId: string,
-    companyId: string,
-  ) {
+  async unsnoozeNotification(id: string, userId: string, companyId: string) {
     // Verify notification belongs to user
     const notification = await this.prisma.notification.findFirst({
       where: { id, userId, companyId },

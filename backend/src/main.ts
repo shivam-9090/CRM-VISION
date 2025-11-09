@@ -267,7 +267,9 @@ List endpoints support pagination with query parameters:
   console.log(`🔐 Security: Enhanced password requirements (12+ chars)`);
   console.log(`📊 Database: Performance indexes added`);
   console.log(`📄 Pagination: Enabled on all list endpoints (max 100/page)`);
-  console.log(`🗜️  Compression: Enabled (threshold: 1KB, level: 6, ~60-80% reduction)`);
+  console.log(
+    `🗜️  Compression: Enabled (threshold: 1KB, level: 6, ~60-80% reduction)`,
+  );
   console.log(`❤️  Health check: Available at /api/health`);
   console.log(`⏱️  Request timeout: 30 seconds`);
   const poolSize = configService.get<number>('DB_POOL_SIZE', 10);

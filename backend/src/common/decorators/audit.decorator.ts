@@ -4,10 +4,10 @@ export const AUDIT_LOG_KEY = 'audit_log';
 
 /**
  * Decorator to enable automatic audit logging for a method
- * 
+ *
  * @param entityType - The type of entity being operated on (e.g., 'User', 'Company', 'Deal')
  * @param options - Additional audit options
- * 
+ *
  * @example
  * ```typescript
  * @AuditLog('User')
@@ -50,9 +50,7 @@ export interface AuditLogOptions {
   sensitive?: boolean;
 }
 
-export const AuditLog = (
-  entityTypeOrOptions: string | AuditLogOptions,
-) => {
+export const AuditLog = (entityTypeOrOptions: string | AuditLogOptions) => {
   const options: AuditLogOptions =
     typeof entityTypeOrOptions === 'string'
       ? { entityType: entityTypeOrOptions }

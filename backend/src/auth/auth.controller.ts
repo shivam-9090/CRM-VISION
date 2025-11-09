@@ -152,7 +152,10 @@ export class AuthController {
     summary: 'Verify JWT token',
     description: 'Check if current JWT token is valid',
   })
-  @ApiResponse({ status: 200, description: 'Token is valid, returns user data' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token is valid, returns user data',
+  })
   @ApiResponse(SWAGGER_RESPONSES.UNAUTHORIZED_401)
   async verify(@Request() req) {
     return { user: req.user };

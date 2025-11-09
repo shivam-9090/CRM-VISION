@@ -167,7 +167,11 @@ export class CacheService {
   /**
    * Increment a counter
    */
-  async increment(key: string, by: number = 1, prefix?: string): Promise<number> {
+  async increment(
+    key: string,
+    by: number = 1,
+    prefix?: string,
+  ): Promise<number> {
     try {
       const fullKey = this.buildKey(key, prefix);
       return await this.redis.incrby(fullKey, by);
@@ -180,7 +184,11 @@ export class CacheService {
   /**
    * Decrement a counter
    */
-  async decrement(key: string, by: number = 1, prefix?: string): Promise<number> {
+  async decrement(
+    key: string,
+    by: number = 1,
+    prefix?: string,
+  ): Promise<number> {
     try {
       const fullKey = this.buildKey(key, prefix);
       return await this.redis.decrby(fullKey, by);

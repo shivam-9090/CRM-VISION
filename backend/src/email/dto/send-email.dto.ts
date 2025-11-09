@@ -1,4 +1,14 @@
-import { IsString, IsEmail, IsEnum, IsObject, IsOptional, IsArray, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsEnum,
+  IsObject,
+  IsOptional,
+  IsArray,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EmailTemplate } from '../interfaces/email.interface';
 
@@ -52,7 +62,10 @@ export class SendBulkEmailDto {
     example: ['user1@example.com', 'user2@example.com'],
   })
   @IsArray()
-  @IsEmail({}, { each: true, message: 'Each recipient must be a valid email address' })
+  @IsEmail(
+    {},
+    { each: true, message: 'Each recipient must be a valid email address' },
+  )
   to: string[];
 
   @ApiProperty({

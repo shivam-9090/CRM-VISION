@@ -95,7 +95,8 @@ export class NotificationPreferencesService {
    */
   async setTypePreference(userId: string, dto: SetTypePreferenceDto) {
     const preferences = await this.getPreferences(userId);
-    const typePreferences = (preferences.typePreferences as TypePreferences) || {};
+    const typePreferences =
+      (preferences.typePreferences as TypePreferences) || {};
 
     // Update or create preference for this type
     typePreferences[dto.type] = {
@@ -115,7 +116,8 @@ export class NotificationPreferencesService {
    */
   async addMutedEntity(userId: string, dto: MuteEntityDto) {
     const preferences = await this.getPreferences(userId);
-    const mutedEntities = (preferences.mutedEntities as unknown as MutedEntity[]) || [];
+    const mutedEntities =
+      (preferences.mutedEntities as unknown as MutedEntity[]) || [];
 
     // Check if already muted
     const alreadyMuted = mutedEntities.some(
@@ -148,7 +150,8 @@ export class NotificationPreferencesService {
     entityId: string,
   ) {
     const preferences = await this.getPreferences(userId);
-    const mutedEntities = (preferences.mutedEntities as unknown as MutedEntity[]) || [];
+    const mutedEntities =
+      (preferences.mutedEntities as unknown as MutedEntity[]) || [];
 
     const filtered = mutedEntities.filter(
       (entity) =>
@@ -188,14 +191,20 @@ export class NotificationPreferencesService {
   async isInQuietHours(userId: string): Promise<boolean> {
     const preferences = await this.getPreferences(userId);
 
-    if (!preferences.quietHoursEnabled || !preferences.quietHoursStart || !preferences.quietHoursEnd) {
+    if (
+      !preferences.quietHoursEnabled ||
+      !preferences.quietHoursStart ||
+      !preferences.quietHoursEnd
+    ) {
       return false;
     }
 
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes(); // Convert to minutes since midnight
 
-    const [startHour, startMin] = preferences.quietHoursStart.split(':').map(Number);
+    const [startHour, startMin] = preferences.quietHoursStart
+      .split(':')
+      .map(Number);
     const [endHour, endMin] = preferences.quietHoursEnd.split(':').map(Number);
 
     const quietStart = startHour * 60 + startMin;
@@ -218,7 +227,8 @@ export class NotificationPreferencesService {
     entityId: string,
   ): Promise<boolean> {
     const preferences = await this.getPreferences(userId);
-    const mutedEntities = (preferences.mutedEntities as unknown as MutedEntity[]) || [];
+    const mutedEntities =
+      (preferences.mutedEntities as unknown as MutedEntity[]) || [];
 
     return mutedEntities.some(
       (entity) =>
@@ -266,7 +276,7 @@ export class NotificationPreferencesService {
     const typePreferences = preferences.typePreferences as TypePreferences;
     if (typePreferences && typePreferences[notificationType]) {
       const typeChannelPref = typePreferences[notificationType];
-      
+
       if (channel === 'email' && typeChannelPref.emailEnabled !== undefined) {
         return typeChannelPref.emailEnabled;
       }

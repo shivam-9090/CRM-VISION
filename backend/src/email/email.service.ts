@@ -96,7 +96,9 @@ export class EmailService {
         removeOnFail: false, // Keep failed jobs for debugging
       });
 
-      this.logger.log(`Email queued successfully: ${jobId} (Job ID: ${job.id})`);
+      this.logger.log(
+        `Email queued successfully: ${jobId} (Job ID: ${job.id})`,
+      );
 
       // Store initial status
       this.deliveryStatuses.set(jobId, {
@@ -395,7 +397,7 @@ export class EmailService {
           </p>
         </div>
       `;
-    
+
     const text = `
 Your Export is Ready!
 
@@ -419,7 +421,10 @@ This is an automated message from your CRM system.
     // Send directly using nodemailer (not queued for immediate delivery)
     try {
       await this.transporter.sendMail({
-        from: this.configService.get<string>('SMTP_FROM', 'noreply@crm-system.com'),
+        from: this.configService.get<string>(
+          'SMTP_FROM',
+          'noreply@crm-system.com',
+        ),
         to,
         subject: `Your ${this.capitalize(exportDetails.entityType)} Export is Ready`,
         html,

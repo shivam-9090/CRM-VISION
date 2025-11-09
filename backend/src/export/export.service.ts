@@ -47,14 +47,14 @@ export class ExportService {
   ): Promise<string> {
     // Build where clause with date filters
     const whereClause: any = { companyId };
-    
+
     if (startDate || endDate) {
       whereClause.createdAt = {};
-      
+
       if (startDate) {
         whereClause.createdAt.gte = new Date(startDate);
       }
-      
+
       if (endDate) {
         // Set to end of day for endDate
         const endDateTime = new Date(endDate);

@@ -192,10 +192,7 @@ export class DealsController {
 
   @Delete(':id')
   @Permissions(PERMISSIONS.DEAL_DELETE)
-  @ApiDelete(
-    'Delete deal',
-    'Permanently delete a deal and all associated data',
-  )
+  @ApiDelete('Delete deal', 'Permanently delete a deal and all associated data')
   async remove(@Param('id') id: string, @Request() req: RequestWithUser) {
     return this.dealsService.remove(id, req.user.companyId);
   }

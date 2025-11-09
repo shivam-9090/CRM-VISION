@@ -23,7 +23,7 @@ describe('DealsService', () => {
       groupBy: jest.fn(),
     },
   };
-  
+
   const mockSanitizerService = {
     sanitize: jest.fn((text) => text),
   };

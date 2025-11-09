@@ -31,13 +31,21 @@ export class MissingTokenException extends BaseException {
 
 export class RefreshTokenInvalidException extends BaseException {
   constructor(details?: any) {
-    super(ErrorCode.AUTH_REFRESH_TOKEN_INVALID, details, HttpStatus.UNAUTHORIZED);
+    super(
+      ErrorCode.AUTH_REFRESH_TOKEN_INVALID,
+      details,
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 }
 
 export class RefreshTokenExpiredException extends BaseException {
   constructor(details?: any) {
-    super(ErrorCode.AUTH_REFRESH_TOKEN_EXPIRED, details, HttpStatus.UNAUTHORIZED);
+    super(
+      ErrorCode.AUTH_REFRESH_TOKEN_EXPIRED,
+      details,
+      HttpStatus.UNAUTHORIZED,
+    );
   }
 }
 
@@ -55,7 +63,11 @@ export class AccountDisabledException extends BaseException {
 
 export class InsufficientPermissionsException extends BaseException {
   constructor(details?: any) {
-    super(ErrorCode.AUTH_INSUFFICIENT_PERMISSIONS, details, HttpStatus.FORBIDDEN);
+    super(
+      ErrorCode.AUTH_INSUFFICIENT_PERMISSIONS,
+      details,
+      HttpStatus.FORBIDDEN,
+    );
   }
 }
 

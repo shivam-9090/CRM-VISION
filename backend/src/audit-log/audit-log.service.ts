@@ -181,9 +181,11 @@ export class AuditLogService {
     try {
       const sensitiveActions: AuditAction[] = ['DELETE', 'EXPORT'];
       const now = new Date();
-      
+
       // Delete sensitive logs older than 7 years
-      const sensitiveCutoff = new Date(now.getTime() - this.SENSITIVE_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      const sensitiveCutoff = new Date(
+        now.getTime() - this.SENSITIVE_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+      );
       const sensitiveDeleted = await this.prisma.auditLog.deleteMany({
         where: {
           action: { in: sensitiveActions },
@@ -192,7 +194,9 @@ export class AuditLogService {
       });
 
       // Delete regular logs older than 1 year
-      const regularCutoff = new Date(now.getTime() - this.DEFAULT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+      const regularCutoff = new Date(
+        now.getTime() - this.DEFAULT_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+      );
       const regularDeleted = await this.prisma.auditLog.deleteMany({
         where: {
           action: { notIn: sensitiveActions },
@@ -201,9 +205,11 @@ export class AuditLogService {
       });
 
       const totalDeleted = sensitiveDeleted.count + regularDeleted.count;
-      
-      this.logger.log(`Cleanup completed: ${totalDeleted} audit logs deleted (${sensitiveDeleted.count} sensitive, ${regularDeleted.count} regular)`);
-      
+
+      this.logger.log(
+        `Cleanup completed: ${totalDeleted} audit logs deleted (${sensitiveDeleted.count} sensitive, ${regularDeleted.count} regular)`,
+      );
+
       return {
         deleted: totalDeleted,
         message: `Successfully cleaned up ${totalDeleted} old audit logs`,
@@ -217,9 +223,13 @@ export class AuditLogService {
   /**
    * Get audit statistics by action type
    */
-  async getStatsByAction(companyId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
+  async getStatsByAction(
+    companyId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any[]> {
     const where: any = { companyId };
-    
+
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
@@ -239,7 +249,7 @@ export class AuditLogService {
       },
     });
 
-    return stats.map(stat => ({
+    return stats.map((stat) => ({
       action: stat.action,
       count: stat._count.id,
     }));
@@ -248,9 +258,13 @@ export class AuditLogService {
   /**
    * Get audit statistics by entity type
    */
-  async getStatsByEntity(companyId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
+  async getStatsByEntity(
+    companyId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any[]> {
     const where: any = { companyId };
-    
+
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
@@ -270,7 +284,7 @@ export class AuditLogService {
       },
     });
 
-    return stats.map(stat => ({
+    return stats.map((stat) => ({
       entityType: stat.entityType,
       count: stat._count.id,
     }));
@@ -279,9 +293,13 @@ export class AuditLogService {
   /**
    * Get audit statistics by user
    */
-  async getStatsByUser(companyId: string, startDate?: Date, endDate?: Date): Promise<any[]> {
+  async getStatsByUser(
+    companyId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any[]> {
     const where: any = { companyId };
-    
+
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;
@@ -302,15 +320,15 @@ export class AuditLogService {
     });
 
     // Fetch user details
-    const userIds = stats.map(stat => stat.userId);
+    const userIds = stats.map((stat) => stat.userId);
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, email: true, name: true },
     });
 
-    const userMap = new Map(users.map(u => [u.id, u]));
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
-    return stats.map(stat => ({
+    return stats.map((stat) => ({
       userId: stat.userId,
       user: userMap.get(stat.userId),
       count: stat._count.id,
@@ -344,7 +362,11 @@ export class AuditLogService {
   /**
    * Export audit logs to JSON for archival/compliance
    */
-  async exportLogs(companyId: string, startDate: Date, endDate: Date): Promise<any[]> {
+  async exportLogs(
+    companyId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<any[]> {
     const logs = await this.prisma.auditLog.findMany({
       where: {
         companyId,

@@ -1,4 +1,12 @@
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+} from 'class-validator';
 import { NotificationType } from '@prisma/client';
 
 export class UpdatePreferencesDto {

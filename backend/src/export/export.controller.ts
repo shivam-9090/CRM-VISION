@@ -304,10 +304,7 @@ export class ExportController {
    */
   @Get('templates/:id/stats')
   @Permissions(PERMISSIONS.DATA_EXPORT)
-  async getTemplateStats(
-    @Req() req: RequestWithUser,
-    @Param('id') id: string,
-  ) {
+  async getTemplateStats(@Req() req: RequestWithUser, @Param('id') id: string) {
     return this.exportTemplateService.getTemplateUsageStats(
       id,
       req.user.id,
@@ -407,11 +404,7 @@ export class ExportController {
   @Post('jobs/:id/cancel')
   @Permissions(PERMISSIONS.DATA_EXPORT)
   async cancelJob(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.exportJobService.cancelJob(
-      id,
-      req.user.id,
-      req.user.companyId,
-    );
+    return this.exportJobService.cancelJob(id, req.user.id, req.user.companyId);
   }
 
   /**
@@ -420,11 +413,7 @@ export class ExportController {
   @Delete('jobs/:id')
   @Permissions(PERMISSIONS.DATA_EXPORT)
   async deleteJob(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.exportJobService.deleteJob(
-      id,
-      req.user.id,
-      req.user.companyId,
-    );
+    return this.exportJobService.deleteJob(id, req.user.id, req.user.companyId);
   }
 
   /**
@@ -432,10 +421,7 @@ export class ExportController {
    */
   @Get('stats/jobs')
   @Permissions(PERMISSIONS.DATA_EXPORT)
-  async getJobStats(
-    @Req() req: RequestWithUser,
-    @Query('days') days?: string,
-  ) {
+  async getJobStats(@Req() req: RequestWithUser, @Query('days') days?: string) {
     return this.exportJobService.getJobStats(
       req.user.companyId,
       days ? parseInt(days, 10) : 30,

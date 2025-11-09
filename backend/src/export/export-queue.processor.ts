@@ -1,4 +1,9 @@
-import { Processor, Process, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueCompleted,
+  OnQueueFailed,
+} from '@nestjs/bull';
 import type { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { ExportJobService } from './export-job.service';
@@ -36,9 +41,20 @@ export class ExportQueueProcessor {
 
   @Process()
   async processExport(job: Job<ScheduledExportJobData>) {
-    const { jobId, entityType, format, filters, fields, companyId, userId, userEmail } = job.data;
+    const {
+      jobId,
+      entityType,
+      format,
+      filters,
+      fields,
+      companyId,
+      userId,
+      userEmail,
+    } = job.data;
 
-    this.logger.log(`📤 Processing export job: ${jobId} (${entityType} → ${format})`);
+    this.logger.log(
+      `📤 Processing export job: ${jobId} (${entityType} → ${format})`,
+    );
 
     try {
       // Update job status to PROCESSING
@@ -69,9 +85,9 @@ export class ExportQueueProcessor {
 
       // Filter fields if specified
       if (fields && fields.length > 0) {
-        data = data.map(item => {
+        data = data.map((item) => {
           const filtered: any = {};
-          fields.forEach(field => {
+          fields.forEach((field) => {
             if (item[field] !== undefined) {
               filtered[field] = item[field];
             }
@@ -90,15 +106,22 @@ export class ExportQueueProcessor {
           mimeType = 'text/csv';
           break;
         case 'excel':
-          fileContent = await this.exportStreamingService.generateExcel(data, entityType);
-          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          fileContent = await this.exportStreamingService.generateExcel(
+            data,
+            entityType,
+          );
+          mimeType =
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           break;
         case 'json':
           fileContent = await this.exportStreamingService.generateJSON(data);
           mimeType = 'application/json';
           break;
         case 'xml':
-          fileContent = await this.exportStreamingService.generateXML(data, entityType);
+          fileContent = await this.exportStreamingService.generateXML(
+            data,
+            entityType,
+          );
           mimeType = 'application/xml';
           break;
         default:
@@ -106,12 +129,13 @@ export class ExportQueueProcessor {
       }
 
       // Save file to storage
-      const { fileUrl, fileName, fileSize, filePath } = await this.fileStorageService.saveFile(
-        fileContent,
-        entityType,
-        format.toLowerCase(),
-        userId,
-      );
+      const { fileUrl, fileName, fileSize, filePath } =
+        await this.fileStorageService.saveFile(
+          fileContent,
+          entityType,
+          format.toLowerCase(),
+          userId,
+        );
 
       // Update job with success
       await this.exportJobService.updateJobStatus(jobId, 'COMPLETED', {
@@ -122,13 +146,25 @@ export class ExportQueueProcessor {
       });
 
       // Send email notification
-      await this.sendCompletionEmail(userEmail, entityType, format, fileUrl, totalRecords, fileSize);
+      await this.sendCompletionEmail(
+        userEmail,
+        entityType,
+        format,
+        fileUrl,
+        totalRecords,
+        fileSize,
+      );
 
-      this.logger.log(`✅ Export job completed: ${jobId} (${totalRecords} records, ${this.formatBytes(fileSize)})`);
+      this.logger.log(
+        `✅ Export job completed: ${jobId} (${totalRecords} records, ${this.formatBytes(fileSize)})`,
+      );
 
       return { success: true, jobId, fileUrl, totalRecords };
     } catch (error) {
-      this.logger.error(`❌ Export job failed: ${jobId} - ${error.message}`, error.stack);
+      this.logger.error(
+        `❌ Export job failed: ${jobId} - ${error.message}`,
+        error.stack,
+      );
 
       // Update job with failure
       await this.exportJobService.updateJobStatus(jobId, 'FAILED', {
@@ -221,7 +257,10 @@ export class ExportQueueProcessor {
   /**
    * Get activities data
    */
-  private async getActivities(companyId: string, filters?: Record<string, any>) {
+  private async getActivities(
+    companyId: string,
+    filters?: Record<string, any>,
+  ) {
     const where: any = { companyId };
 
     if (filters) {
@@ -271,7 +310,8 @@ export class ExportQueueProcessor {
         downloadUrl: fileUrl,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to send completion email: ${errorMessage}`);
     }
   }
@@ -302,7 +342,8 @@ export class ExportQueueProcessor {
         `,
       });
     } catch (error) {
-      const errMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to send failure email: ${errMessage}`);
     }
   }
@@ -315,6 +356,6 @@ export class ExportQueueProcessor {
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   }
 }

@@ -139,10 +139,7 @@ export class PushNotificationService {
         },
       };
 
-      await webPush.sendNotification(
-        pushSubscription,
-        JSON.stringify(payload),
-      );
+      await webPush.sendNotification(pushSubscription, JSON.stringify(payload));
 
       return true;
     } catch (error: any) {
