@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Users, TrendingUp, BarChart3, ArrowRight, Check, Zap, Shield, Clock } from 'lucide-react';
+import { Users, TrendingUp, BarChart3, ArrowRight, Check, Zap, Shield, Clock, Calendar, Phone, FileText, DollarSign } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
@@ -12,6 +12,8 @@ export default function Home() {
   const router = useRouter();
   const [isAnimated, setIsAnimated] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [cursorVariant, setCursorVariant] = useState('default');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -42,6 +44,41 @@ export default function Home() {
   ];
 
   const benefits = ['Setup in 5 minutes', 'No credit card required', 'Free 14-day trial', 'Cancel anytime'];
+
+  const pagePreviewCards = [
+    {
+      id: 'contacts',
+      title: 'Contacts',
+      icon: Users,
+      color: 'from-blue-500 to-cyan-500',
+      description: 'Manage all your customer relationships',
+      features: ['Contact profiles', 'Company links', 'Activity history']
+    },
+    {
+      id: 'deals',
+      title: 'Deals',
+      icon: DollarSign,
+      color: 'from-green-500 to-emerald-500',
+      description: 'Track your sales pipeline',
+      features: ['Visual pipeline', 'Deal stages', 'Revenue tracking']
+    },
+    {
+      id: 'activities',
+      title: 'Activities',
+      icon: Calendar,
+      color: 'from-purple-500 to-pink-500',
+      description: 'Schedule tasks and meetings',
+      features: ['Task management', 'Calendar view', 'Reminders']
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics',
+      icon: BarChart3,
+      color: 'from-orange-500 to-red-500',
+      description: 'Data-driven insights',
+      features: ['Sales reports', 'Performance metrics', 'Custom dashboards']
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -92,16 +129,17 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               <Link 
                 href="/auth/register" 
-                className="group relative w-full sm:w-auto px-8 py-4 bg-white text-black text-lg font-bold rounded-lg hover:bg-gray-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 flex items-center justify-center space-x-2 overflow-hidden"
+                className="group relative w-full sm:w-auto px-8 py-4 bg-white text-black text-lg font-bold rounded-lg hover:bg-gray-100 hover:scale-105 hover:shadow-2xl transition-all duration-300 flex items-center justify-center space-x-2 overflow-hidden animate-glow-pulse"
               >
                 <span className="relative z-10">Start free trial</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 animate-shimmer"></div>
               </Link>
               <Link 
-                href="/auth/login" 
-                className="w-full sm:w-auto px-8 py-4 bg-transparent text-white text-lg font-bold border-2 border-white rounded-lg hover:bg-white hover:text-black hover:scale-105 transition-all duration-300"
+                href="/features" 
+                className="group w-full sm:w-auto px-8 py-4 bg-transparent text-white text-lg font-bold border-2 border-white rounded-lg transition-all duration-300 hover:bg-white hover:!text-black hover:scale-105"
               >
-                Sign in
+                View Features
               </Link>
             </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-white">
@@ -124,7 +162,27 @@ export default function Home() {
       <section className="pb-20 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className={`transform transition-all duration-700 delay-200 ${isAnimated ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-95'}`}>
-            <div className="relative rounded-2xl border-2 border-gray-700 overflow-hidden bg-gradient-to-br from-gray-900 to-black shadow-2xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500">
+            <div 
+              className="group relative rounded-2xl border-2 border-gray-700 overflow-hidden bg-gradient-to-br from-gray-900 to-black shadow-2xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 cursor-zoom-in"
+              style={{
+                boxShadow: 'inset 0 0 0 2px transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = 'inset 0 0 0 2px rgba(255, 255, 255, 0.3), 0 0 40px rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = 'inset 0 0 0 2px transparent';
+              }}
+            >
+              {/* Animated glowing border */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" 
+                style={{
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 2s linear infinite',
+                }}
+              ></div>
+              
               <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center space-x-2">
                 <div className="flex space-x-2">
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -136,35 +194,249 @@ export default function Home() {
                 </div>
               </div>
               <div className="p-8 space-y-6">
+                {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { label: 'Active Deals', value: '$2.4M', change: '+12%' },
-                    { label: 'Contacts', value: '23,567', change: '+8%' },
-                    { label: 'Conversion', value: '68%', change: '+5%' }
+                    { label: 'Active Deals', value: '$2.4M', change: '+12%', color: 'from-green-500 to-emerald-500' },
+                    { label: 'Contacts', value: '23,567', change: '+8%', color: 'from-blue-500 to-cyan-500' },
+                    { label: 'Conversion', value: '68%', change: '+5%', color: 'from-purple-500 to-pink-500' }
                   ].map((stat, i) => (
-                    <div key={i} className="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 100 + 400}ms` }}>
-                      <div className="text-sm font-semibold text-gray-400 mb-1">{stat.label}</div>
-                      <div className="text-2xl font-bold text-white">{stat.value}</div>
-                      <div className="text-xs font-bold text-green-400 mt-1">{stat.change}</div>
+                    <div key={i} className="relative bg-gray-800 p-4 rounded-lg border border-gray-700 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer animate-fade-in group/stat" style={{ animationDelay: `${i * 100 + 400}ms` }}>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover/stat:opacity-10 rounded-lg transition-opacity duration-300`}></div>
+                      <div className="relative">
+                        <div className="text-sm font-semibold text-gray-400 mb-1">{stat.label}</div>
+                        <div className="text-2xl font-bold text-white">{stat.value}</div>
+                        <div className="text-xs font-bold text-green-400 mt-1">{stat.change}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 hover:shadow-lg transition-all duration-300">
-                  <div className="text-sm font-bold text-white mb-4">Recent Activity</div>
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-3 py-2 hover:bg-gray-700 rounded-lg transition-all duration-200 cursor-pointer animate-slide-in-left" style={{ animationDelay: `${i * 100 + 700}ms` }}>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 animate-pulse"></div>
-                        <div className="flex-1">
-                          <div className="h-3 bg-gray-700 rounded w-48 mb-2"></div>
-                          <div className="h-2 bg-gray-800 rounded w-32"></div>
-                        </div>
+                
+                {/* Page Previews Grid - Shows all pages */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Contacts Preview */}
+                  <div className="group/card relative bg-gray-800 rounded-lg border border-gray-700 p-4 hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-0 group-hover/card:opacity-10 rounded-lg transition-opacity duration-300"></div>
+                    <div className="relative">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <div className="text-xs font-bold text-white">Contacts</div>
                       </div>
-                    ))}
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((_, i) => (
+                          <div key={i} className="flex items-center space-x-2 animate-slide-in-left" style={{ animationDelay: `${i * 100 + 700}ms` }}>
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 opacity-40"></div>
+                            <div className="flex-1 space-y-1">
+                              <div className="h-2 bg-gray-700 rounded w-20"></div>
+                              <div className="h-1.5 bg-gray-800 rounded w-16"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Deals Preview */}
+                  <div className="group/card relative bg-gray-800 rounded-lg border border-gray-700 p-4 hover:border-green-500 transition-all duration-300 cursor-pointer">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-500 opacity-0 group-hover/card:opacity-10 rounded-lg transition-opacity duration-300"></div>
+                    <div className="relative">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <DollarSign className="w-4 h-4 text-green-400" />
+                        <div className="text-xs font-bold text-white">Deals</div>
+                      </div>
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((_, i) => (
+                          <div key={i} className="flex items-center space-x-2 animate-slide-in-right" style={{ animationDelay: `${i * 100 + 700}ms` }}>
+                            <div className="w-2 h-6 rounded bg-gradient-to-b from-green-500 to-emerald-500 opacity-40"></div>
+                            <div className="flex-1 space-y-1">
+                              <div className="h-2 bg-gray-700 rounded w-24"></div>
+                              <div className="h-1.5 bg-gray-800 rounded w-12"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Activities Preview */}
+                  <div className="group/card relative bg-gray-800 rounded-lg border border-gray-700 p-4 hover:border-purple-500 transition-all duration-300 cursor-pointer">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-0 group-hover/card:opacity-10 rounded-lg transition-opacity duration-300"></div>
+                    <div className="relative">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Calendar className="w-4 h-4 text-purple-400" />
+                        <div className="text-xs font-bold text-white">Activities</div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {[...Array(7)].map((_, i) => (
+                          <div key={i} className="h-1 bg-gray-700 rounded"></div>
+                        ))}
+                      </div>
+                      <div className="space-y-1.5">
+                        {[1, 2].map((_, i) => (
+                          <div key={i} className="h-2 bg-gray-700 rounded animate-fade-in" style={{ animationDelay: `${i * 100 + 800}ms` }}></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Analytics Preview */}
+                  <div className="group/card relative bg-gray-800 rounded-lg border border-gray-700 p-4 hover:border-orange-500 transition-all duration-300 cursor-pointer">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-500 opacity-0 group-hover/card:opacity-10 rounded-lg transition-opacity duration-300"></div>
+                    <div className="relative">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <BarChart3 className="w-4 h-4 text-orange-400" />
+                        <div className="text-xs font-bold text-white">Analytics</div>
+                      </div>
+                      <div className="flex items-end space-x-1 h-12">
+                        {[40, 70, 45, 85, 60, 90, 55].map((height, i) => (
+                          <div 
+                            key={i} 
+                            className="flex-1 bg-gradient-to-t from-orange-500 to-red-500 rounded-t opacity-40 animate-scale-in"
+                            style={{ 
+                              height: `${height}%`,
+                              animationDelay: `${i * 50 + 900}ms`
+                            }}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Page Preview Cards Section */}
+      <section 
+        className="py-32 px-4 sm:px-6 lg:px-8 bg-black relative z-10"
+        onMouseEnter={() => setCursorVariant('preview')}
+        onMouseLeave={() => setCursorVariant('default')}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4 animate-fade-in">
+              Complete CRM Solution
+            </h2>
+            <p className="text-xl font-medium text-gray-400 animate-fade-in" style={{ animationDelay: '100ms' }}>
+              Everything you need to manage your business, all in one place
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {pagePreviewCards.map((card, index) => (
+              <div
+                key={card.id}
+                className="group relative bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-6 cursor-pointer overflow-hidden animate-fade-in"
+                style={{ 
+                  animationDelay: `${index * 150}ms`,
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+                onMouseEnter={(e) => {
+                  setHoveredCard(card.id);
+                  e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  setHoveredCard(null);
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {/* Animated gradient overlay */}
+                <div 
+                  className={`absolute inset-0 bg-gradient-to-br ${card.color} opacity-0 group-hover:opacity-10 transition-opacity duration-700`}
+                  style={{
+                    backgroundSize: '200% 200%',
+                    animation: hoveredCard === card.id ? 'gradient 3s ease infinite' : 'none'
+                  }}
+                ></div>
+
+                {/* Subtle shimmer effect */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: hoveredCard === card.id ? 'shimmer 2s linear infinite' : 'none'
+                  }}
+                ></div>
+                
+                {/* Icon with smooth animation */}
+                <div 
+                  className={`relative mb-4 w-14 h-14 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center transition-all duration-500 ease-out`}
+                  style={{
+                    transform: hoveredCard === card.id ? 'scale(1.1) rotate(5deg)' : 'scale(1) rotate(0deg)',
+                    boxShadow: hoveredCard === card.id ? `0 8px 20px ${card.color.includes('blue') ? 'rgba(59, 130, 246, 0.3)' : card.color.includes('green') ? 'rgba(34, 197, 94, 0.3)' : card.color.includes('purple') ? 'rgba(168, 85, 247, 0.3)' : 'rgba(249, 115, 22, 0.3)'}` : 'none'
+                  }}
+                >
+                  <card.icon className="w-7 h-7 text-white" />
+                </div>
+
+                {/* Content with smooth transitions */}
+                <h3 className="relative text-xl font-bold text-white mb-2 transition-all duration-300" style={{
+                  transform: hoveredCard === card.id ? 'translateX(4px)' : 'translateX(0)'
+                }}>
+                  {card.title}
+                </h3>
+                <p className="relative text-sm text-gray-400 mb-4 transition-colors duration-300 group-hover:text-gray-300">
+                  {card.description}
+                </p>
+
+                {/* Features list with staggered animation */}
+                <div className={`relative space-y-2 transition-all duration-500 ${hoveredCard === card.id ? 'opacity-100 max-h-40 translate-y-0' : 'opacity-0 max-h-0 -translate-y-2'} overflow-hidden`}>
+                  {card.features.map((feature, i) => (
+                    <div 
+                      key={i} 
+                      className="flex items-center space-x-2 text-xs text-gray-400 transition-all duration-300"
+                      style={{ 
+                        transitionDelay: hoveredCard === card.id ? `${i * 80}ms` : '0ms',
+                        transform: hoveredCard === card.id ? 'translateX(0)' : 'translateX(-8px)'
+                      }}
+                    >
+                      <Check className="w-3 h-3 text-green-400 flex-shrink-0" strokeWidth={3} />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Arrow indicator with smooth slide */}
+                <div 
+                  className={`relative mt-4 flex items-center text-sm font-semibold transition-all duration-400`}
+                  style={{
+                    color: hoveredCard === card.id ? '#ffffff' : '#4b5563',
+                    transform: hoveredCard === card.id ? 'translateX(4px)' : 'translateX(0)'
+                  }}
+                >
+                  <span>Explore</span>
+                  <ArrowRight 
+                    className="w-4 h-4 ml-1 transition-transform duration-400"
+                    style={{
+                      transform: hoveredCard === card.id ? 'translateX(4px)' : 'translateX(0)'
+                    }}
+                  />
+                </div>
+
+                {/* Mini preview mockup with entrance animation */}
+                {hoveredCard === card.id && (
+                  <div 
+                    className="absolute -top-2 -right-2 w-24 h-24 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border border-gray-700 p-2 shadow-2xl"
+                    style={{
+                      animation: 'scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                      transformOrigin: 'top right'
+                    }}
+                  >
+                    <div className="space-y-1">
+                      <div className="h-1.5 bg-gray-700 rounded w-full animate-fade-in" style={{ animationDelay: '100ms' }}></div>
+                      <div className="h-1.5 bg-gray-700 rounded w-3/4 animate-fade-in" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-1.5 bg-gray-700 rounded w-1/2 animate-fade-in" style={{ animationDelay: '200ms' }}></div>
+                      <div className={`mt-2 h-8 bg-gradient-to-br ${card.color} rounded opacity-20 animate-fade-in`} style={{ animationDelay: '250ms' }}></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

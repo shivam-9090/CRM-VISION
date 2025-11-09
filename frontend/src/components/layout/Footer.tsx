@@ -10,11 +10,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="flex items-center space-x-2 group">
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg">
-                <Building2 className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">CRM Vision</span>
+            <Link href="/" className="inline-block group">
+              <span className="text-xl font-bold text-white hover:text-gray-200 transition-colors">CRM Vision</span>
             </Link>
             <p className="mt-4 text-sm text-gray-400 max-w-md">
               Streamline your business operations with our powerful CRM solution.
@@ -55,15 +52,19 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-blue-400" />
-                <span>info@crmvision.com</span>
+                <a href="mailto:visionakl08@gmail.com" className="hover:text-blue-400 transition-colors">
+                  visionakl08@gmail.com
+                </a>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-blue-400" />
-                <span>+1 (555) 123-4567</span>
+                <a href="tel:+918780546982" className="hover:text-blue-400 transition-colors">
+                  +91 8780546982
+                </a>
               </li>
-              <li className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-blue-400" />
-                <span>San Francisco, CA</span>
+              <li className="flex items-start space-x-2">
+                <MapPin className="w-4 h-4 text-blue-400 mt-0.5" />
+                <span>Mota Varachha, Surat, India</span>
               </li>
             </ul>
           </div>
