@@ -1,72 +1,44 @@
-services:# Terraform configuration for cloud deployment (optional)
-
-  - type: web# This is a sample configuration for deploying to AWS/GCP/Azure
-
+services:
+  # Backend API Service
+  - type: web
     name: crm-backend
-
-    runtime: node# Example Render.com YAML configuration
-
-    plan: starterservices:
-
-    region: oregon  - type: web
-
-    buildCommand: npm install && npm run build    name: crm-backend
-
-    startCommand: npm run start:prod    runtime: node
-
-    rootDir: backend    buildCommand: npm install && npm run build
-
-    envVars:    startCommand: npm run start:prod
-
-      - key: NODE_ENV    plan: starter
-
-        value: production    healthCheckPath: /health
-
-      - key: DATABASE_URL    envVars:
-
-        fromDatabase:      - key: NODE_ENV
-
-          name: crm-database        value: production
-
-          property: connectionString      - key: DATABASE_URL
-
-      - key: REDIS_URL        fromDatabase:
-
-        fromService:          name: crm-postgres
-
-          type: redis          property: connectionString
-
-          name: crm-cache      - key: REDIS_URL
-
-          property: connectionString        fromService:
-
-      - key: JWT_SECRET          type: redis
-
-        generateValue: true          name: crm-redis
-
-      - key: FRONTEND_URL          property: connectionString
-
-        fromService:      - key: JWT_SECRET
-
-          type: web        generateValue: true
-
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start:prod
+    rootDir: backend
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: crm-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: crm-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRATION
+        value: 7d
+      - key: FRONTEND_URL
+        fromService:
+          type: web
           name: crm-frontend
+          property: url
 
-          property: url  - type: redis
-
-    name: crm-redis
-
-  - type: web    plan: starter
-
+  # Frontend Next.js Service
+  - type: web
     name: crm-frontend
-
-    runtime: staticdatabases:
-
-    plan: starter  - name: crm-postgres
-
-    region: oregon    plan: starter
+    runtime: node
+    plan: starter
+    region: oregon
     buildCommand: npm install && npm run build
-    staticPublishPath: out
+    startCommand: npm start
     rootDir: frontend
     envVars:
       - key: NEXT_PUBLIC_API_URL
@@ -74,14 +46,20 @@ services:# Terraform configuration for cloud deployment (optional)
           type: web
           name: crm-backend
           property: url
+      - key: NODE_ENV
+        value: production
+
+  # Redis Cache Service
+  - type: redis
+    name: crm-redis
+    plan: starter
+    region: oregon
+    ipAllowList: []
 
 databases:
-  - name: crm-database
+  # PostgreSQL Database
+  - name: crm-postgres
     plan: starter
     region: oregon
-
-services:
-  - type: redis
-    name: crm-cache
-    plan: starter
-    region: oregon
+    databaseName: crm_db
+    user: crm_user
