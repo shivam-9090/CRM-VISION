@@ -5,7 +5,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: cd backend && npm install && npx prisma generate && npx nest build
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
     startCommand: cd backend && npm run start:prod
     rootDir: .
     healthCheckPath: /health
