@@ -29,6 +29,16 @@ services:
         sync: false
       - key: PORT
         value: 3001
+      - key: SENTRY_DSN
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
 
   # Frontend Next.js Service
   - type: web
