@@ -26,10 +26,9 @@ services:
       - key: JWT_EXPIRATION
         value: 7d
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: crm-frontend
-          property: url
+        sync: false
+      - key: PORT
+        value: 3001
 
   # Frontend Next.js Service
   - type: web
@@ -42,12 +41,11 @@ services:
     rootDir: frontend
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: crm-backend
-          property: url
+        sync: false
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3000
 
   # Redis Cache Service
   - type: redis
