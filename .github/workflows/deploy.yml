@@ -1,5 +1,19 @@
 name: CD Pipeline - Deploy to Production
 
+# ⚠️ BEFORE USING THIS WORKFLOW:
+# 1. Replace "your-domain.com" with your actual domain (6 occurrences)
+# 2. Add required GitHub Secrets:
+#    - RENDER_API_KEY
+#    - RENDER_SERVICE_ID_BACKEND_STAGING
+#    - RENDER_SERVICE_ID_FRONTEND_STAGING
+#    - RENDER_SERVICE_ID_BACKEND_PRODUCTION
+#    - RENDER_SERVICE_ID_FRONTEND_PRODUCTION
+#    - DATABASE_URL_STAGING
+#    - DATABASE_URL_PRODUCTION
+#    - SENTRY_AUTH_TOKEN (optional)
+#    - SENTRY_ORG (optional)
+#    - SENTRY_PROJECT (optional)
+
 on:
   push:
     branches:
