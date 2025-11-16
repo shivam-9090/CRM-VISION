@@ -57,7 +57,7 @@ services:
 databases:
   # PostgreSQL Database
   - name: crm-postgres
-    plan: starter
+    plan: free
     region: oregon
     databaseName: crm_db
     user: crm_user
