@@ -5,9 +5,9 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npm run start:prod
-    rootDir: backend
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npm run start:prod
+    rootDir: .
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -36,9 +36,9 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    rootDir: frontend
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    rootDir: .
     envVars:
       - key: NEXT_PUBLIC_API_URL
         sync: false
