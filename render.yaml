@@ -5,7 +5,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: npm install --include=dev --prefix backend && npx --prefix backend prisma generate && npm run build --prefix backend
+    buildCommand: npm install --include=dev --prefix backend && cd backend && npx prisma generate && npm run build
     startCommand: node backend/dist/main.js
     rootDir: .
     healthCheckPath: /health
