@@ -237,13 +237,10 @@ export function validateEnvironment() {
       warnings.push('SENTRY_DSN is not a valid URL format');
     }
   } else {
-    if (process.env.NODE_ENV === 'production') {
-      errors.push('SENTRY_DSN is required for production error monitoring');
-    } else {
-      warnings.push(
-        'SENTRY_DSN not set - error tracking and monitoring disabled',
-      );
-    }
+    // Make Sentry optional even in production for free tier deployment
+    warnings.push(
+      'SENTRY_DSN not set - error tracking and monitoring disabled',
+    );
   }
 
   // Validate email configuration
