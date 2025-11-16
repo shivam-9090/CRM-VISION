@@ -203,7 +203,7 @@ export default function AboutPage() {
           </h1>
           
           <p className="text-xl sm:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '200ms' }}>
-            We're on a mission to simplify customer relationship management for businesses of all sizes.
+            We&apos;re on a mission to simplify customer relationship management for businesses of all sizes.
           </p>
 
           <div className="flex flex-wrap justify-center gap-8 animate-fade-in" style={{ animationDelay: '400ms' }}>
@@ -244,7 +244,7 @@ export default function AboutPage() {
                   <h2 className="text-3xl font-bold text-white">Our Vision</h2>
                 </div>
                 <p className="text-lg text-gray-300 leading-relaxed">
-                  To become the world's most trusted and intuitive CRM platform, empowering businesses to build 
+                  To become the world&apos;s most trusted and intuitive CRM platform, empowering businesses to build 
                   meaningful customer relationships through innovative technology and exceptional user experience.
                 </p>
               </div>
@@ -274,7 +274,7 @@ export default function AboutPage() {
                 </div>
                 <p className="text-lg text-gray-300 leading-relaxed">
                   To simplify customer relationship management by delivering powerful, easy-to-use tools that help 
-                  businesses grow, scale, and succeed in today's competitive marketplace.
+                  businesses grow, scale, and succeed in today&apos;s competitive marketplace.
                 </p>
               </div>
             </div>
@@ -376,7 +376,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">Get In Touch</h2>
-            <p className="text-xl text-gray-400">We'd love to hear from you</p>
+            <p className="text-xl text-gray-400">We&apos;d love to hear from you</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
