@@ -3,7 +3,7 @@ services:
   - type: web
     name: crm-backend
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npm run start:prod
@@ -34,7 +34,7 @@ services:
   - type: web
     name: crm-frontend
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     buildCommand: npm install && npm run build
     startCommand: npm start
@@ -50,8 +50,9 @@ services:
   # Redis Cache Service
   - type: redis
     name: crm-redis
-    plan: starter
+    plan: free
     region: oregon
+    maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
 databases:
