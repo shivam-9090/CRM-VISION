@@ -3,7 +3,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'standalone',
+  // Use standalone for Docker/Render, remove for Netlify
+  // output: 'standalone',
   experimental: {
     disableOptimizedLoading: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-toast'],
