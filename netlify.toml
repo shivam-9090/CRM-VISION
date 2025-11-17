@@ -13,13 +13,13 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Redirect rules
-[[redirects]]
-  from = "/api/*"
-  to = "https://crm-backend-5f20.onrender.com/api/:splat"
-  status = 200
-  force = true
-  headers = {X-From = "Netlify"}
+# Redirect rules (disabled - using direct backend calls)
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://crm-backend-5f20.onrender.com/api/:splat"
+#   status = 200
+#   force = true
+#   headers = {X-From = "Netlify"}
 
 # Security headers
 [[headers]]
