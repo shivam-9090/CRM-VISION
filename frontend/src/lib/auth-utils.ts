@@ -1,6 +1,8 @@
 // Simple auth utilities without automatic redirects
 import { migrateJWTToken } from './jwt-migration';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 // Helper function to decode JWT and check expiration
 function isTokenExpired(token: string): boolean {
   try {
@@ -72,7 +74,7 @@ export async function verifyAuthToken(): Promise<boolean> {
   
   try {
     // Try to verify with backend
-    const response = await fetch('http://localhost:3001/api/auth/verify', {
+    const response = await fetch(`${API_URL}/auth/verify`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
