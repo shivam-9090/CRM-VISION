@@ -5,8 +5,8 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: cd backend && npm install --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build
-    startCommand: node backend/dist/src/main.js
+    buildCommand: cd backend && npm install --include=dev && npx prisma generate && npm run build
+    startCommand: cd backend && npx prisma migrate deploy && cd .. && node backend/dist/src/main.js
     rootDir: .
     healthCheckPath: /api/health
     envVars:
@@ -54,4 +54,4 @@ databases:
     plan: free
     region: oregon
     databaseName: crm_db
-    user: crm_user
+    user: crm_user  
