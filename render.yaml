@@ -26,7 +26,7 @@ services:
       - key: JWT_EXPIRATION
         value: 7d
       - key: FRONTEND_URL
-        sync: false
+        value: https://vision-crm.netlify.app
       - key: PORT
         value: 3001
       - key: SENTRY_DSN
@@ -39,23 +39,6 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
-
-  # Frontend Next.js Service
-  - type: web
-    name: crm-frontend
-    runtime: node
-    plan: free
-    region: oregon
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
-    rootDir: .
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        sync: false
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 3000
 
   # Redis Cache Service
   - type: redis
