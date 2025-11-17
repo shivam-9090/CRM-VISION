@@ -6,7 +6,7 @@ services:
     plan: free
     region: oregon
     buildCommand: cd backend && npm install --include=dev && npx prisma generate && npm run build
-    startCommand: cd backend && npm run one-time-reset
+    startCommand: cd backend && npm run start:migrate:prod
     rootDir: .
     healthCheckPath: /api/health
     envVars:
