@@ -1,10 +1,25 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables (CRITICAL - Never commit real secrets!)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.production.local
+.env.development
+.env.development.local
+.env.staging
+.env.test.local
+backend/.env
+backend/.env.production
+backend/.env.development
+backend/.env.staging
+frontend/.env
+frontend/.env.production
+frontend/.env.development
+frontend/.env.staging
+frontend/.env.local
 
 # Build outputs
 dist/
@@ -44,10 +59,13 @@ pnpm-debug.log*
 ehthumbs.db
 Thumbs.db
 
-# Coverage
+# Coverage reports (generated files)
 coverage/
+*/coverage/
 *.lcov
 .nyc_output
+.c8
+jest-coverage/
 
 # Temporary folders
 tmp/
@@ -62,9 +80,97 @@ temp/
 # Yarn Integrity file
 .yarn-integrity
 
-# Prisma migrations (keep schema but ignore auto-generated)
-prisma/migrations/
+# Prisma (keep migrations but ignore generated client)
+node_modules/.prisma/
+**/prisma/generated/
 
 # Local database volumes
 postgres_data/
 redis_data/
+nginx_logs/
+
+# File uploads (backend)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Docker generated files
+**/.dockerignore
+
+# Package manager lock files (keep one, ignore others if using multiple)
+# Uncomment the ones you want to ignore:
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Terraform state files (if using infra/)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Sensitive configuration files
+**/secrets/
+**/credentials/
+**/*-secret.yml
+**/*-secret.yaml
+**/*-secrets.yml
+**/*-secrets.yaml
+
+# SSH keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+**/.ssh/
+
+# Database dumps and backups (but NOT Prisma migrations)
+*.dump
+scripts/backups/*
+!scripts/backups/.gitkeep
+backup/*
+!backup/.gitkeep
+backups/*
+!backups/.gitkeep
+# Exclude SQL dumps and backups, but allow Prisma migrations
+*.sql
+!backend/prisma/migrations/**/*.sql
+!frontend/prisma/migrations/**/*.sql
+
+# Docker files (keep in master/docker branch only)
+docker-compose.yml
+docker-compose.prod.yml
+docker-compose.override.yml
+docker-compose.local.yml
+.env.docker
+docker-deploy.ps1
+docker-setup.ps1
+DOCKER-QUICK-START.md
+README.DOCKER.md
+backend/Dockerfile
+backend/Dockerfile.prod
+frontend/Dockerfile
+.dockerignore
+
+# Docker volumes and data
+postgres_data/
+redis_data/
+
+# Backup files
+*.backup
+*.bak
+*.orig
+*.backup.*
+*~.backup
+*.tsx.backup
+*.ts.backup
+*.js.backup
+*.json.backup
+
+# Editor specific
+*.sublime-project
+*.sublime-workspace

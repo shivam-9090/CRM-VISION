@@ -1,0 +1,21 @@
+Welcome to CRM System! 🎉
+
+Hello {{name}},
+
+Welcome to our CRM System! Your account has been successfully created.
+
+You can now log in and start managing your business relationships, tracking deals, and improving customer engagement.
+
+Login URL: {{loginUrl}}
+
+Getting Started:
+- Set up your company profile
+- Add your first contacts
+- Create your sales pipeline
+- Invite team members
+
+If you have any questions, feel free to contact our support team.
+
+---
+This email was sent from the CRM System.
+Please do not reply to this email.

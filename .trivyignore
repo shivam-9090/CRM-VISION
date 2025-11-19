@@ -1,0 +1,21 @@
+# Trivy Ignore File
+# https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+
+# ========================
+# Instructions
+# ========================
+# Add CVEs that are false positives or have valid business justifications
+# Format: CVE-YYYY-NNNNN
+# Always include a comment explaining why it's ignored
+# Review quarterly and remove resolved issues
+
+# ========================
+# Example Entries
+# ========================
+# CVE-2024-12345 # Fixed in next release v2.0, no current workaround, low risk
+# CVE-2024-67890 # False positive - not applicable to our use case
+
+# ========================
+# Ignored Vulnerabilities
+# ========================
+# Add ignored CVEs below this line with justification comments

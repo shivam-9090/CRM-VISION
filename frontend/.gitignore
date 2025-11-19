@@ -1,0 +1,34 @@
+# Dependencies
+node_modules
+
+# Next.js
+.next
+out
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# Build outputs
+build
+dist
+*.tsbuildinfo
+
+# Logs
+*.log
+logs
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sentry
+.sentryclirc

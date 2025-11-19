@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,70 +8,128 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  password     String
-  name         String
-  role         Role     @default(EMPLOYEE)
-  companyId    String?
-  company      Company? @relation(fields: [companyId], references: [id])
-  assignedDeals Deal[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  password             String
+  plainPassword        String?   // For manager to view employee passwords
+  name                 String
+  phone                String?
+  role                 Role      @default(EMPLOYEE)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  companyId            String?
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  lastLoginAt          DateTime?
+  lastLoginIp          String?
+  isVerified           Boolean   @default(false)
+  verificationToken    String?
+  verificationExpiry   DateTime?
+  twoFactorSecret      String?
+  twoFactorEnabled     Boolean   @default(false)
+  permissions          Json?     @default("{}")
+  assignedDeals               Deal[]
+  assignedActivities          Activity[] @relation("AssignedActivities")
+  comments                    Comment[]
+  auditLogs                   AuditLog[]
+  notifications               Notification[]
+  refreshTokens               RefreshToken[]
+  notificationPreferences     NotificationPreference?
+  pushSubscriptions           PushSubscription[]
+  company                     Company?  @relation(fields: [companyId], references: [id])
 
+  @@index([companyId, email]) // ✅ For finding users by company + email
+  @@index([lastLoginAt]) // ✅ For "recently active users" queries
   @@map("users")
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
 }
 
 model Company {
   id          String     @id @default(cuid())
   name        String
-  description String?
-  users       User[]
-  contacts    Contact[]
-  deals       Deal[]
-  activities  Activity[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  description String?
+  activities  Activity[]
+  contacts    Contact[]
+  deals       Deal[]
+  users       User[]
+  comments    Comment[]
+  auditLogs   AuditLog[]
+  notifications Notification[]
+  exportTemplates ExportTemplate[]
+  exportJobs  ExportJob[]
 
+  @@index([name]) // ✅ For company search/autocomplete
   @@map("companies")
 }
 
 model Contact {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String?
-  phone     String?
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
-  deals     Deal[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String     @id @default(cuid())
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  companyId  String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  company    Company    @relation(fields: [companyId], references: [id])
+  deals      Deal[]
+  activities Activity[]
 
+  @@index([companyId])
+  @@index([email])
+  @@index([companyId, email])
+  @@index([firstName]) // ✅ For contact search
+  @@index([lastName]) // ✅ For contact search
+  @@index([companyId, firstName, lastName]) // ✅ Composite for filtered search
   @@map("contacts")
 }
 
 model Deal {
-  id               String     @id @default(cuid())
-  title            String
-  value            Decimal?
-  stage            DealStage  @default(LEAD)
-  leadSource       LeadSource @default(WEBSITE)
-  leadScore        Int        @default(0)
-  priority         Priority   @default(MEDIUM)
+  id                String     @id @default(cuid())
+  title             String
+  value             Decimal?
+  stage             DealStage  @default(LEAD)
   expectedCloseDate DateTime?
-  closedAt         DateTime?
-  assignedToId     String?
-  assignedTo       User?      @relation(fields: [assignedToId], references: [id])
-  contactId        String
-  contact          Contact    @relation(fields: [contactId], references: [id])
-  companyId        String
-  company          Company    @relation(fields: [companyId], references: [id])
-  notes            String?
-  lastContactDate  DateTime?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  companyId         String
+  contactId         String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  closedAt          DateTime?
+  assignedToId      String?
+  lastContactDate   DateTime?
+  leadScore         Int        @default(0)
+  leadSource        LeadSource @default(WEBSITE)
+  notes             String?
+  priority          Priority   @default(MEDIUM)
+  assignedTo        User?      @relation(fields: [assignedToId], references: [id])
+  company           Company    @relation(fields: [companyId], references: [id])
+  contact           Contact?   @relation(fields: [contactId], references: [id])
+  activities        Activity[]
 
+  @@index([companyId])
+  @@index([companyId, stage])
+  @@index([assignedToId])
+  @@index([contactId])
+  @@index([companyId, leadScore])
+  @@index([companyId, priority])
+  @@index([companyId, stage, priority])
+  @@index([expectedCloseDate])
   @@map("deals")
 }
 
@@ -89,22 +141,198 @@ model Activity {
   description   String?
   scheduledDate DateTime
   companyId     String
-  company       Company        @relation(fields: [companyId], references: [id])
+  contactId     String?
+  dealId        String?
+  assignedToId  String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  company       Company        @relation(fields: [companyId], references: [id])
+  contact       Contact?       @relation(fields: [contactId], references: [id])
+  deal          Deal?          @relation(fields: [dealId], references: [id])
+  assignedTo    User?          @relation("AssignedActivities", fields: [assignedToId], references: [id])
 
+  @@index([companyId])
+  @@index([companyId, scheduledDate])
+  @@index([companyId, status])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([assignedToId])
+  @@index([title]) // ✅ For activity search
+  @@index([companyId, title]) // ✅ Composite for filtered search
   @@map("activities")
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  email     String
+  companyId String
+  role      Role
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("invites")
+}
+
+model Comment {
+  id               String         @id @default(cuid())
+  content          String
+  commentableType  CommentableType
+  commentableId    String
+  userId           String
+  companyId        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company          Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([commentableType, commentableId])
+  @@index([companyId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  action     AuditAction
+  entityType String
+  entityId   String
+  changes    Json?
+  userId     String
+  companyId  String
+  createdAt  DateTime    @default(now())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([companyId, createdAt])
+  @@index([companyId, entityType])
+  @@map("audit_logs")
+}
+
+model Attachment {
+  id             String         @id @default(cuid())
+  filename       String
+  originalName   String
+  mimeType       String
+  size           Int
+  path           String
+  url            String?
+  attachableType AttachableType
+  attachableId   String
+  companyId      String
+  uploadedBy     String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([attachableType, attachableId])
+  @@index([companyId])
+  @@index([uploadedBy])
+  @@map("attachments")
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  type       NotificationType
+  title      String
+  message    String
+  entityType String?
+  entityId   String?
+  isRead     Boolean          @default(false)
+  isMuted    Boolean          @default(false)
+  snoozedUntil DateTime?
+  groupKey   String?          // For grouping similar notifications
+  groupCount Int              @default(1) // Count of grouped notifications
+  userId     String
+  companyId  String
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company    Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, groupKey])
+  @@index([companyId])
+  @@index([createdAt])
+  @@index([snoozedUntil])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id             String           @id @default(cuid())
+  userId         String           @unique
+  
+  // Channel preferences for each notification type
+  emailEnabled   Boolean          @default(true)
+  pushEnabled    Boolean          @default(true)
+  inAppEnabled   Boolean          @default(true)
+  
+  // Type-specific preferences (JSON object mapping NotificationType to enabled channels)
+  typePreferences Json            @default("{}")
+  
+  // Sound and visual preferences
+  soundEnabled   Boolean          @default(true)
+  soundType      String           @default("default") // "default", "subtle", "none"
+  
+  // Quiet hours (24-hour format)
+  quietHoursEnabled Boolean        @default(false)
+  quietHoursStart   String?        // e.g., "22:00"
+  quietHoursEnd     String?        // e.g., "08:00"
+  
+  // Muted entities (JSON array of {entityType, entityId})
+  mutedEntities  Json             @default("[]")
+  
+  // Grouping preferences
+  groupingEnabled Boolean          @default(true)
+  groupingWindow  Int              @default(300) // seconds (5 minutes)
+  
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notification_preferences")
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique
+  keys       Json     // {p256dh: string, auth: string}
+  userAgent  String?  // Browser/device info
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 enum Role {
   ADMIN
+  MANAGER
+  SALES
   EMPLOYEE
+}
+
+enum CommentableType {
+  DEAL
+  CONTACT
+  ACTIVITY
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  EXPORT
 }
 
 enum DealStage {
   LEAD
   QUALIFIED
-  PROPOSAL
   NEGOTIATION
   CLOSED_WON
   CLOSED_LOST
@@ -144,4 +372,78 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum AttachableType {
+  DEAL
+  CONTACT
+  ACTIVITY
+  COMMENT
+}
+
+enum NotificationType {
+  DEAL_CREATED
+  DEAL_UPDATED
+  DEAL_ASSIGNED
+  DEAL_STATUS_CHANGED
+  CONTACT_CREATED
+  CONTACT_UPDATED
+  ACTIVITY_CREATED
+  ACTIVITY_ASSIGNED
+  ACTIVITY_DUE_SOON
+  COMMENT_ADDED
+  MENTION
+  SYSTEM
+}
+
+model ExportTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  entityType  String   // contacts, deals, activities, companies
+  fields      Json     // Selected fields to export
+  filters     Json?    // Default filters (date range, status, etc.)
+  format      String   @default("csv") // csv, excel, json, xml
+  userId      String
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  exportJobs  ExportJob[]
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("export_templates")
+}
+
+model ExportJob {
+  id            String    @id @default(cuid())
+  entityType    String    // contacts, deals, activities, companies
+  format        String    // csv, excel, json, xml
+  status        String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  schedule      String?   // once, daily, weekly, monthly
+  filters       Json?     // Date range, status filters, etc.
+  fields        Json?     // Selected fields
+  templateId    String?
+  fileUrl       String?   // S3 or local path to generated file
+  fileName      String?
+  fileSize      Int?
+  totalRecords  Int?
+  progress      Int       @default(0) // Percentage 0-100
+  errorMessage  String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  expiresAt     DateTime? // File expiration (24 hours after completion)
+  userId        String
+  companyId     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  template      ExportTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("export_jobs")
 }

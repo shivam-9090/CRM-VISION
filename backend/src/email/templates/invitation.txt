@@ -1,0 +1,14 @@
+You've Been Invited! ✉️
+
+Hello,
+
+{{inviterName}} has invited you to join {{companyName}} on CRM System as a {{role}}.
+
+Click the link below to accept the invitation and create your account:
+{{inviteUrl}}
+
+⏰ This invitation will expire in {{expiryDays}} day(s).
+
+---
+This email was sent from the CRM System.
+Please do not reply to this email.

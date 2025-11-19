@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -40,6 +40,7 @@ async function main() {
       name: 'Admin User',
       role: 'ADMIN',
       companyId: companies[0].id,
+      permissions: ['*:*'], // Full admin permissions
     },
   });
 
@@ -93,7 +94,7 @@ async function main() {
       data: {
         title: 'Manufacturing Equipment Deal',
         value: 250000,
-        stage: 'PROPOSAL',
+        stage: 'NEGOTIATION',
         companyId: companies[1].id,
         contactId: contacts[1].id,
       },

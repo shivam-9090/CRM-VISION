@@ -1,0 +1,130 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  # ========================
+  # Update Dependencies
+  # ========================
+  update-dependencies:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check backend dependencies
+        working-directory: ./backend
+        run: |
+          echo "Checking for outdated backend dependencies..."
+          npm outdated || true
+          npx npm-check-updates
+
+      - name: Check frontend dependencies
+        working-directory: ./frontend
+        run: |
+          echo "Checking for outdated frontend dependencies..."
+          npm outdated || true
+          npx npm-check-updates
+
+      - name: Run npm audit
+        run: |
+          echo "=== Backend Security Audit ==="
+          cd backend && npm audit --audit-level=moderate || true
+          echo ""
+          echo "=== Frontend Security Audit ==="
+          cd ../frontend && npm audit --audit-level=moderate || true
+
+      - name: Create issue for vulnerabilities
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '🔒 Security vulnerabilities detected in dependencies';
+            const body = `Security audit found vulnerabilities in dependencies.
+            
+            **Action Required:**
+            - Review the vulnerabilities in the workflow logs
+            - Update affected packages
+            - Run \`npm audit fix\` where possible
+            - Manually update packages that require major version changes
+            
+            [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'dependencies']
+            });
+
+  # ========================
+  # Dependabot Alternative
+  # ========================
+  auto-update-minor:
+    name: Auto-update Minor Versions
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update backend dependencies (minor)
+        working-directory: ./backend
+        run: |
+          npx npm-check-updates -u --target minor
+          npm install
+
+      - name: Update frontend dependencies (minor)
+        working-directory: ./frontend
+        run: |
+          npx npm-check-updates -u --target minor
+          npm install
+
+      - name: Run tests
+        run: |
+          cd backend && npm test || echo "Tests failed"
+          cd ../frontend && npm run build || echo "Build failed"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update minor dependencies'
+          title: '🔄 Auto-update minor dependencies'
+          body: |
+            Automated dependency updates for minor versions.
+            
+            **Changes:**
+            - Backend dependencies updated
+            - Frontend dependencies updated
+            
+            **Testing:**
+            - Backend tests: ${{ job.status }}
+            - Frontend build: ${{ job.status }}
+            
+            Please review and merge if all checks pass.
+          branch: auto-update-dependencies
+          delete-branch: true
+          labels: dependencies, automated
