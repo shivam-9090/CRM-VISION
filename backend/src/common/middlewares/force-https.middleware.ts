@@ -18,6 +18,11 @@ export class ForceHttpsMiddleware implements NestMiddleware {
       return next();
     }
 
+    // Skip HTTPS enforcement for health check endpoint (Railway uses HTTP internally)
+    if (req.path === '/api/health') {
+      return next();
+    }
+
     // Check if the request is already HTTPS
     const isHttps =
       req.secure || // Standard Express check
