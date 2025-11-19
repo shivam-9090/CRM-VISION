@@ -51,21 +51,13 @@ RUN npm ci --omit=dev --prefer-offline --no-audit && npm cache clean --force
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
+# Copy startup script
+COPY --chown=nestjs:nodejs start.sh ./
+RUN chmod +x start.sh
+
 # Expose port
 EXPOSE 3001
 
-# Run migrations and start with explicit error handling and environment debugging
-CMD sh -c "echo '=== STARTING APPLICATION ===' && \
-    echo 'Environment check:' && \
-    echo '  PORT='$PORT && \
-    echo '  NODE_ENV='$NODE_ENV && \
-    echo '  DATABASE_URL='${DATABASE_URL:0:30}'...' && \
-    echo '  JWT_SECRET='${JWT_SECRET:0:10}'...' && \
-    echo '' && \
-    echo 'Running Prisma migrations...' && \
-    npx prisma migrate deploy && \
-    echo 'Migrations complete!' && \
-    echo '' && \
-    echo 'Starting NestJS application...' && \
-    node dist/src/main 2>&1 || (echo '!!! APPLICATION CRASHED !!!' && exit 1)"
+# Use startup script
+CMD ["./start.sh"]
 
