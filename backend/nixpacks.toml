@@ -1,0 +1,12 @@
+# Force Railway to use Nixpacks (Node.js) instead of Docker
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = ["npm install --include=dev"]
+
+[phases.build]
+cmds = ["npx prisma generate", "npm run build"]
+
+[start]
+cmd = "npm run start:migrate:prod"
