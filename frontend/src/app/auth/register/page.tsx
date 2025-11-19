@@ -110,12 +110,11 @@ export default function RegisterPage() {
       // Make register API call - the backend will set httpOnly cookie
       const response = await api.post('/auth/register', cleanFormData);
       
+      console.log('✅ Registration response received:', response.data);
+      
       // Store auth data using utility function - handles both 'token' and 'access_token' fields
       const token = response.data.token || response.data.access_token;
-      if (response.data.user && token) {
-        storeAuthData(token, response.data.user);
-        console.log('✅ Both user and token stored successfully');
-      } else {
+      if (!response.data.user || !token) {
         console.error('❌ Missing user or token in response:', {
           hasUser: !!response.data.user,
           hasToken: !!token,
@@ -126,21 +125,28 @@ export default function RegisterPage() {
         return;
       }
 
-      console.log('✅ Registration successful!', response.data);
-      console.log('✅ Token stored:', !!response.data.token);
-      console.log('✅ User stored:', !!response.data.user);
+      // Store auth data immediately
+      storeAuthData(token, response.data.user);
+      console.log('✅ Auth data stored in localStorage');
       
-      // Small delay to ensure localStorage is written
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for localStorage to persist (crucial for dashboard auth check)
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Verify that the data was stored correctly
+      // Verify storage before redirecting
       const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
-      console.log('✅ Verification - Token in localStorage:', !!storedToken);
-      console.log('✅ Verification - User in localStorage:', !!storedUser);
       
-      // Use replace instead of push to prevent going back to register
-      router.replace('/dashboard');
+      if (!storedToken || !storedUser) {
+        console.error('❌ Failed to persist auth data to localStorage');
+        setError('Registration successful but session initialization failed. Please try logging in.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('✅ Registration complete, redirecting to dashboard...');
+      
+      // Force a hard navigation to ensure fresh auth check
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
       console.error('Registration error:', err);
       if (err && typeof err === 'object' && 'response' in err) {

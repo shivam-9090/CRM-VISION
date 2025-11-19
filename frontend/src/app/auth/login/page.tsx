@@ -75,20 +75,36 @@ export default function LoginPage() {
       }
 
       // Store user data in localStorage for quick access (token is in httpOnly cookie)
-      if (response.data.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        // Also store token if provided for backward compatibility
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
+      if (!response.data.user || !response.data.token) {
+        console.error('❌ Missing user or token in response');
+        setError('Login successful but authentication data is incomplete. Please try again.');
+        setLoading(false);
+        return;
       }
 
-      console.log('🔑 Login successful!', response.data);
-      console.log('🔑 Token stored:', !!response.data.token);
-      console.log('🔑 User stored:', !!response.data.user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', response.data.token);
       
-      // Redirect to dashboard after successful login
-      router.replace('/dashboard');
+      console.log('🔑 Login successful!', response.data);
+      
+      // Wait for localStorage to persist
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Verify storage before redirecting
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (!storedToken || !storedUser) {
+        console.error('❌ Failed to persist auth data to localStorage');
+        setError('Login successful but session initialization failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('🔑 Redirecting to dashboard...');
+      
+      // Force a hard navigation to ensure fresh auth check
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
       console.error('Login error:', err);
       if (err && typeof err === 'object' && 'response' in err) {
@@ -127,17 +143,32 @@ export default function LoginPage() {
       });
 
       // Store user data
-      if (response.data.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
+      if (!response.data.user || !response.data.token) {
+        setTwoFactorError('Login successful but authentication data is incomplete. Please try again.');
+        setLoading(false);
+        return;
       }
+
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', response.data.token);
 
       console.log('🔑 2FA Login successful!', response.data);
       
-      // Redirect to dashboard
-      router.replace('/dashboard');
+      // Wait for localStorage to persist
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Verify storage
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (!storedToken || !storedUser) {
+        setTwoFactorError('Login successful but session initialization failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      // Force a hard navigation
+      window.location.href = '/dashboard';
     } catch (err: unknown) {
       console.error('2FA verify error:', err);
       if (err && typeof err === 'object' && 'response' in err) {
