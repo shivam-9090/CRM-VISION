@@ -107,27 +107,29 @@ export class AuthService {
       return { user };
     });
 
-    // Send verification email
-    try {
-      const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
-      await this.emailService.sendEmail({
-        to: email,
-        subject: 'Verify Your Email - CRM System',
-        text: `Please verify your email by clicking this link: ${verificationUrl}`,
-        html: `
-          <h2>Welcome to CRM System!</h2>
-          <p>Please click the link below to verify your email address:</p>
-          <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
-            Verify Email
-          </a>
-          <p>This link will expire in 24 hours.</p>
-          <p>If you didn't create this account, please ignore this email.</p>
-        `,
-      });
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail registration if email fails - user can request new verification
-    }
+    // Send verification email asynchronously (don't block registration)
+    setImmediate(async () => {
+      try {
+        const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
+        await this.emailService.sendEmail({
+          to: email,
+          subject: 'Verify Your Email - CRM System',
+          text: `Please verify your email by clicking this link: ${verificationUrl}`,
+          html: `
+            <h2>Welcome to CRM System!</h2>
+            <p>Please click the link below to verify your email address:</p>
+            <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Verify Email
+            </a>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you didn't create this account, please ignore this email.</p>
+          `,
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Email failure doesn't affect registration - user can request resend
+      }
+    });
 
     const payload = {
       id: result.user.id,
