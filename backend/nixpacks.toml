@@ -1,13 +1,11 @@
-providers = ["node"]
-
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "npm-10_x"]
 
 [phases.install]
-cmds = ["npm ci --include=dev"]
+cmds = ["npm ci"]
 
 [phases.build]
 cmds = ["npx prisma generate", "npm run build"]
 
 [start]
-cmd = "npm run start:migrate:prod"
+cmd = "npx prisma migrate deploy && npm run start:prod"
