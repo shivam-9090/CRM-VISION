@@ -86,11 +86,16 @@ export default function EmployeesPage() {
       setNewEmployeeEmail('');
       setCustomPassword('');
       fetchEmployees();
+      
+      // Auto-close modal after showing password for 5 seconds
+      setTimeout(() => {
+        setTempPassword('');
+        setAddModalOpen(false);
+      }, 5000);
     } catch (error: any) {
       console.error('Error adding employee:', error);
       const message = error.response?.data?.message || 'Failed to add employee';
       toast.error(message);
-    } finally {
       setAdding(false);
     }
   };
