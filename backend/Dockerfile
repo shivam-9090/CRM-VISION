@@ -51,11 +51,15 @@ RUN npm ci --omit=dev --prefer-offline --no-audit && npm cache clean --force
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
-# Switch to non-root user
-USER nestjs
-
 # Expose port
 EXPOSE 3001
 
-# Run migrations and start
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
+# Don't switch to non-root user yet (prisma migrate needs permissions)
+# USER nestjs
+
+# Run migrations and start with explicit error handling
+CMD sh -c "echo 'Starting application...' && \
+    echo 'Running Prisma migrations...' && \
+    npx prisma migrate deploy && \
+    echo 'Migrations complete. Starting server...' && \
+    node dist/src/main"
