@@ -54,12 +54,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modul
 # Expose port
 EXPOSE 3001
 
-# Don't switch to non-root user yet (prisma migrate needs permissions)
-# USER nestjs
-
 # Run migrations and start with explicit error handling
 CMD sh -c "echo 'Starting application...' && \
     echo 'Running Prisma migrations...' && \
     npx prisma migrate deploy && \
     echo 'Migrations complete. Starting server...' && \
-    node dist/src/main"
+    node dist/src/main 2>&1 || (echo 'Application failed to start!' && exit 1)"
