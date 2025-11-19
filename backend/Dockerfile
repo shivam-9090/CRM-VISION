@@ -1,8 +1,11 @@
-# Use Node.js 20 Alpine for smaller image
-FROM node:20-alpine AS builder
+# Use Node.js 20 (Debian-based) for better compatibility
+FROM node:20-slim AS builder
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl libc6-compat
+# Install system dependencies for Prisma and native modules
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -24,9 +27,12 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-slim
 
-RUN apk add --no-cache openssl libc6-compat
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
