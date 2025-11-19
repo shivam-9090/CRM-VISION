@@ -98,6 +98,8 @@ async function bootstrap() {
   const allowedOrigins = isProduction
     ? [
         configService.get('FRONTEND_URL') || 'https://your-domain.com',
+        'https://vision-crm.netlify.app',
+        'https://vision-crm.netlify.app/',
         // Add production HTTPS domains here
       ]
     : [
