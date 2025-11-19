@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../redis/cache.service';
 import { ApiPublicEndpoint } from '../common/swagger/swagger-decorators';
@@ -7,6 +8,7 @@ import { QueryPerformanceInterceptor } from '../common/interceptors/query-perfor
 
 @ApiTags('Health')
 @Controller('health')
+@SkipThrottle() // Skip rate limiting for health check endpoint
 export class HealthController {
   constructor(
     private prisma: PrismaService,
