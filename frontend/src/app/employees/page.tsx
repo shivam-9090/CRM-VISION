@@ -82,16 +82,19 @@ export default function EmployeesPage() {
       const response = await api.post('/users/employees', payload);
 
       toast.success('Employee added successfully!');
-      setTempPassword(response.data.temporaryPassword);
+      
+      // Show password in a toast notification instead of modal
+      if (response.data.temporaryPassword) {
+        toast.success(`Password: ${response.data.temporaryPassword}`, {
+          duration: 10000, // Show for 10 seconds
+        });
+      }
+      
       setNewEmployeeEmail('');
       setCustomPassword('');
+      setTempPassword('');
+      setAddModalOpen(false); // Close modal immediately
       fetchEmployees();
-      
-      // Auto-close modal after showing password for 5 seconds
-      setTimeout(() => {
-        setTempPassword('');
-        setAddModalOpen(false);
-      }, 5000);
     } catch (error: any) {
       console.error('Error adding employee:', error);
       const message = error.response?.data?.message || 'Failed to add employee';
