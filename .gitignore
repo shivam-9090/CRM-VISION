@@ -141,9 +141,24 @@ backups/*
 !backend/prisma/migrations/**/*.sql
 !frontend/prisma/migrations/**/*.sql
 
-# Environment-specific docker files
+# Docker files (keep in master/docker branch only)
+docker-compose.yml
+docker-compose.prod.yml
 docker-compose.override.yml
 docker-compose.local.yml
+.env.docker
+docker-deploy.ps1
+docker-setup.ps1
+DOCKER-QUICK-START.md
+README.DOCKER.md
+backend/Dockerfile
+backend/Dockerfile.prod
+frontend/Dockerfile
+.dockerignore
+
+# Docker volumes and data
+postgres_data/
+redis_data/
 
 # Backup files
 *.backup
