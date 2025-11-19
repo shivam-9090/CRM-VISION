@@ -55,8 +55,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --chown=nestjs:nodejs start.sh ./
 RUN chmod +x start.sh
 
-# Expose port
-EXPOSE 3001
+# Railway automatically exposes the correct port
+# No EXPOSE needed
 
 # Use startup script
 CMD ["./start.sh"]
