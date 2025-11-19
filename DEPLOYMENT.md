@@ -1,75 +1,99 @@
-# 🚀 Free Deployment Guide - Render.com
+# 🚀 Deployment Guide - Railway.app
 
-Deploy your CRM system to Render.com **100% FREE** in just 5 minutes!
+Deploy your CRM system to Railway.app with **always-on** backend in minutes!
 
-## ✅ What You Get (Free Forever)
+## ✅ What You Get
 
-- ✅ Backend API (Node.js)
-- ✅ Frontend (Next.js)
-- ✅ PostgreSQL Database (1 GB)
-- ✅ Redis Cache (256 MB)
+- ✅ Backend API (Node.js) - **Always On, No Sleep**
+- ✅ Frontend (Next.js) - Deploy on Netlify/Vercel
+- ✅ PostgreSQL Database (Managed)
+- ✅ Redis Cache (Optional)
 - ✅ Free SSL Certificate
 - ✅ Auto-deploy from GitHub
+- ✅ ~$5-7/month for low traffic usage
 
-**Note:** Free tier services sleep after 15 minutes of inactivity (wakes up in ~30 seconds on first request)
+**Note:** Railway charges based on actual usage (CPU/RAM/Network), not fixed monthly fees. Small apps typically cost $5-7/month.
 
 ---
 
-## 🎯 Quick Deployment (5 Minutes)
+## 🎯 Quick Deployment (10 Minutes)
 
 ### Step 1: Push to GitHub ✅
+
 Your code is already on GitHub at: `https://github.com/shivam-9090/CRM-VISION`
 
-### Step 2: Sign Up on Render.com
-1. Go to: **https://render.com**
-2. Click **"Get Started for Free"**
-3. Sign up with your **GitHub account**
-4. Authorize Render to access your repositories
+### Step 2: Sign Up on Railway.app
 
-### Step 3: Deploy with Blueprint
-1. Click **"New"** → **"Blueprint"**
+1. Go to: <https://railway.app>
+2. Click **"Login"** or **"Start a New Project"**
+3. Sign in with your **GitHub account**
+4. Authorize Railway to access your repositories
+
+### Step 3: Create PostgreSQL Database
+
+1. Click **"New Project"**
+2. Select **"Provision PostgreSQL"**
+3. Database will be created automatically
+4. Copy the `DATABASE_URL` from Variables tab (we'll use this later)
+
+### Step 4: Deploy Backend Service
+
+1. In the same project, click **"+ New"** → **"GitHub Repo"**
 2. Connect to: **`shivam-9090/CRM-VISION`**
-3. Render will automatically detect `render.yaml`
-4. Click **"Apply"**
+3. Railway will detect Node.js and `railway.toml`
+4. Click **"Add Variables"** and set:
+   - `NODE_ENV` = `production`
+   - `DATABASE_URL` = (reference the PostgreSQL database variable)
+   - `JWT_SECRET` = (generate random: `openssl rand -base64 32`)
+   - `JWT_EXPIRATION` = `7d`
+   - `FRONTEND_URL` = `https://vision-crm.netlify.app` (or your frontend URL)
+   - `PORT` = `3001`
+   - `SMTP_HOST` = (your SMTP server, e.g., `smtp.gmail.com`)
+   - `SMTP_PORT` = `587`
+   - `SMTP_USER` = (your email)
+   - `SMTP_PASS` = (your email password or app password)
+5. Click **"Deploy"**
 
-### Step 4: Wait for Deployment (5-10 minutes)
-Render will create:
-- ✅ PostgreSQL database
-- ✅ Redis cache
-- ✅ Backend service
-- ✅ Frontend service
+### Step 5: Get Backend URL
 
-### Step 5: Configure URLs
-After deployment completes:
+After deployment completes (3-5 minutes):
 
-1. **Get the URLs:**
-   - Backend: `https://crm-backend.onrender.com`
-   - Frontend: `https://crm-frontend.onrender.com`
-
-2. **Update Environment Variables:**
-
-   **For Backend Service:**
-   - Go to Backend service → Environment
-   - Add: `FRONTEND_URL` = `https://crm-frontend.onrender.com`
-   - Save and redeploy
-
-   **For Frontend Service:**
-   - Go to Frontend service → Environment
-   - Add: `NEXT_PUBLIC_API_URL` = `https://crm-backend.onrender.com/api`
-   - Save and redeploy
+1. Go to your backend service → **Settings** → **Networking**
+2. Click **"Generate Domain"**
+3. Copy the URL (e.g., `https://crm-backend-production.up.railway.app`)
+4. Update `FRONTEND_URL` if deploying frontend to Railway too
 
 ### Step 6: Run Database Migrations
-1. Go to Backend service → Shell
-2. Run:
+
+1. Go to Backend service → **Deployments** → Click latest deployment
+2. Click **"View Logs"**
+3. Migrations should run automatically via `start:migrate:prod` script
+4. If needed, open terminal and run:
+
    ```bash
    npx prisma migrate deploy
    npx prisma db seed
    ```
 
-### Step 7: Access Your CRM! 🎉
-Visit: `https://crm-frontend.onrender.com`
+### Step 7: Deploy Frontend (Netlify - Free)
+
+1. Go to: <https://netlify.com>
+2. Click **"Add new site"** → **"Import an existing project"**
+3. Connect to GitHub: **`shivam-9090/CRM-VISION`**
+4. Configure build:
+   - Base directory: `frontend`
+   - Build command: `npm run build`
+   - Publish directory: `frontend/.next`
+5. Add environment variable:
+   - `NEXT_PUBLIC_API_URL` = `https://your-backend-url.railway.app/api`
+6. Click **"Deploy"**
+
+### Step 8: Access Your CRM! 🎉
+
+Visit your Netlify URL (e.g., `https://vision-crm.netlify.app`)
 
 **Default login:**
+
 - Email: `admin@example.com`
 - Password: (check your seed file)
 
@@ -78,72 +102,88 @@ Visit: `https://crm-frontend.onrender.com`
 ## 🔧 Managing Your Deployment
 
 ### View Logs
-- Go to each service → **Logs** tab
+
+- Go to service → **Deployments** → Click on deployment → **View Logs**
 - Real-time logs for debugging
 
 ### Manual Deploy
-- Go to service → **Manual Deploy** → **Deploy latest commit**
+
+- Railway auto-deploys on every push to `main` branch
+- Or click **"Redeploy"** in the deployment view
 
 ### Environment Variables
-- Go to service → **Environment**
+
+- Go to service → **Variables** tab
 - Add/edit variables
-- Click **Save Changes** (auto-redeploys)
+- Changes apply on next deployment
 
 ### Database Access
-- Go to PostgreSQL service → **Info**
+
+- Go to PostgreSQL service → **Connect** tab
 - Copy connection string
-- Use with tools like pgAdmin or DBeaver
+- Use with tools like pgAdmin, DBeaver, or Prisma Studio
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### Service Won't Start?
-1. Check logs in the service dashboard
+
+1. Check logs in the deployment view
 2. Verify all environment variables are set
-3. Make sure DATABASE_URL is correct
+3. Make sure `DATABASE_URL` is correct
+4. Check that migrations ran successfully
 
 ### Database Connection Error?
+
 - Wait 2-3 minutes after database creation
-- Check if migrations ran successfully
-- Verify DATABASE_URL format
+- Verify `DATABASE_URL` is correctly referenced
+- Check database is in same Railway project
 
 ### Frontend Can't Connect to Backend?
-- Verify `NEXT_PUBLIC_API_URL` is set correctly
-- Check CORS settings in backend
+
+- Verify `NEXT_PUBLIC_API_URL` is set correctly in Netlify
+- Check CORS settings in backend (`FRONTEND_URL`)
 - Ensure backend service is running
 
-### Service Sleeping Too Much?
-**Free tier limitations:**
-- Services sleep after 15 min inactivity
-- First request takes ~30 sec to wake up
-- Consider upgrading to Starter plan ($7/month) for always-on
+### Railway Usage Costs Too High?
+
+- Check Metrics tab for CPU/RAM/Network usage
+- Consider optimizing database queries
+- Add Redis caching to reduce DB calls
+- Monitor background jobs (Bull queues)
 
 ---
 
-## 📊 Free Tier Limits
+## 📊 Railway Pricing
 
-| Resource | Free Tier Limit |
-|----------|----------------|
-| Web Service | 750 hours/month |
-| PostgreSQL | 1 GB storage |
-| Redis | 256 MB memory |
-| Build minutes | Unlimited |
-| Bandwidth | 100 GB/month |
+Railway charges based on actual usage:
+
+| Resource | Cost |
+|----------|------|
+| CPU | ~$0.000463/min |
+| RAM | ~$0.000231/GB/min |
+| Disk | ~$0.25/GB/month |
+| Network Egress | ~$0.10/GB |
+
+**Typical small CRM costs: $5-10/month**
+
+### Free Trial
+
+- $5 free credit on signup
+- Good for ~1 month of testing
+- No credit card required initially
 
 ---
 
-## 🚀 Upgrade Options (Optional)
+## 🚀 Optional: Add Redis Cache
 
-### Starter Plan ($7/month per service)
-- ✅ No sleep time
-- ✅ Better performance
-- ✅ More resources
+To reduce database load and costs:
 
-### When to Upgrade?
-- Production use with real customers
-- Need 24/7 availability
-- Higher traffic expected
+1. In your Railway project, click **"+ New"** → **"Database"** → **"Add Redis"**
+2. Copy the `REDIS_URL` from Variables
+3. Add to backend service variables: `REDIS_URL` = (reference Redis variable)
+4. Redeploy backend
 
 ---
 
@@ -151,27 +191,32 @@ Visit: `https://crm-frontend.onrender.com`
 
 1. **Change Default Passwords**
    - Update admin password after first login
-   - Use strong database passwords
+   - Use strong database passwords (Railway auto-generates)
 
 2. **Environment Variables**
    - Never commit `.env` files to git
-   - Use Render's environment variables
+   - Use Railway's Variables feature
 
 3. **JWT Secret**
-   - Render auto-generates this
-   - Don't share or expose
+   - Generate strong secret: `openssl rand -base64 32`
+   - Store in Railway Variables
 
 4. **CORS Configuration**
-   - Update `FRONTEND_URL` and `CORS_ORIGIN`
+   - Update `FRONTEND_URL` to match your actual frontend domain
    - Restrict to your domain only
+
+5. **Rate Limiting**
+   - Backend already has throttling configured
+   - Monitor for unusual traffic patterns
 
 ---
 
 ## 📚 Useful Links
 
-- Render Dashboard: https://dashboard.render.com
-- Render Docs: https://render.com/docs
-- Your GitHub Repo: https://github.com/shivam-9090/CRM-VISION
+- Railway Dashboard: <https://railway.app/dashboard>
+- Railway Docs: <https://docs.railway.app>
+- Your GitHub Repo: <https://github.com/shivam-9090/CRM-VISION>
+- Netlify Dashboard: <https://app.netlify.com>
 
 ---
 
@@ -181,9 +226,9 @@ Visit: `https://crm-frontend.onrender.com`
 
 ```bash
 # View service logs
-# Go to: Dashboard → Your Service → Logs
+# Go to: Railway Dashboard → Your Service → Deployments → View Logs
 
-# Run migrations
+# Run migrations manually (if needed)
 npx prisma migrate deploy
 
 # Seed database
@@ -192,7 +237,7 @@ npx prisma db seed
 # Generate Prisma client
 npx prisma generate
 
-# Check database
+# Check database (local)
 npx prisma studio
 ```
 
@@ -200,23 +245,30 @@ npx prisma studio
 
 ## 🎉 Success Checklist
 
-- ✅ All 4 services are deployed (backend, frontend, postgres, redis)
-- ✅ Backend health check passes
-- ✅ Frontend loads without errors
+- ✅ PostgreSQL database created on Railway
+- ✅ Backend service deployed and running
+- ✅ Frontend deployed on Netlify
+- ✅ All environment variables configured
+- ✅ Backend health check passes (`/api/health`)
 - ✅ Database migrations completed
 - ✅ Can login to the CRM
 - ✅ CORS configured correctly
 
-**Congratulations! Your CRM is now live! 🚀**
+**Congratulations! Your CRM is now live on Railway! 🚀**
 
 ---
 
 ## 💡 Tips
 
-1. **Monitor Usage:** Check Render dashboard for resource usage
+1. **Monitor Usage:** Check Railway Metrics tab regularly
 2. **Auto-Deploy:** Every push to `main` branch auto-deploys
-3. **Preview Branches:** Create pull requests for preview deployments
-4. **Custom Domain:** Add your own domain in service settings (free!)
-5. **Backups:** Use Render's database backup feature
+3. **Preview Deployments:** Railway creates preview for each PR
+4. **Custom Domain:** Add your own domain in Settings (free!)
+5. **Backups:** Use Railway's database backup feature or Prisma migrations
+6. **Cost Optimization:**
+   - Use connection pooling (Prisma already does this)
+   - Add Redis for caching
+   - Optimize N+1 queries
+   - Monitor slow queries
 
-**Your CRM is production-ready!** 🎯
+**Your CRM is production-ready and always-on!** 🎯
