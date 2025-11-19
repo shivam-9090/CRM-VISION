@@ -37,7 +37,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Create a non-root user for security
-RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs nestjs
 
 # Copy package files
 COPY --chown=nestjs:nodejs package*.json ./

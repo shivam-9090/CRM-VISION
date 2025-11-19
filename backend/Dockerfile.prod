@@ -41,8 +41,8 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
+RUN groupadd -g 1001 nodejs && \
+    useradd -r -u 1001 -g nodejs nestjs
 
 # Copy package files
 COPY --chown=nestjs:nodejs package*.json ./
