@@ -9,8 +9,8 @@ const logger = new Logger('EnvValidation');
 export function validateEnvironment() {
   const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
 
-  // Additional required vars for production
-  const productionRequired = [
+  // These are recommended but not required for production (free tier deployment)
+  const productionRecommended = [
     'SENTRY_DSN',
     'SMTP_HOST',
     'SMTP_USER',
@@ -28,12 +28,12 @@ export function validateEnvironment() {
     }
   }
 
-  // Production-specific required variables - make them warnings instead to allow free tier deployment
+  // Production-specific recommended variables - optional for free tier deployment
   if (process.env.NODE_ENV === 'production') {
-    for (const envVar of productionRequired) {
+    for (const envVar of productionRecommended) {
       if (!process.env[envVar]) {
         warnings.push(
-          `${envVar} not configured - some features will be disabled`,
+          `${envVar} not configured - related features will be disabled`,
         );
       }
     }
