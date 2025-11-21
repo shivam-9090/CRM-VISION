@@ -215,7 +215,7 @@ export default function GoogleCalendarConnect({
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> After connecting, all your CRM meetings
               will automatically sync to your Google Calendar. You can also add
-              events in Google Calendar (mobile or web), and they'll appear in
+              events in Google Calendar (mobile or web), and they&apos;ll appear in
               your CRM.
             </p>
           </div>

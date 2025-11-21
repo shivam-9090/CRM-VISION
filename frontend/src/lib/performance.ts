@@ -134,6 +134,7 @@ export function useMeasureRender(componentName: string) {
   useEffect(() => {
     renderCountRef.current++;
     const startTime = performance.now();
+    const renderCount = renderCountRef.current;
 
     return () => {
       const endTime = performance.now();
@@ -141,7 +142,7 @@ export function useMeasureRender(componentName: string) {
 
       if (process.env.NODE_ENV === 'development') {
         console.log(
-          `[Performance] ${componentName} render #${renderCountRef.current}: ${renderTime.toFixed(2)}ms`
+          `[Performance] ${componentName} render #${renderCount}: ${renderTime.toFixed(2)}ms`
         );
       }
     };
