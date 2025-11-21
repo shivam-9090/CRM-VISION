@@ -14,8 +14,12 @@ export class EmailService {
 
   private initializeTransporter() {
     try {
-      // Production SMTP configuration
-      if (process.env.NODE_ENV === 'production' && process.env.SMTP_HOST) {
+      // If SMTP credentials are configured, use them regardless of environment
+      if (
+        process.env.SMTP_HOST &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+      ) {
         this.transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
           port: parseInt(process.env.SMTP_PORT || '587'),
@@ -30,12 +34,12 @@ export class EmailService {
         });
 
         this.logger.log(
-          `Email service initialized (production mode - SMTP: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT})`,
+          `Email service initialized with SMTP: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT} (User: ${process.env.SMTP_USER})`,
         );
         return;
       }
 
-      // Development mode - log emails to console
+      // Fallback - log emails to console if no SMTP configured
       this.transporter = nodemailer.createTransport({
         streamTransport: true,
         newline: 'unix',
@@ -43,7 +47,7 @@ export class EmailService {
       });
 
       this.logger.log(
-        'Email service initialized (development mode - console logging)',
+        'Email service initialized (console logging mode - no SMTP configured)',
       );
     } catch (error) {
       this.logger.error('Failed to initialize email transporter', error);
@@ -62,22 +66,32 @@ export class EmailService {
         ...options,
       };
 
-      // In development, log the email content
+      // If SMTP is configured, always send real emails
+      if (
+        process.env.SMTP_HOST &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+      ) {
+        const result: any = await this.transporter.sendMail(mailOptions);
+        this.logger.log(`Email sent to ${options.to}`, result.messageId);
+        return;
+      }
+
+      // Otherwise, just log in development
       if (process.env.NODE_ENV !== 'production') {
-        this.logger.log('Email (Development Mode):');
+        this.logger.log('Email (Development Mode - No SMTP):');
         this.logger.log(`To: ${options.to}`);
         this.logger.log(`Subject: ${options.subject}`);
         if (options.html) {
           this.logger.log(
-            'HTML content available. In production, this would be sent via SMTP.',
+            'HTML content available. Configure SMTP to send real emails.',
           );
         }
         return;
       }
 
-      // In production, actually send the email
-      const result: any = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent to ${options.to}`, result.messageId);
+      // In production without SMTP, throw error
+      throw new Error('SMTP not configured');
     } catch (error) {
       this.logger.error(`Failed to send email to ${options.to}`, error);
       throw new Error('Failed to send email');
@@ -134,19 +148,7 @@ export class EmailService {
         `,
       };
 
-      // In development, log the email content
-      if (process.env.NODE_ENV !== 'production') {
-        this.logger.log('Password Reset Email (Development Mode):');
-        this.logger.log(`To: ${email}`);
-        this.logger.log(`Subject: ${mailOptions.subject}`);
-        this.logger.log(`Reset URL: ${resetUrl}`);
-        this.logger.log(
-          'Email content logged. In production, this would be sent via SMTP.',
-        );
-        return;
-      }
-
-      // In production, actually send the email
+      // Send the email via SMTP
       const result: any = await this.transporter.sendMail(mailOptions);
       this.logger.log(
         `Password reset email sent to ${email}`,
@@ -200,18 +202,7 @@ export class EmailService {
         `,
       };
 
-      // In development, log the email content
-      if (process.env.NODE_ENV !== 'production') {
-        this.logger.log('Welcome Email (Development Mode):');
-        this.logger.log(`To: ${email}`);
-        this.logger.log(`Subject: ${mailOptions.subject}`);
-        this.logger.log(
-          'Email content logged. In production, this would be sent via SMTP.',
-        );
-        return;
-      }
-
-      // In production, actually send the email
+      // Send the email via SMTP
       const result: any = await this.transporter.sendMail(mailOptions);
       this.logger.log(`Welcome email sent to ${email}`, result.messageId);
     } catch (error) {
@@ -246,18 +237,91 @@ export class EmailService {
         `,
       };
 
-      if (process.env.NODE_ENV !== 'production') {
-        this.logger.log('Invitation Email (Development Mode):');
-        this.logger.log(`To: ${email}`);
-        this.logger.log(`Invite URL: ${inviteUrl}`);
-        return;
-      }
-
+      // Send the email via SMTP
       const result: any = await this.transporter.sendMail(mailOptions);
       this.logger.log(`Invitation email sent to ${email}`, result.messageId);
     } catch (error) {
       this.logger.error(`Failed to send invitation email to ${email}`, error);
       throw new Error('Failed to send invitation email');
     }
+  }
+
+  async sendVerificationCodeEmail(
+    email: string,
+    name: string,
+    code: string,
+  ): Promise<void> {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">🔐 Login Verification</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
+          <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">Hello ${name},</p>
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
+            You are attempting to log in to your CRM account. Please use the verification code below to complete your login:
+          </p>
+          
+          <div style="background: white; border: 2px dashed #667eea; border-radius: 8px; padding: 25px; text-align: center; margin: 30px 0;">
+            <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace;">
+              ${code}
+            </div>
+          </div>
+
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 25px 0;">
+            <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
+              ⚠️ <strong>Important:</strong> This code will expire in <strong>10 minutes</strong>. If you didn't attempt to log in, please secure your account immediately.
+            </p>
+          </div>
+
+          <div style="background: #e0e7ff; padding: 20px; border-radius: 8px; margin-top: 25px;">
+            <h3 style="color: #3730a3; margin: 0 0 10px 0; font-size: 14px;">🛡️ Security Tips:</h3>
+            <ul style="color: #4c1d95; font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+              <li>Never share this code with anyone</li>
+              <li>Our support team will never ask for this code</li>
+              <li>This code is only valid for this login session</li>
+            </ul>
+          </div>
+
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+          
+          <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 20px 0 0 0;">
+            This email was sent to <strong>${email}</strong><br>
+            CRM System - Secure Account Access<br>
+            If you have questions, contact our support team.
+          </p>
+        </div>
+      </div>
+    `;
+
+    const text = `
+      Login Verification Code
+      
+      Hello ${name},
+      
+      You are attempting to log in to your CRM account at ${email}.
+      
+      Your verification code is: ${code}
+      
+      This code will expire in 10 minutes.
+      
+      Security Tips:
+      - Never share this code with anyone
+      - Our support team will never ask for this code
+      - This code is only valid for this login session
+      
+      If you didn't attempt to log in, please secure your account immediately.
+      
+      ---
+      CRM System
+    `;
+
+    // Use the sendEmail method which handles SMTP configuration check
+    await this.sendEmail({
+      to: email,
+      subject: 'Login Verification Code - CRM System',
+      html,
+      text,
+    });
   }
 }

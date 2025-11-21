@@ -129,6 +129,11 @@ export class DealsService {
     const leadScore = this.calculateLeadScore(createDealDto as any);
 
     // Build deal data object conditionally
+    // Prepare date fields to avoid Prisma parsing issues
+    const expectedCloseDateValue = createDealDto.expectedCloseDate
+      ? new Date(createDealDto.expectedCloseDate)
+      : undefined;
+
     const dealData: Prisma.DealCreateInput = {
       title: sanitizedTitle,
       value: createDealDto.value,
@@ -137,9 +142,7 @@ export class DealsService {
       leadSource: createDealDto.leadSource,
       leadScore,
       notes: sanitizedNotes,
-      expectedCloseDate: createDealDto.expectedCloseDate
-        ? new Date(createDealDto.expectedCloseDate)
-        : undefined,
+      expectedCloseDate: expectedCloseDateValue,
       company: {
         connect: { id: user.companyId },
       },
@@ -238,9 +241,18 @@ export class DealsService {
     return deal;
   }
 
-  // ✅ Optimized update - single query with updateMany
+  // ✅ Optimized update - using update with where clause for company check
   async update(id: string, updateDealDto: UpdateDealDto, companyId: string) {
     try {
+      // First verify the deal exists and belongs to the company
+      const existingDeal = await this.prisma.deal.findFirst({
+        where: { id, companyId },
+      });
+
+      if (!existingDeal) {
+        throw new NotFoundException(`Deal with ID ${id} not found`);
+      }
+
       // Prepare update data
       const dataToUpdate: Prisma.DealUpdateInput = {};
 
@@ -263,16 +275,18 @@ export class DealsService {
       if (updateDealDto.leadSource !== undefined)
         dataToUpdate.leadSource = updateDealDto.leadSource;
       if (updateDealDto.lastContactDate !== undefined) {
-        dataToUpdate.lastContactDate = updateDealDto.lastContactDate
+        const lastContactDateValue = updateDealDto.lastContactDate
           ? new Date(updateDealDto.lastContactDate)
           : null;
+        dataToUpdate.lastContactDate = lastContactDateValue;
       }
 
       // Handle date conversion
       if (updateDealDto.expectedCloseDate !== undefined) {
-        dataToUpdate.expectedCloseDate = updateDealDto.expectedCloseDate
+        const expectedCloseDateValue = updateDealDto.expectedCloseDate
           ? new Date(updateDealDto.expectedCloseDate)
           : null;
+        dataToUpdate.expectedCloseDate = expectedCloseDateValue;
       }
 
       // Auto-handle closed deals
@@ -289,8 +303,12 @@ export class DealsService {
       }
 
       // Update contact if changed
-      if (updateDealDto.contactId) {
-        dataToUpdate.contact = { connect: { id: updateDealDto.contactId } };
+      if (updateDealDto.contactId !== undefined) {
+        if (updateDealDto.contactId) {
+          dataToUpdate.contact = { connect: { id: updateDealDto.contactId } };
+        } else {
+          dataToUpdate.contact = { disconnect: true };
+        }
       }
 
       // Update assignedTo if changed
@@ -311,24 +329,15 @@ export class DealsService {
         updateDealDto.priority !== undefined ||
         updateDealDto.leadSource !== undefined
       ) {
-        const currentDeal = await this.prisma.deal.findUnique({
-          where: { id },
-        });
-        if (currentDeal) {
-          const mergedDeal = { ...currentDeal, ...updateDealDto };
-          dataToUpdate.leadScore = this.calculateLeadScore(mergedDeal as any);
-        }
+        const mergedDeal = { ...existingDeal, ...updateDealDto };
+        dataToUpdate.leadScore = this.calculateLeadScore(mergedDeal as any);
       }
 
-      // ✅ Single query with company check
-      const updated = await this.prisma.deal.updateMany({
-        where: { id, companyId },
+      // ✅ Use update instead of updateMany to support relation operations
+      await this.prisma.deal.update({
+        where: { id },
         data: dataToUpdate,
       });
-
-      if (updated.count === 0) {
-        throw new NotFoundException(`Deal with ID ${id} not found`);
-      }
 
       // ✅ Invalidate Redis cache after update
       await this.invalidateCache(companyId, updateDealDto.assignedToId);

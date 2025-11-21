@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Label from "@/components/ui/Label";
@@ -30,13 +36,13 @@ export default function SecurityPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await api.post("/auth/2fa/disable", { password });
-      
+
       setSuccess(response.data.message || "2FA disabled successfully");
       setPassword("");
       setShowDisable2FA(false);
-      
+
       // Refresh user data
       await refreshUser();
     } catch (err: any) {
@@ -95,16 +101,17 @@ export default function SecurityPage() {
             </div>
             <CardDescription>
               {is2FAEnabled
-                ? "Your account is protected with two-factor authentication"
-                : "Add an extra layer of security to your account"}
+                ? "Your account is protected with authenticator app 2FA"
+                : "Add an extra layer of security with an authenticator app"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {is2FAEnabled ? (
               <div className="space-y-4">
                 <p className="text-sm text-gray-600">
-                  Two-factor authentication is currently enabled on your account. You&apos;ll be asked for a
-                  verification code each time you log in.
+                  Two-factor authentication is currently enabled on your
+                  account. You&apos;ll be asked for a code from your
+                  authenticator app each time you log in.
                 </p>
                 {!showDisable2FA ? (
                   <Button
@@ -156,8 +163,9 @@ export default function SecurityPage() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-gray-600">
-                  Two-factor authentication is not enabled. Enable it now to secure your account with an
-                  authenticator app.
+                  Two-factor authentication is not enabled. Enable it now to
+                  secure your account with an authenticator app like Google
+                  Authenticator or Authy.
                 </p>
               </div>
             )}
@@ -165,7 +173,9 @@ export default function SecurityPage() {
         </Card>
 
         {/* 2FA Setup Card (only show if not enabled) */}
-        {!is2FAEnabled && <TwoFactorSetup onSetupComplete={handle2FASetupComplete} />}
+        {!is2FAEnabled && (
+          <TwoFactorSetup onSetupComplete={handle2FASetupComplete} />
+        )}
 
         {/* Account Security Tips */}
         <Card>

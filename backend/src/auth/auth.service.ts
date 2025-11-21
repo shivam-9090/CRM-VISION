@@ -306,30 +306,36 @@ export class AuthService {
     // Check for 2FA if enabled
     if (user.twoFactorEnabled) {
       if (!twoFactorToken) {
-        // Password is correct, but 2FA token is required
         return {
           requiresTwoFactor: true,
-          message: 'Please provide your 2FA token',
+          message: 'Please enter the 6-digit code from your authenticator app',
         };
       }
 
-      // Verify 2FA token
-      const is2FAValid = await this.verifyTwoFactorToken(
-        user.id,
+      // Verify TOTP token from authenticator app
+      if (!user.twoFactorSecret) {
+        throw new UnauthorizedException('2FA is not properly configured');
+      }
+
+      const is2FAValid = this.verifyTwoFactorToken(
+        user.twoFactorSecret,
         twoFactorToken,
       );
       if (!is2FAValid) {
-        throw new UnauthorizedException('Invalid 2FA token');
+        throw new UnauthorizedException('Invalid 2FA code. Please try again.');
       }
     }
 
-    // Reset failed attempts on successful login
+    // Reset failed attempts and verify account on successful login
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
         failedLoginAttempts: 0,
         lockedUntil: null,
         lastLoginAt: new Date(),
+        isVerified: true, // Auto-verify on first successful login
+        verificationToken: null, // Clear verification token
+        verificationExpiry: null, // Clear expiry
       },
     });
 
@@ -728,11 +734,25 @@ export class AuthService {
     };
   }
 
+  // 2FA Methods - Authenticator App (TOTP)
   async enableTwoFactor(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true, twoFactorEnabled: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled');
+    }
+
     // Generate secret for TOTP
     const secret = speakeasy.generateSecret({
-      name: `CRM System (${userId})`,
-      length: 32,
+      name: `CRM Vision (${user.email})`,
+      issuer: 'CRM Vision',
     });
 
     // Store the secret temporarily (not enabled until verified)
@@ -740,7 +760,7 @@ export class AuthService {
       where: { id: userId },
       data: {
         twoFactorSecret: secret.base32,
-        twoFactorEnabled: false, // Not enabled until verified
+        twoFactorEnabled: false,
       },
     });
 
@@ -751,14 +771,17 @@ export class AuthService {
       secret: secret.base32,
       qrCode: qrCodeUrl,
       message:
-        'Scan the QR code with your authenticator app and verify to enable 2FA',
+        'Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)',
     };
   }
 
   async verifyAndEnableTwoFactor(userId: string, token: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { twoFactorSecret: true, twoFactorEnabled: true },
+      select: {
+        twoFactorSecret: true,
+        twoFactorEnabled: true,
+      },
     });
 
     if (!user || !user.twoFactorSecret) {
@@ -767,22 +790,22 @@ export class AuthService {
       );
     }
 
-    // Verify the token
-    const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
-      encoding: 'base32',
-      token,
-      window: 2, // Allow 2 time steps before/after
-    });
+    if (user.twoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled');
+    }
 
-    if (!verified) {
-      throw new UnauthorizedException('Invalid 2FA token');
+    // Verify the token
+    const isValid = this.verifyTwoFactorToken(user.twoFactorSecret, token);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid verification code');
     }
 
     // Enable 2FA
     await this.prisma.user.update({
       where: { id: userId },
-      data: { twoFactorEnabled: true },
+      data: {
+        twoFactorEnabled: true,
+      },
     });
 
     return {
@@ -791,21 +814,17 @@ export class AuthService {
     };
   }
 
-  async verifyTwoFactorToken(userId: string, token: string): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { twoFactorSecret: true, twoFactorEnabled: true },
-    });
-
-    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+  verifyTwoFactorToken(secret: string, token: string): boolean {
+    if (!secret || !token) {
       return false;
     }
 
+    // Verify TOTP token
     return speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
+      secret: secret,
       encoding: 'base32',
-      token,
-      window: 2,
+      token: token,
+      window: 2, // Allow 2 time steps before/after for clock skew
     });
   }
 

@@ -1,48 +1,52 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
-import api from '@/lib/api';
-import Sidebar from '@/components/layout/Sidebar';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useInvalidateQueries } from "@/lib/use-invalidate-queries";
+import api from "@/lib/api";
+import Sidebar from "@/components/layout/Sidebar";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ArrowLeft } from "lucide-react";
 
 const ACTIVITY_TYPES = [
-  { value: 'TASK', label: 'Task' },
-  { value: 'CALL', label: 'Call' },
-  { value: 'MEETING', label: 'Meeting' },
-  { value: 'EMAIL', label: 'Email' },
-  { value: 'NOTE', label: 'Note' }
+  { value: "TASK", label: "Task" },
+  { value: "CALL", label: "Call" },
+  { value: "MEETING", label: "Meeting" },
+  { value: "EMAIL", label: "Email" },
+  { value: "NOTE", label: "Note" },
 ];
 
 const ACTIVITY_STATUS = [
-  { value: 'SCHEDULED', label: 'Scheduled' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' }
+  { value: "SCHEDULED", label: "Scheduled" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "CANCELLED", label: "Cancelled" },
 ];
 
 export default function CreateActivityPage() {
   const router = useRouter();
   const { invalidateOnActivityChange } = useInvalidateQueries();
   const [formData, setFormData] = useState({
-    title: '',
-    type: 'TASK',
-    status: 'SCHEDULED',
-    scheduledDate: '',
-    description: '',
+    title: "",
+    type: "TASK",
+    status: "SCHEDULED",
+    scheduledDate: "",
+    description: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
+      setErrors({ ...errors, [e.target.name]: "" });
     }
   };
 
@@ -52,20 +56,22 @@ export default function CreateActivityPage() {
     setErrors({});
 
     try {
-      await api.post('/activities', formData);
+      await api.post("/activities", formData);
       // ✅ Invalidate cache to refresh dashboard and activities list in real-time
       invalidateOnActivityChange();
-      router.push('/activities');
+      router.push("/activities");
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
+      if (err && typeof err === "object" && "response" in err) {
         const response = (err as any).response;
         if (response?.data?.errors) {
           setErrors(response.data.errors);
         } else {
-          setErrors({ general: response?.data?.message || 'Failed to create activity' });
+          setErrors({
+            general: response?.data?.message || "Failed to create activity",
+          });
         }
       } else {
-        setErrors({ general: 'Failed to create activity' });
+        setErrors({ general: "Failed to create activity" });
       }
     } finally {
       setLoading(false);
@@ -73,18 +79,23 @@ export default function CreateActivityPage() {
   };
 
   // Get today's date in YYYY-MM-DD format for min attribute
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
+      <div className="flex-1 p-4 bg-gray-50 min-h-screen animate-fade-in">
         <div className="mb-8">
-          <Link href="/activities" className="inline-flex items-center text-gray-600 hover:text-black mb-4 transition-colors duration-200">
+          <Link
+            href="/activities"
+            className="inline-flex items-center text-gray-600 hover:text-black mb-4 transition-colors duration-200"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Activities
           </Link>
-          <h1 className="text-3xl font-bold text-black animate-slide-in-left">Create Activity</h1>
+          <h1 className="text-3xl font-bold text-black animate-slide-in-left">
+            Create Activity
+          </h1>
         </div>
 
         <Card className="max-w-xl mx-auto hover:shadow-lg transition-all duration-300 animate-bounce-subtle">

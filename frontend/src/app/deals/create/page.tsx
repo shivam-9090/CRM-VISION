@@ -1,47 +1,47 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import api from '@/lib/api';
-import { verify } from '@/lib/auth';
-import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
-import Sidebar from '@/components/layout/Sidebar';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import api from "@/lib/api";
+import { verify } from "@/lib/auth";
+import { useInvalidateQueries } from "@/lib/use-invalidate-queries";
+import Sidebar from "@/components/layout/Sidebar";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ArrowLeft } from "lucide-react";
 
 const DEAL_STAGES = [
-  { value: 'LEAD', label: 'Lead' },
-  { value: 'QUALIFIED', label: 'Qualified' },
-  { value: 'PROPOSAL', label: 'Proposal' },
-  { value: 'NEGOTIATION', label: 'Negotiation' },
-  { value: 'CLOSED_WON', label: 'Closed Won' },
-  { value: 'CLOSED_LOST', label: 'Closed Lost' }
+  { value: "LEAD", label: "Lead" },
+  { value: "QUALIFIED", label: "Qualified" },
+  { value: "PROPOSAL", label: "Proposal" },
+  { value: "NEGOTIATION", label: "Negotiation" },
+  { value: "CLOSED_WON", label: "Closed Won" },
+  { value: "CLOSED_LOST", label: "Closed Lost" },
 ];
 
 const PRIORITIES = [
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'URGENT', label: 'Urgent' }
+  { value: "LOW", label: "Low" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "HIGH", label: "High" },
+  { value: "URGENT", label: "Urgent" },
 ];
 
 const LEAD_SOURCES = [
-  { value: 'WEBSITE', label: 'Website' },
-  { value: 'FACEBOOK', label: 'Facebook' },
-  { value: 'GOOGLE_ADS', label: 'Google Ads' },
-  { value: 'LINKEDIN', label: 'LinkedIn' },
-  { value: 'REFERRAL', label: 'Referral' },
-  { value: 'COLD_CALL', label: 'Cold Call' },
-  { value: 'EMAIL_CAMPAIGN', label: 'Email Campaign' },
-  { value: 'TRADE_SHOW', label: 'Trade Show' },
-  { value: 'SOCIAL_MEDIA', label: 'Social Media' },
-  { value: 'DIRECT_MAIL', label: 'Direct Mail' },
-  { value: 'PARTNER', label: 'Partner' },
-  { value: 'OTHER', label: 'Other' }
+  { value: "WEBSITE", label: "Website" },
+  { value: "FACEBOOK", label: "Facebook" },
+  { value: "GOOGLE_ADS", label: "Google Ads" },
+  { value: "LINKEDIN", label: "LinkedIn" },
+  { value: "REFERRAL", label: "Referral" },
+  { value: "COLD_CALL", label: "Cold Call" },
+  { value: "EMAIL_CAMPAIGN", label: "Email Campaign" },
+  { value: "TRADE_SHOW", label: "Trade Show" },
+  { value: "SOCIAL_MEDIA", label: "Social Media" },
+  { value: "DIRECT_MAIL", label: "Direct Mail" },
+  { value: "PARTNER", label: "Partner" },
+  { value: "OTHER", label: "Other" },
 ];
 
 interface Contact {
@@ -60,19 +60,22 @@ interface TeamMember {
 export default function CreateDealPage() {
   const router = useRouter();
   const { invalidateOnDealChange } = useInvalidateQueries(); // Add cache invalidation
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [formData, setFormData] = useState({
-    title: '',
-    value: '',
-    stage: 'LEAD',
-    priority: 'MEDIUM',
-    leadSource: 'WEBSITE',
-    contactId: '',
-    assignedToId: '',
-    expectedCloseDate: '',
-    notes: '',
+    title: "",
+    value: "",
+    stage: "LEAD",
+    priority: "MEDIUM",
+    leadSource: "WEBSITE",
+    contactId: "",
+    assignedToId: "",
+    expectedCloseDate: "",
+    notes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -84,26 +87,26 @@ export default function CreateDealPage() {
         const user = await verify();
         if (user) {
           setCurrentUser({ id: user.id, name: user.name });
-          setFormData(prev => ({ ...prev, assignedToId: user.id })); // Default to current user
+          setFormData((prev) => ({ ...prev, assignedToId: user.id })); // Default to current user
         }
 
         // Fetch contacts
-        const contactsResponse = await api.get('/contacts');
-        const contactsData = Array.isArray(contactsResponse.data) 
-          ? contactsResponse.data 
-          : (contactsResponse.data?.data || []);
+        const contactsResponse = await api.get("/contacts");
+        const contactsData = Array.isArray(contactsResponse.data)
+          ? contactsResponse.data
+          : contactsResponse.data?.data || [];
         setContacts(contactsData);
 
         // Fetch team members (users in same company)
-        const companiesResponse = await api.get('/companies');
+        const companiesResponse = await api.get("/companies");
         // Companies endpoint returns array with user's company including users
-        const companyData = Array.isArray(companiesResponse.data) 
-          ? companiesResponse.data[0] 
+        const companyData = Array.isArray(companiesResponse.data)
+          ? companiesResponse.data[0]
           : companiesResponse.data;
         const usersData = companyData?.users || [];
         setTeamMembers(usersData);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error("Failed to fetch data:", error);
       }
     };
     fetchData();
@@ -111,10 +114,12 @@ export default function CreateDealPage() {
 
   // Removed contact fetching as contact field is no longer required
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
+      setErrors({ ...errors, [e.target.name]: "" });
     }
   };
 
@@ -135,27 +140,34 @@ export default function CreateDealPage() {
       assignedToId: formData.assignedToId || currentUser?.id,
     };
 
-    console.log('Submitting deal data:', submitData);
+    console.log("Submitting deal data:", submitData);
 
     try {
-      const response = await api.post('/deals', submitData);
-      console.log('Deal created successfully:', response.data);
-      
+      const response = await api.post("/deals", submitData);
+      console.log("Deal created successfully:", response.data);
+
       // ✅ Invalidate cache to refresh dashboard and deals list in real-time
       invalidateOnDealChange();
-      
-      router.push('/deals');
+
+      router.push("/deals");
     } catch (err: unknown) {
-      console.error('Deal creation failed:', err);
-      if (err && typeof err === 'object' && 'response' in err) {
-        const response = err as { response?: { data?: { errors?: Record<string, string>; message?: string } } };
+      console.error("Deal creation failed:", err);
+      if (err && typeof err === "object" && "response" in err) {
+        const response = err as {
+          response?: {
+            data?: { errors?: Record<string, string>; message?: string };
+          };
+        };
         if (response.response?.data?.errors) {
           setErrors(response.response.data.errors);
         } else {
-          setErrors({ general: response.response?.data?.message || 'Failed to create deal' });
+          setErrors({
+            general:
+              response.response?.data?.message || "Failed to create deal",
+          });
         }
       } else {
-        setErrors({ general: 'Failed to create deal' });
+        setErrors({ general: "Failed to create deal" });
       }
     } finally {
       setLoading(false);
@@ -167,13 +179,18 @@ export default function CreateDealPage() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
+      <div className="flex-1 p-4 bg-gray-50 min-h-screen animate-fade-in">
         <div className="mb-8">
-          <Link href="/deals" className="inline-flex items-center text-gray-600 hover:text-black mb-4 transition-colors duration-200">
+          <Link
+            href="/deals"
+            className="inline-flex items-center text-gray-600 hover:text-black mb-4 transition-colors duration-200"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Deals
           </Link>
-          <h1 className="text-3xl font-bold text-black animate-slide-in-left">Create Deal</h1>
+          <h1 className="text-3xl font-bold text-black animate-slide-in-left">
+            Create Deal
+          </h1>
         </div>
 
         <Card className="max-w-xl mx-auto hover:shadow-lg transition-all duration-300 animate-bounce-subtle">
@@ -204,7 +221,9 @@ export default function CreateDealPage() {
                 <textarea
                   name="notes"
                   value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={3}
                   placeholder="Add any notes or description for this deal..."
@@ -265,11 +284,11 @@ export default function CreateDealPage() {
                   value={formData.contactId}
                   onChange={handleChange}
                   options={[
-                    { value: '', label: 'No contact' },
-                    ...contacts.map(contact => ({
+                    { value: "", label: "No contact" },
+                    ...contacts.map((contact) => ({
                       value: contact.id,
-                      label: `${contact.firstName} ${contact.lastName}`
-                    }))
+                      label: `${contact.firstName} ${contact.lastName}`,
+                    })),
                   ]}
                 />
 
@@ -278,9 +297,9 @@ export default function CreateDealPage() {
                   name="assignedToId"
                   value={formData.assignedToId}
                   onChange={handleChange}
-                  options={teamMembers.map(member => ({
+                  options={teamMembers.map((member) => ({
                     value: member.id,
-                    label: member.name
+                    label: member.name,
                   }))}
                 />
               </div>
@@ -294,8 +313,6 @@ export default function CreateDealPage() {
                 error={errors.expectedCloseDate}
                 placeholder="Select expected close date"
               />
-
-
 
               <div className="flex gap-4">
                 <Button type="submit" isLoading={loading}>

@@ -152,17 +152,25 @@ export class ImportService {
           contactId = contact?.id || null;
         }
 
-        // Create deal
+        // Create deal - prepare date fields separately to avoid Prisma parsing issues
+        let expectedCloseDateValue: Date | null = null;
+        if (row['Expected Close Date']) {
+          expectedCloseDateValue = new Date(row['Expected Close Date']);
+        }
+
+        let closedAtValue: Date | null = null;
+        if (row['Closed At']) {
+          closedAtValue = new Date(row['Closed At']);
+        }
+
         await this.prisma.deal.create({
           data: {
             title: row['Title'],
             value: row['Value'] ? parseFloat(row['Value']) : 0,
             stage: stage || 'LEAD',
             priority: priority || 'MEDIUM',
-            expectedCloseDate: row['Expected Close Date']
-              ? new Date(row['Expected Close Date'])
-              : null,
-            closedAt: row['Closed At'] ? new Date(row['Closed At']) : null,
+            expectedCloseDate: expectedCloseDateValue,
+            closedAt: closedAtValue,
             contactId,
             companyId,
           },

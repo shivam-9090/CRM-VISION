@@ -247,6 +247,7 @@ export class AuthController {
     return this.authService.resendVerificationEmail(body.email);
   }
 
+  // 2FA endpoints
   @Post('2fa/enable')
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')

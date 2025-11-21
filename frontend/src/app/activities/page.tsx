@@ -1,19 +1,36 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
-import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
-import api from '@/lib/api';
-import Sidebar from '@/components/layout/Sidebar';
-import Button from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
-import { Plus, Edit, Trash2, Clock, CheckCircle, XCircle, Search, Filter, X } from 'lucide-react';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { hasAuthToken, verifyAuthToken } from "@/lib/auth-utils";
+import { useInvalidateQueries } from "@/lib/use-invalidate-queries";
+import api from "@/lib/api";
+import Sidebar from "@/components/layout/Sidebar";
+import Button from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Search,
+  Filter,
+  X,
+} from "lucide-react";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import toast from "react-hot-toast";
 
 interface Activity {
   id: string;
@@ -34,45 +51,45 @@ interface Activity {
 }
 
 const ACTIVITY_TYPES = {
-  TASK: 'Task',
-  CALL: 'Call',
-  MEETING: 'Meeting',
-  EMAIL: 'Email',
-  NOTE: 'Note'
+  TASK: "Task",
+  CALL: "Call",
+  MEETING: "Meeting",
+  EMAIL: "Email",
+  NOTE: "Note",
 };
 
 const ACTIVITY_STATUS = {
-  SCHEDULED: 'Scheduled',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled'
+  SCHEDULED: "Scheduled",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
 };
 
 const STATUS_COLORS = {
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  COMPLETED: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800'
+  SCHEDULED: "bg-blue-100 text-blue-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-800",
 };
 
 const STATUS_ICONS = {
   SCHEDULED: Clock,
   COMPLETED: CheckCircle,
-  CANCELLED: XCircle
+  CANCELLED: XCircle,
 };
 
 const TYPE_FILTER_OPTIONS = [
-  { value: '', label: 'All Types' },
-  { value: 'TASK', label: 'Task' },
-  { value: 'CALL', label: 'Call' },
-  { value: 'MEETING', label: 'Meeting' },
-  { value: 'EMAIL', label: 'Email' },
-  { value: 'NOTE', label: 'Note' }
+  { value: "", label: "All Types" },
+  { value: "TASK", label: "Task" },
+  { value: "CALL", label: "Call" },
+  { value: "MEETING", label: "Meeting" },
+  { value: "EMAIL", label: "Email" },
+  { value: "NOTE", label: "Note" },
 ];
 
 const STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'SCHEDULED', label: 'Scheduled' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' }
+  { value: "", label: "All Statuses" },
+  { value: "SCHEDULED", label: "Scheduled" },
+  { value: "COMPLETED", label: "Completed" },
+  { value: "CANCELLED", label: "Cancelled" },
 ];
 
 export default function ActivitiesPage() {
@@ -82,27 +99,27 @@ export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState("");
+
   // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const hasToken = hasAuthToken();
         if (!hasToken) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
-        
+
         const isValid = await verifyAuthToken();
         if (!isValid) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
       }
@@ -115,28 +132,28 @@ export default function ActivitiesPage() {
       fetchActivities();
     };
 
-    window.addEventListener('focus', handleFocus);
-    
+    window.addEventListener("focus", handleFocus);
+
     // Also refetch when visibility changes (user returns to the tab)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         fetchActivities();
       }
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [router]);
 
   // Refetch activities when navigating back to this page
   useEffect(() => {
-    console.log('📍 Pathname changed to:', pathname);
-    if (pathname === '/activities') {
-      console.log('✨ Pathname is /activities - refetching...');
+    console.log("📍 Pathname changed to:", pathname);
+    if (pathname === "/activities") {
+      console.log("✨ Pathname is /activities - refetching...");
       fetchActivities();
     }
   }, [pathname]);
@@ -147,48 +164,56 @@ export default function ActivitiesPage() {
 
     // Search filter
     if (searchQuery) {
-      filtered = filtered.filter(activity =>
-        activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.contact?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.deal?.title.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (activity) =>
+          activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          activity.description
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          activity.contact?.name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          activity.deal?.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Type filter
     if (typeFilter) {
-      filtered = filtered.filter(activity => activity.type === typeFilter);
+      filtered = filtered.filter((activity) => activity.type === typeFilter);
     }
 
     // Status filter
     if (statusFilter) {
-      filtered = filtered.filter(activity => activity.status === statusFilter);
+      filtered = filtered.filter(
+        (activity) => activity.status === statusFilter
+      );
     }
 
     setFilteredActivities(filtered);
   }, [activities, searchQuery, typeFilter, statusFilter]);
 
   const fetchActivities = async () => {
-    console.log('🔄 Fetching activities...');
+    console.log("🔄 Fetching activities...");
     try {
-      const response = await api.get('/activities');
-      console.log('📦 Raw API response:', response);
-      console.log('📦 Response data:', response.data);
-      console.log('📦 Response data type:', typeof response.data);
-      console.log('📦 Is array?:', Array.isArray(response.data));
-      
+      const response = await api.get("/activities");
+      console.log("📦 Raw API response:", response);
+      console.log("📦 Response data:", response.data);
+      console.log("📦 Response data type:", typeof response.data);
+      console.log("📦 Is array?:", Array.isArray(response.data));
+
       // Check if response.data has a 'data' property (paginated response)
       const activitiesData = response.data.data || response.data;
       const data = Array.isArray(activitiesData) ? activitiesData : [];
-      
-      console.log('✅ Activities fetched:', data.length, 'activities');
-      console.log('📋 Activities:', data);
+
+      console.log("✅ Activities fetched:", data.length, "activities");
+      console.log("📋 Activities:", data);
       setActivities(data);
       setFilteredActivities(data);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch activities';
-      console.error('❌ Failed to fetch activities:', errorMessage);
-      console.error('❌ Full error:', err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch activities";
+      console.error("❌ Failed to fetch activities:", errorMessage);
+      console.error("❌ Full error:", err);
       setError(errorMessage);
       toast.error(errorMessage);
       setActivities([]);
@@ -199,16 +224,17 @@ export default function ActivitiesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this activity?')) return;
+    if (!confirm("Are you sure you want to delete this activity?")) return;
 
     try {
       await api.delete(`/activities/${id}`);
-      setActivities(activities.filter(activity => activity.id !== id));
+      setActivities(activities.filter((activity) => activity.id !== id));
       // ✅ Invalidate cache to refresh dashboard and activities list in real-time
       invalidateOnActivityChange();
-      toast.success('Activity deleted successfully');
+      toast.success("Activity deleted successfully");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete activity';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete activity";
       setError(errorMessage);
       toast.error(errorMessage);
     }
@@ -217,14 +243,17 @@ export default function ActivitiesPage() {
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await api.patch(`/activities/${id}`, { status: newStatus });
-      setActivities(activities.map(activity => 
-        activity.id === id ? { ...activity, status: newStatus } : activity
-      ));
+      setActivities(
+        activities.map((activity) =>
+          activity.id === id ? { ...activity, status: newStatus } : activity
+        )
+      );
       // ✅ Invalidate cache to refresh dashboard and activities list in real-time
       invalidateOnActivityChange();
       toast.success(`Activity marked as ${newStatus.toLowerCase()}`);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update activity';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update activity";
       setError(errorMessage);
       toast.error(errorMessage);
     }
@@ -232,51 +261,66 @@ export default function ActivitiesPage() {
 
   const handleBulkDelete = async () => {
     if (selectedActivities.length === 0) {
-      toast.error('No activities selected');
+      toast.error("No activities selected");
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedActivities.length} activities?`)) return;
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedActivities.length} activities?`
+      )
+    )
+      return;
 
     try {
       await Promise.all(
-        selectedActivities.map(id => api.delete(`/activities/${id}`))
+        selectedActivities.map((id) => api.delete(`/activities/${id}`))
       );
-      setActivities(activities.filter(activity => !selectedActivities.includes(activity.id)));
+      setActivities(
+        activities.filter(
+          (activity) => !selectedActivities.includes(activity.id)
+        )
+      );
       setSelectedActivities([]);
       // ✅ Invalidate cache to refresh dashboard and activities list in real-time
       invalidateOnActivityChange();
       toast.success(`${selectedActivities.length} activities deleted`);
     } catch (err) {
-      toast.error('Failed to delete some activities');
+      toast.error("Failed to delete some activities");
     }
   };
 
   const handleBulkStatusChange = async (newStatus: string) => {
     if (selectedActivities.length === 0) {
-      toast.error('No activities selected');
+      toast.error("No activities selected");
       return;
     }
 
     try {
       await Promise.all(
-        selectedActivities.map(id => api.patch(`/activities/${id}`, { status: newStatus }))
+        selectedActivities.map((id) =>
+          api.patch(`/activities/${id}`, { status: newStatus })
+        )
       );
-      setActivities(activities.map(activity =>
-        selectedActivities.includes(activity.id) ? { ...activity, status: newStatus } : activity
-      ));
+      setActivities(
+        activities.map((activity) =>
+          selectedActivities.includes(activity.id)
+            ? { ...activity, status: newStatus }
+            : activity
+        )
+      );
       setSelectedActivities([]);
       // ✅ Invalidate cache to refresh dashboard and activities list in real-time
       invalidateOnActivityChange();
       toast.success(`${selectedActivities.length} activities updated`);
     } catch (err) {
-      toast.error('Failed to update some activities');
+      toast.error("Failed to update some activities");
     }
   };
 
   const toggleSelectActivity = (id: string) => {
-    setSelectedActivities(prev =>
-      prev.includes(id) ? prev.filter(actId => actId !== id) : [...prev, id]
+    setSelectedActivities((prev) =>
+      prev.includes(id) ? prev.filter((actId) => actId !== id) : [...prev, id]
     );
   };
 
@@ -284,21 +328,21 @@ export default function ActivitiesPage() {
     if (selectedActivities.length === filteredActivities.length) {
       setSelectedActivities([]);
     } else {
-      setSelectedActivities(filteredActivities.map(a => a.id));
+      setSelectedActivities(filteredActivities.map((a) => a.id));
     }
   };
 
   const clearFilters = () => {
-    setSearchQuery('');
-    setTypeFilter('');
-    setStatusFilter('');
+    setSearchQuery("");
+    setTypeFilter("");
+    setStatusFilter("");
   };
 
   if (loading) {
     return (
       <div className="flex">
         <Sidebar />
-        <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
+        <div className="flex-1 p-4 bg-gray-50 min-h-screen animate-fade-in">
           <div className="text-center text-black">Loading...</div>
         </div>
       </div>
@@ -311,9 +355,12 @@ export default function ActivitiesPage() {
       <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-black animate-slide-in-left">Activities</h1>
+            <h1 className="text-3xl font-bold text-black animate-slide-in-left">
+              Activities
+            </h1>
             <p className="text-gray-600 mt-1">
-              {filteredActivities.length} of {activities.length} activities {loading && '(Loading...)'}
+              {filteredActivities.length} of {activities.length} activities{" "}
+              {loading && "(Loading...)"}
             </p>
           </div>
           <Link href="/activities/create">
@@ -344,7 +391,7 @@ export default function ActivitiesPage() {
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
+                {showFilters ? "Hide Filters" : "Show Filters"}
               </Button>
             </div>
           </CardHeader>
@@ -399,13 +446,15 @@ export default function ActivitiesPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-blue-900">
-                  {selectedActivities.length} {selectedActivities.length === 1 ? 'activity' : 'activities'} selected
+                  {selectedActivities.length}{" "}
+                  {selectedActivities.length === 1 ? "activity" : "activities"}{" "}
+                  selected
                 </p>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkStatusChange('COMPLETED')}
+                    onClick={() => handleBulkStatusChange("COMPLETED")}
                     className="text-green-600 border-green-200 hover:bg-green-50"
                   >
                     Mark Completed
@@ -413,7 +462,7 @@ export default function ActivitiesPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleBulkStatusChange('CANCELLED')}
+                    onClick={() => handleBulkStatusChange("CANCELLED")}
                     className="text-orange-600 border-orange-200 hover:bg-orange-50"
                   >
                     Mark Cancelled
@@ -448,9 +497,9 @@ export default function ActivitiesPage() {
             {filteredActivities.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">
-                  {activities.length === 0 
-                    ? 'No activities found' 
-                    : 'No activities match your filters'}
+                  {activities.length === 0
+                    ? "No activities found"
+                    : "No activities match your filters"}
                 </p>
                 {activities.length === 0 ? (
                   <Link href="/activities/create">
@@ -469,7 +518,11 @@ export default function ActivitiesPage() {
                     <TableHead className="w-12">
                       <input
                         type="checkbox"
-                        checked={selectedActivities.length === filteredActivities.length && filteredActivities.length > 0}
+                        checked={
+                          selectedActivities.length ===
+                            filteredActivities.length &&
+                          filteredActivities.length > 0
+                        }
                         onChange={toggleSelectAll}
                         className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                       />
@@ -483,12 +536,21 @@ export default function ActivitiesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(Array.isArray(filteredActivities) ? filteredActivities : []).map((activity) => {
-                    const StatusIcon = STATUS_ICONS[activity.status as keyof typeof STATUS_ICONS];
+                  {(Array.isArray(filteredActivities)
+                    ? filteredActivities
+                    : []
+                  ).map((activity) => {
+                    const StatusIcon =
+                      STATUS_ICONS[
+                        activity.status as keyof typeof STATUS_ICONS
+                      ];
                     const isSelected = selectedActivities.includes(activity.id);
-                    
+
                     return (
-                      <TableRow key={activity.id} className={isSelected ? 'bg-blue-50' : ''}>
+                      <TableRow
+                        key={activity.id}
+                        className={isSelected ? "bg-blue-50" : ""}
+                      >
                         <TableCell>
                           <input
                             type="checkbox"
@@ -499,11 +561,16 @@ export default function ActivitiesPage() {
                         </TableCell>
                         <TableCell className="font-medium">
                           <div>
-                            <div className="text-gray-900">{activity.title}</div>
+                            <div className="text-gray-900">
+                              {activity.title}
+                            </div>
                             {activity.description && (
                               <div className="text-sm text-gray-500 mt-1">
-                                {activity.description.length > 60 
-                                  ? `${activity.description.substring(0, 60)}...` 
+                                {activity.description.length > 60
+                                  ? `${activity.description.substring(
+                                      0,
+                                      60
+                                    )}...`
                                   : activity.description}
                               </div>
                             )}
@@ -511,23 +578,39 @@ export default function ActivitiesPage() {
                         </TableCell>
                         <TableCell>
                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {ACTIVITY_TYPES[activity.type as keyof typeof ACTIVITY_TYPES]}
+                            {
+                              ACTIVITY_TYPES[
+                                activity.type as keyof typeof ACTIVITY_TYPES
+                              ]
+                            }
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <StatusIcon className="h-4 w-4" />
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[activity.status as keyof typeof STATUS_COLORS]}`}>
-                              {ACTIVITY_STATUS[activity.status as keyof typeof ACTIVITY_STATUS]}
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                STATUS_COLORS[
+                                  activity.status as keyof typeof STATUS_COLORS
+                                ]
+                              }`}
+                            >
+                              {
+                                ACTIVITY_STATUS[
+                                  activity.status as keyof typeof ACTIVITY_STATUS
+                                ]
+                              }
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {new Date(activity.scheduledDate).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
+                            {new Date(
+                              activity.scheduledDate
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
                             })}
                           </div>
                         </TableCell>
@@ -535,12 +618,14 @@ export default function ActivitiesPage() {
                           <div className="text-sm space-y-1">
                             {activity.contact && (
                               <div className="text-gray-600">
-                                <span className="font-medium">Contact:</span> {activity.contact.name}
+                                <span className="font-medium">Contact:</span>{" "}
+                                {activity.contact.name}
                               </div>
                             )}
                             {activity.deal && (
                               <div className="text-gray-600">
-                                <span className="font-medium">Deal:</span> {activity.deal.title}
+                                <span className="font-medium">Deal:</span>{" "}
+                                {activity.deal.title}
                               </div>
                             )}
                             {!activity.contact && !activity.deal && (
@@ -550,11 +635,13 @@ export default function ActivitiesPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            {activity.status === 'SCHEDULED' && (
+                            {activity.status === "SCHEDULED" && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleStatusChange(activity.id, 'COMPLETED')}
+                                onClick={() =>
+                                  handleStatusChange(activity.id, "COMPLETED")
+                                }
                                 className="text-green-600 hover:text-green-700"
                                 title="Mark as completed"
                               >

@@ -1,16 +1,23 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { hasAuthToken, verifyAuthToken } from '@/lib/auth-utils';
-import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
-import api from '@/lib/api';
-import Sidebar from '@/components/layout/Sidebar';
-import Button from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
-import { Plus, Edit, Trash2, Mail, Phone } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { hasAuthToken, verifyAuthToken } from "@/lib/auth-utils";
+import { useInvalidateQueries } from "@/lib/use-invalidate-queries";
+import api from "@/lib/api";
+import Sidebar from "@/components/layout/Sidebar";
+import Button from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
+import { Plus, Edit, Trash2, Mail, Phone } from "lucide-react";
 
 interface Contact {
   id: string;
@@ -30,20 +37,20 @@ export default function ContactsPage() {
   const { invalidateOnContactChange } = useInvalidateQueries();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const hasToken = hasAuthToken();
         if (!hasToken) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
-        
+
         const isValid = await verifyAuthToken();
         if (!isValid) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
       }
@@ -54,13 +61,16 @@ export default function ContactsPage() {
 
   const fetchContacts = async () => {
     try {
-      const response = await api.get('/contacts');
-      console.log('Contacts API response:', response.data);
+      const response = await api.get("/contacts");
+      console.log("Contacts API response:", response.data);
       // Ensure we set an array, handle both direct array and nested data
-      const contactsData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      const contactsData = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
       setContacts(contactsData);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch contacts';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch contacts";
       setError(errorMessage);
       setContacts([]); // Set empty array on error
     } finally {
@@ -69,15 +79,16 @@ export default function ContactsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) return;
+    if (!confirm("Are you sure you want to delete this contact?")) return;
 
     try {
       await api.delete(`/contacts/${id}`);
-      setContacts(contacts.filter(contact => contact.id !== id));
+      setContacts(contacts.filter((contact) => contact.id !== id));
       // ✅ Invalidate cache to refresh dashboard and contacts list in real-time
       invalidateOnContactChange();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete contact';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete contact";
       setError(errorMessage);
     }
   };
@@ -86,7 +97,7 @@ export default function ContactsPage() {
     return (
       <div className="flex">
         <Sidebar />
-        <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
+        <div className="flex-1 p-4 bg-gray-50 min-h-screen animate-fade-in">
           <div className="text-center text-black">Loading...</div>
         </div>
       </div>
@@ -98,7 +109,9 @@ export default function ContactsPage() {
       <Sidebar />
       <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-black animate-slide-in-left">Contacts</h1>
+          <h1 className="text-3xl font-bold text-black animate-slide-in-left">
+            Contacts
+          </h1>
           <Link href="/contacts/create">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -150,7 +163,9 @@ export default function ContactsPage() {
                             <Mail className="h-4 w-4 mr-2 text-gray-400" />
                             {contact.email}
                           </div>
-                        ) : '-'}
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
                       <TableCell>
                         {contact.phone ? (
@@ -158,7 +173,9 @@ export default function ContactsPage() {
                             <Phone className="h-4 w-4 mr-2 text-gray-400" />
                             {contact.phone}
                           </div>
-                        ) : '-'}
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
                       <TableCell>
                         {new Date(contact.createdAt).toLocaleDateString()}

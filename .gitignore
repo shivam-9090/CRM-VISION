@@ -142,6 +142,7 @@ backups/*
 !frontend/prisma/migrations/**/*.sql
 
 # Docker files (keep in master/docker branch only)
+
 docker-compose.yml
 docker-compose.prod.yml
 docker-compose.override.yml
@@ -174,3 +175,7 @@ redis_data/
 # Editor specific
 *.sublime-project
 *.sublime-workspace
+
+# Test files
+test-api.ps1
+test-export.csv

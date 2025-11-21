@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsNotEmpty,
   MaxLength,
+  Length,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { normalizeEmail } from '../../common/decorators/validation.decorators';
@@ -23,7 +24,6 @@ export class LoginDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(6, { message: 'Two-factor token must be 6 characters' })
-  @MaxLength(6, { message: 'Two-factor token must be 6 characters' })
+  @Length(6, 6, { message: '2FA code must be exactly 6 characters' })
   twoFactorToken?: string;
 }

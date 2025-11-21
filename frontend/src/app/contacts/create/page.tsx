@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useInvalidateQueries } from '@/lib/use-invalidate-queries';
-import api from '@/lib/api';
-import Sidebar from '@/components/layout/Sidebar';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useInvalidateQueries } from "@/lib/use-invalidate-queries";
+import api from "@/lib/api";
+import Sidebar from "@/components/layout/Sidebar";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ArrowLeft } from "lucide-react";
 
 interface Company {
   id: string;
@@ -22,11 +22,11 @@ export default function CreateContactPage() {
   const { invalidateOnContactChange } = useInvalidateQueries();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    companyId: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    companyId: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -37,17 +37,19 @@ export default function CreateContactPage() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await api.get('/companies');
+      const response = await api.get("/companies");
       setCompanies(response.data);
     } catch (err) {
-      console.error('Failed to fetch companies:', err);
+      console.error("Failed to fetch companies:", err);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
+      setErrors({ ...errors, [e.target.name]: "" });
     }
   };
 
@@ -58,37 +60,40 @@ export default function CreateContactPage() {
 
     // Client-side validation
     if (!formData.firstName.trim()) {
-      setErrors({ firstName: 'First name is required' });
+      setErrors({ firstName: "First name is required" });
       setLoading(false);
       return;
     }
 
     if (formData.firstName.trim().length < 2) {
-      setErrors({ firstName: 'First name must be at least 2 characters long' });
+      setErrors({ firstName: "First name must be at least 2 characters long" });
       setLoading(false);
       return;
     }
 
     if (!formData.lastName.trim()) {
-      setErrors({ lastName: 'Last name is required' });
+      setErrors({ lastName: "Last name is required" });
       setLoading(false);
       return;
     }
 
     if (formData.lastName.trim().length < 2) {
-      setErrors({ lastName: 'Last name must be at least 2 characters long' });
+      setErrors({ lastName: "Last name must be at least 2 characters long" });
       setLoading(false);
       return;
     }
 
-    if (formData.email && (!formData.email.includes('@') || !formData.email.includes('.'))) {
-      setErrors({ email: 'Please enter a valid email address' });
+    if (
+      formData.email &&
+      (!formData.email.includes("@") || !formData.email.includes("."))
+    ) {
+      setErrors({ email: "Please enter a valid email address" });
       setLoading(false);
       return;
     }
 
     if (formData.phone && formData.phone.length < 10) {
-      setErrors({ phone: 'Phone number must be at least 10 characters long' });
+      setErrors({ phone: "Phone number must be at least 10 characters long" });
       setLoading(false);
       return;
     }
@@ -99,25 +104,27 @@ export default function CreateContactPage() {
         ...formData,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email?.trim().toLowerCase() || '',
-        phone: formData.phone?.trim() || '',
-        companyId: formData.companyId || ''
+        email: formData.email?.trim().toLowerCase() || "",
+        phone: formData.phone?.trim() || "",
+        companyId: formData.companyId || "",
       };
-      
-      await api.post('/contacts', cleanFormData);
+
+      await api.post("/contacts", cleanFormData);
       // ✅ Invalidate cache to refresh dashboard and contacts list in real-time
       invalidateOnContactChange();
-      router.push('/contacts');
+      router.push("/contacts");
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
+      if (err && typeof err === "object" && "response" in err) {
         const response = (err as any).response;
         if (response?.data?.errors) {
           setErrors(response.data.errors);
         } else {
-          setErrors({ general: response?.data?.message || 'Failed to create contact' });
+          setErrors({
+            general: response?.data?.message || "Failed to create contact",
+          });
         }
       } else {
-        setErrors({ general: 'Failed to create contact' });
+        setErrors({ general: "Failed to create contact" });
       }
     } finally {
       setLoading(false);
@@ -125,20 +132,25 @@ export default function CreateContactPage() {
   };
 
   const companyOptions = [
-    { value: '', label: 'Select a company' },
-    ...companies.map(company => ({ value: company.id, label: company.name }))
+    { value: "", label: "Select a company" },
+    ...companies.map((company) => ({ value: company.id, label: company.name })),
   ];
 
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 p-8 bg-gray-50 min-h-screen animate-fade-in">
+      <div className="flex-1 p-4 bg-gray-50 min-h-screen animate-fade-in">
         <div className="mb-8">
-          <Link href="/contacts" className="inline-flex items-center text-gray-600 hover:text-black mb-4 transition-colors duration-200">
+          <Link
+            href="/contacts"
+            className="inline-flex items-center text-gray-600 hover:text-black mb-4 transition-colors duration-200"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Contacts
           </Link>
-          <h1 className="text-3xl font-bold text-black animate-slide-in-left">Create Contact</h1>
+          <h1 className="text-3xl font-bold text-black animate-slide-in-left">
+            Create Contact
+          </h1>
         </div>
 
         <Card className="max-w-xl mx-auto hover:shadow-lg transition-all duration-300 animate-bounce-subtle">
