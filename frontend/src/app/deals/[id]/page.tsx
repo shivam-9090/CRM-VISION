@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import CommentSection from "@/components/comments/CommentSection";
 import FileUpload from "@/components/FileUpload";
 import AttachmentList from "@/components/AttachmentList";
+import MeetingFormModal from "@/components/calendar/meeting-form-modal";
 import { ArrowLeft, Edit, DollarSign, Calendar, User, Tag } from "lucide-react";
 
 interface Deal {
@@ -47,6 +48,7 @@ export default function DealDetailPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [attachmentRefresh, setAttachmentRefresh] = useState(0);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
 
   const fetchDeal = async () => {
     try {
@@ -156,12 +158,21 @@ export default function DealDetailPage() {
               </Link>
               <h1 className="text-3xl font-bold">{deal.title}</h1>
             </div>
-            <Link href={`/deals/${dealId}/edit`}>
-              <Button variant="primary">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Deal
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowMeetingModal(true)}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Schedule Meeting
               </Button>
-            </Link>
+              <Link href={`/deals/${dealId}/edit`}>
+                <Button variant="primary">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Deal
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -289,7 +300,9 @@ export default function DealDetailPage() {
                     <FileUpload
                       attachableType="DEAL"
                       attachableId={dealId}
-                      onUploadComplete={() => setAttachmentRefresh((prev) => prev + 1)}
+                      onUploadComplete={() =>
+                        setAttachmentRefresh((prev) => prev + 1)
+                      }
                     />
                     <AttachmentList
                       attachableType="DEAL"
@@ -324,6 +337,15 @@ export default function DealDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Meeting Modal */}
+      {showMeetingModal && (
+        <MeetingFormModal
+          isOpen={showMeetingModal}
+          onClose={() => setShowMeetingModal(false)}
+          initialData={{ dealId }}
+        />
+      )}
     </div>
   );
 }

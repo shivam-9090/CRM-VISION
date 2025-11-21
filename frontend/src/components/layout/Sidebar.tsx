@@ -14,6 +14,7 @@ import {
   UserCog,
   Menu,
   X,
+  Activity,
 } from "lucide-react";
 import NotificationBell from "../NotificationBell";
 import { getStoredUser } from "@/lib/auth-utils";
@@ -24,7 +25,8 @@ const baseNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Contacts", href: "/contacts", icon: Users },
   { name: "Deals", href: "/deals", icon: Briefcase },
-  { name: "Activities", href: "/activities", icon: Calendar },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Activities", href: "/activities", icon: Activity },
   { name: "Export/Import", href: "/export", icon: Download },
   { name: "Profile", href: "/profile", icon: User },
 ];

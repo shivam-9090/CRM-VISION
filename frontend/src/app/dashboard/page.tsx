@@ -15,8 +15,11 @@ import {
   TrendingUp,
   Calendar,
   Clock,
+  Video,
 } from "lucide-react";
 import api from "@/lib/api";
+import { calendarApi } from "@/lib/api/calendar";
+import { format } from "date-fns";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -48,13 +51,19 @@ export default function DashboardPage() {
       console.log("📊 Fetching dashboard data with React Query...");
 
       // Fetch all data in parallel
-      const [companiesRes, contactsRes, pipelineStatsRes, activitiesRes] =
-        await Promise.all([
-          api.get("/companies"),
-          api.get("/contacts"),
-          api.get("/deals/stats/pipeline"),
-          api.get("/activities"),
-        ]);
+      const [
+        companiesRes,
+        contactsRes,
+        pipelineStatsRes,
+        activitiesRes,
+        meetingsRes,
+      ] = await Promise.all([
+        api.get("/companies"),
+        api.get("/contacts"),
+        api.get("/deals/stats/pipeline"),
+        api.get("/activities"),
+        calendarApi.getMeetings().catch(() => []),
+      ]);
 
       console.log("📊 Raw API responses:", {
         companies: companiesRes.data,
@@ -101,6 +110,13 @@ export default function DashboardPage() {
         ? activitiesData.slice(0, 5)
         : [];
 
+      // Handle meetings data
+      const upcomingMeetings = Array.isArray(meetingsRes)
+        ? meetingsRes
+            .filter((meeting: any) => new Date(meeting.start) >= new Date())
+            .slice(0, 5)
+        : [];
+
       console.log("📊 Dashboard data calculated:", {
         totalCompanies,
         totalContacts,
@@ -109,6 +125,7 @@ export default function DashboardPage() {
         lostDeals,
         totalRevenue: `$${totalRevenue.toLocaleString()}`,
         recentActivities: recentActivities.length,
+        upcomingMeetings: upcomingMeetings.length,
       });
 
       return {
@@ -119,6 +136,7 @@ export default function DashboardPage() {
         wonDeals,
         lostDeals,
         recentActivities,
+        upcomingMeetings,
       };
     },
     enabled: isAuthorized, // Only fetch when authorized
@@ -467,6 +485,59 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Meetings Widget */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="w-5 h-5 text-blue-600" />
+                Upcoming Meetings Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {dashboardData?.upcomingMeetings &&
+                dashboardData.upcomingMeetings.length > 0 ? (
+                  dashboardData.upcomingMeetings.map((meeting: any) => (
+                    <div
+                      key={meeting.id}
+                      className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {meeting.title}
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {format(new Date(meeting.start), "h:mm a")} -{" "}
+                          {format(new Date(meeting.end), "h:mm a")}
+                        </p>
+                        {meeting.location && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {meeting.location}
+                          </p>
+                        )}
+                      </div>
+                      {meeting.meetLink && (
+                        <a
+                          href={meeting.meetLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-3 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
+                        >
+                          <Video className="w-4 h-4" />
+                          Join
+                        </a>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">
+                    No upcoming meetings today
+                  </p>
                 )}
               </div>
             </CardContent>

@@ -40,16 +40,20 @@ export class CalendarService {
   /**
    * Get Google OAuth URL for authorization
    */
-  getGoogleAuthUrl(): string {
+  getGoogleAuthUrl(userId: string): string {
     const scopes = [
       'https://www.googleapis.com/auth/calendar',
       'https://www.googleapis.com/auth/calendar.events',
     ];
 
+    // Encode userId in state parameter for callback
+    const state = Buffer.from(userId).toString('base64');
+
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       prompt: 'consent',
+      state,
     });
   }
 
