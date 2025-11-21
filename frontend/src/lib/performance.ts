@@ -3,7 +3,7 @@
  * Helper functions for improving frontend performance
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from "react";
 
 /**
  * Debounce function for expensive operations
@@ -91,18 +91,18 @@ export function useIntersectionObserver(
  * @param as Resource type
  */
 export function preloadResource(href: string, as: string): void {
-  if (typeof document === 'undefined') return;
+  if (typeof document === "undefined") return;
 
   const existingLink = document.querySelector(`link[href="${href}"]`);
   if (existingLink) return;
 
-  const link = document.createElement('link');
-  link.rel = 'preload';
+  const link = document.createElement("link");
+  link.rel = "preload";
   link.href = href;
   link.as = as;
-  
-  if (as === 'font') {
-    link.crossOrigin = 'anonymous';
+
+  if (as === "font") {
+    link.crossOrigin = "anonymous";
   }
 
   document.head.appendChild(link);
@@ -113,13 +113,13 @@ export function preloadResource(href: string, as: string): void {
  * @param url Page URL to prefetch
  */
 export function prefetchPage(url: string): void {
-  if (typeof document === 'undefined') return;
+  if (typeof document === "undefined") return;
 
   const existingLink = document.querySelector(`link[href="${url}"]`);
   if (existingLink) return;
 
-  const link = document.createElement('link');
-  link.rel = 'prefetch';
+  const link = document.createElement("link");
+  link.rel = "prefetch";
   link.href = url;
   document.head.appendChild(link);
 }
@@ -140,9 +140,11 @@ export function useMeasureRender(componentName: string) {
       const endTime = performance.now();
       const renderTime = endTime - startTime;
 
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         console.log(
-          `[Performance] ${componentName} render #${renderCount}: ${renderTime.toFixed(2)}ms`
+          `[Performance] ${componentName} render #${renderCount}: ${renderTime.toFixed(
+            2
+          )}ms`
         );
       }
     };
@@ -164,7 +166,9 @@ export function useRenderPerformance(componentName: string, threshold = 16) {
       const renderTime = performance.now() - renderStartRef.current;
       if (renderTime > threshold) {
         console.warn(
-          `[Performance] ${componentName} slow render: ${renderTime.toFixed(2)}ms (threshold: ${threshold}ms)`
+          `[Performance] ${componentName} slow render: ${renderTime.toFixed(
+            2
+          )}ms (threshold: ${threshold}ms)`
         );
       }
     };
@@ -179,7 +183,7 @@ export function getMemoryUsage(): {
   totalJSHeapSize: number;
   jsHeapSizeLimit: number;
 } | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
   const memory = (performance as any).memory;
   if (!memory) return null;
@@ -196,7 +200,7 @@ export function getMemoryUsage(): {
  * @param name Mark name
  */
 export function mark(name: string): void {
-  if (typeof performance !== 'undefined' && performance.mark) {
+  if (typeof performance !== "undefined" && performance.mark) {
     performance.mark(name);
   }
 }
@@ -207,10 +211,14 @@ export function mark(name: string): void {
  * @param startMark Start mark name
  * @param endMark End mark name
  */
-export function measure(name: string, startMark: string, endMark: string): number | null {
-  if (typeof performance !== 'undefined' && performance.measure) {
+export function measure(
+  name: string,
+  startMark: string,
+  endMark: string
+): number | null {
+  if (typeof performance !== "undefined" && performance.measure) {
     performance.measure(name, startMark, endMark);
-    const measures = performance.getEntriesByName(name, 'measure');
+    const measures = performance.getEntriesByName(name, "measure");
     return measures.length > 0 ? measures[0].duration : null;
   }
   return null;
@@ -220,7 +228,7 @@ export function measure(name: string, startMark: string, endMark: string): numbe
  * Clear performance marks and measures
  */
 export function clearPerformanceData(): void {
-  if (typeof performance !== 'undefined') {
+  if (typeof performance !== "undefined") {
     if (performance.clearMarks) performance.clearMarks();
     if (performance.clearMeasures) performance.clearMeasures();
   }
@@ -231,7 +239,7 @@ export function clearPerformanceData(): void {
  * Based on device memory and CPU cores
  */
 export function isLowEndDevice(): boolean {
-  if (typeof navigator === 'undefined') return false;
+  if (typeof navigator === "undefined") return false;
 
   const memory = (navigator as any).deviceMemory; // GB
   const cpuCores = navigator.hardwareConcurrency;
@@ -246,9 +254,12 @@ export function isLowEndDevice(): boolean {
  * Get network information
  */
 export function getNetworkInfo() {
-  if (typeof navigator === 'undefined') return null;
+  if (typeof navigator === "undefined") return null;
 
-  const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+  const connection =
+    (navigator as any).connection ||
+    (navigator as any).mozConnection ||
+    (navigator as any).webkitConnection;
 
   if (!connection) return null;
 
@@ -270,8 +281,8 @@ export function shouldReduceQuality(): boolean {
   // Reduce quality on slow connections or save-data mode
   return (
     network.saveData ||
-    network.effectiveType === 'slow-2g' ||
-    network.effectiveType === '2g' ||
+    network.effectiveType === "slow-2g" ||
+    network.effectiveType === "2g" ||
     (network.downlink && network.downlink < 1)
   );
 }
@@ -279,10 +290,13 @@ export function shouldReduceQuality(): boolean {
 /**
  * Request idle callback with fallback
  */
-export function requestIdleCallback(callback: () => void, timeout = 1000): number {
-  if (typeof window === 'undefined') return 0;
+export function requestIdleCallback(
+  callback: () => void,
+  timeout = 1000
+): number {
+  if (typeof window === "undefined") return 0;
 
-  if ('requestIdleCallback' in window) {
+  if ("requestIdleCallback" in window) {
     const id = (window as any).requestIdleCallback(callback, { timeout });
     return id as number;
   }
@@ -296,9 +310,9 @@ export function requestIdleCallback(callback: () => void, timeout = 1000): numbe
  * Cancel idle callback
  */
 export function cancelIdleCallback(id: number): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
-  if ('cancelIdleCallback' in window) {
+  if ("cancelIdleCallback" in window) {
     (window as any).cancelIdleCallback(id);
   } else {
     clearTimeout(id);
