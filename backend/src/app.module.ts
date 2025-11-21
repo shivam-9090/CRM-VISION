@@ -21,6 +21,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HealthModule } from './health/health.module';
 import { EmailModule } from './email/email.module';
+import { CalendarModule } from './calendar/calendar.module';
 import { GlobalExceptionFilter } from './common/global-exception.filter';
 import { RedisModule } from './redis/redis.module';
 import { CommonModule } from './common/common.module';
@@ -91,6 +92,7 @@ import { QueryPerformanceInterceptor } from './common/interceptors/query-perform
     AttachmentsModule,
     NotificationsModule,
     HealthModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [

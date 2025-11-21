@@ -142,7 +142,9 @@ backups/*
 !frontend/prisma/migrations/**/*.sql
 
 # Docker files (keep in master/docker branch only)
-
+Dockerfile
+**/Dockerfile
+**/Dockerfile.*
 docker-compose.yml
 docker-compose.prod.yml
 docker-compose.override.yml
@@ -152,9 +154,8 @@ docker-deploy.ps1
 docker-setup.ps1
 DOCKER-QUICK-START.md
 README.DOCKER.md
-backend/Dockerfile
-backend/Dockerfile.prod
-frontend/Dockerfile
+backend/Dockerfile*
+frontend/Dockerfile*
 .dockerignore
 
 # Docker volumes and data

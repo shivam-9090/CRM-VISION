@@ -235,6 +235,21 @@ REDIS_URL=${{Redis.REDIS_URL}}
 
 # 🔷 Optional - Monitoring
 SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+
+# ============================================
+# 🎯 GOOGLE CALENDAR INTEGRATION (REQUIRED)
+# ============================================
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=https://your-railway-app.up.railway.app/api/calendar/google/callback
+APP_URL=https://your-railway-app.up.railway.app
+ENCRYPTION_KEY=your-64-character-hex-encryption-key-here
+
+# 📌 IMPORTANT FOR GOOGLE CALENDAR:
+# 1. Add this redirect URI to Google Cloud Console:
+#    https://your-railway-app.up.railway.app/api/calendar/google/callback
+# 2. Enable Google Calendar API in your Google Cloud project
+# 3. Verify your Railway domain for webhook notifications
 ```
 
 ---

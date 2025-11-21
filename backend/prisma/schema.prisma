@@ -38,6 +38,8 @@ model User {
   refreshTokens               RefreshToken[]
   notificationPreferences     NotificationPreference?
   pushSubscriptions           PushSubscription[]
+  googleCalendarToken         GoogleCalendarToken?
+  organizedMeetings           Meeting[] @relation("MeetingOrganizer")
   company                     Company?  @relation(fields: [companyId], references: [id])
 
   @@index([companyId, email]) // ✅ For finding users by company + email
@@ -73,6 +75,7 @@ model Company {
   notifications Notification[]
   exportTemplates ExportTemplate[]
   exportJobs  ExportJob[]
+  meetings    Meeting[]
 
   @@index([name]) // ✅ For company search/autocomplete
   @@map("companies")
@@ -90,6 +93,7 @@ model Contact {
   company    Company    @relation(fields: [companyId], references: [id])
   deals      Deal[]
   activities Activity[]
+  meetings   Meeting[]
 
   @@index([companyId])
   @@index([email])
@@ -118,9 +122,10 @@ model Deal {
   notes             String?
   priority          Priority   @default(MEDIUM)
   assignedTo        User?      @relation(fields: [assignedToId], references: [id])
-  company           Company    @relation(fields: [companyId], references: [id])
-  contact           Contact?   @relation(fields: [contactId], references: [id])
+  company           Company        @relation(fields: [companyId], references: [id])
+  contact           Contact?       @relation(fields: [contactId], references: [id])
   activities        Activity[]
+  meetings          Meeting[]
 
   @@index([companyId])
   @@index([companyId, stage])
@@ -309,6 +314,103 @@ model PushSubscription {
   @@map("push_subscriptions")
 }
 
+model GoogleCalendarToken {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  accessToken     String   // Encrypted
+  refreshToken    String   // Encrypted
+  tokenExpiry     DateTime
+  calendarId      String   @default("primary")
+  syncToken       String?  // For incremental sync
+  channelId       String?  // For push notifications
+  resourceId      String?  // Google's resource ID for the watch
+  channelExpiry   DateTime? // When the watch expires
+  isConnected     Boolean  @default(true)
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([channelId])
+  @@map("google_calendar_tokens")
+}
+
+model Meeting {
+  id                String         @id @default(cuid())
+  title             String
+  description       String?
+  location          String?
+  startTime         DateTime
+  endTime           DateTime
+  timeZone          String         @default("UTC")
+  isAllDay          Boolean        @default(false)
+  status            MeetingStatus  @default(SCHEDULED)
+  
+  // Relationships
+  organizerId       String
+  companyId         String
+  dealId            String?
+  contactId         String?
+  
+  // Attendees (JSON array of {email, name, responseStatus})
+  attendees         Json?          @default("[]")
+  
+  // Google Calendar sync
+  googleEventId     String?        @unique
+  googleCalendarId  String?        @default("primary")
+  googleMeetLink    String?        // Auto-generated Google Meet link
+  isSyncedToGoogle  Boolean        @default(false)
+  lastGoogleSync    DateTime?
+  
+  // Reminders (JSON array of {minutes: number, method: 'email'|'popup'|'notification'})
+  reminders         Json?          @default("[{\"minutes\": 15, \"method\": \"notification\"}, {\"minutes\": 60, \"method\": \"email\"}]")
+  
+  // Recurrence (JSON with rrule, until, count, etc.)
+  recurrence        Json?
+  isRecurring       Boolean        @default(false)
+  
+  // Notes for the meeting
+  agenda            String?
+  notes             String?        // Post-meeting notes
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  organizer         User              @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal              Deal?             @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  contact           Contact?          @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  meetingReminders  MeetingReminder[]
+  
+  @@index([companyId])
+  @@index([organizerId])
+  @@index([dealId])
+  @@index([contactId])
+  @@index([startTime])
+  @@index([status])
+  @@index([companyId, startTime])
+  @@index([organizerId, startTime])
+  @@index([googleEventId])
+  @@map("meetings")
+}
+
+model MeetingReminder {
+  id            String         @id @default(cuid())
+  meetingId     String
+  method        ReminderMethod @default(NOTIFICATION)
+  minutesBefore Int
+  scheduledFor  DateTime
+  sentAt        DateTime?
+  createdAt     DateTime       @default(now())
+  
+  meeting       Meeting        @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  @@index([meetingId])
+  @@index([scheduledFor, sentAt])
+  @@map("meeting_reminders")
+}
+
 enum Role {
   ADMIN
   MANAGER
@@ -394,6 +496,25 @@ enum NotificationType {
   COMMENT_ADDED
   MENTION
   SYSTEM
+  MEETING_CREATED
+  MEETING_UPDATED
+  MEETING_REMINDER
+  MEETING_CANCELLED
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ReminderMethod {
+  EMAIL
+  NOTIFICATION
+  POPUP
+  SMS
 }
 
 model ExportTemplate {

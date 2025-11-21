@@ -30,7 +30,8 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto, res: Response) {
-    const { email, password, name, role, companyId, phone } = registerDto;
+    const { email, password, name, role, companyId, phone, companyName } =
+      registerDto;
 
     // 🔒 IMPORTANT: Public registration only allows MANAGER role (company owners)
     // Employees must be added by their manager through the employee management system
@@ -64,7 +65,7 @@ export class AuthService {
       if (!userCompanyId) {
         const company = await prisma.company.create({
           data: {
-            name: `${name}'s Company`,
+            name: companyName || `${name}'s Company`,
             description: 'Auto-created company',
           },
         });

@@ -42,6 +42,13 @@ export class RegisterDto {
 
   @IsString()
   @IsOptional()
+  @MinLength(2, { message: 'Company name must be at least 2 characters long' })
+  @MaxLength(100, { message: 'Company name must not exceed 100 characters' })
+  @Transform(({ value }) => transformOptional(value, sanitizeString))
+  companyName?: string;
+
+  @IsString()
+  @IsOptional()
   @IsPhoneNumber({ message: 'Please provide a valid phone number' })
   @Transform(({ value }) => transformOptional(value, sanitizeString))
   phone?: string;

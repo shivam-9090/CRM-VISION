@@ -12,6 +12,10 @@ export enum NotificationType {
   ACTIVITY_DUE_SOON = 'ACTIVITY_DUE_SOON',
   COMMENT_ADDED = 'COMMENT_ADDED',
   MENTION = 'MENTION',
+  MEETING_CREATED = 'MEETING_CREATED',
+  MEETING_UPDATED = 'MEETING_UPDATED',
+  MEETING_REMINDER = 'MEETING_REMINDER',
+  MEETING_CANCELLED = 'MEETING_CANCELLED',
   SYSTEM = 'SYSTEM',
 }
 
@@ -39,4 +43,7 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   @IsString()
   userId: string;
+
+  @IsOptional()
+  metadata?: any;
 }
