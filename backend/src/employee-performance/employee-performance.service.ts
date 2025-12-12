@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PerformanceScoringService } from './performance-scoring.service';
-import { CreatePerformanceReviewDto, UpdateSkillsDto, UpdateWorkCapacityDto } from './dto/performance.dto';
+import {
+  CreatePerformanceReviewDto,
+  UpdateSkillsDto,
+  UpdateWorkCapacityDto,
+} from './dto/performance.dto';
 
 @Injectable()
 export class EmployeePerformanceService {
@@ -44,7 +48,10 @@ export class EmployeePerformanceService {
 
     return employees.map((emp) => ({
       ...emp,
-      utilizationRate: emp.workCapacity > 0 ? (emp.currentWorkload / emp.workCapacity) * 100 : 0,
+      utilizationRate:
+        emp.workCapacity > 0
+          ? (emp.currentWorkload / emp.workCapacity) * 100
+          : 0,
       completionRate:
         emp.totalTasksAssigned > 0
           ? (emp.totalTasksCompleted / emp.totalTasksAssigned) * 100
@@ -118,7 +125,9 @@ export class EmployeePerformanceService {
 
     // Calculate analytics
     const completed = tasks.filter((t) => t.status === 'COMPLETED');
-    const onTime = completed.filter((t) => t.dueDate && t.completedAt && t.completedAt <= t.dueDate);
+    const onTime = completed.filter(
+      (t) => t.dueDate && t.completedAt && t.completedAt <= t.dueDate,
+    );
 
     return {
       tasks,
@@ -126,8 +135,10 @@ export class EmployeePerformanceService {
         totalTasks: tasks.length,
         completedTasks: completed.length,
         onTimeDeliveries: onTime.length,
-        completionRate: tasks.length > 0 ? (completed.length / tasks.length) * 100 : 0,
-        onTimeRate: completed.length > 0 ? (onTime.length / completed.length) * 100 : 0,
+        completionRate:
+          tasks.length > 0 ? (completed.length / tasks.length) * 100 : 0,
+        onTimeRate:
+          completed.length > 0 ? (onTime.length / completed.length) * 100 : 0,
       },
     };
   }
@@ -135,13 +146,18 @@ export class EmployeePerformanceService {
   /**
    * Create a performance review
    */
-  async createPerformanceReview(reviewDto: CreatePerformanceReviewDto, reviewedById: string) {
+  async createPerformanceReview(
+    reviewDto: CreatePerformanceReviewDto,
+    reviewedById: string,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: reviewDto.userId },
     });
 
     if (!user) {
-      throw new NotFoundException(`Employee with ID ${reviewDto.userId} not found`);
+      throw new NotFoundException(
+        `Employee with ID ${reviewDto.userId} not found`,
+      );
     }
 
     // Calculate metrics for the review period
@@ -177,8 +193,12 @@ export class EmployeePerformanceService {
         performanceScore: user.performanceScore,
         reviewedById,
         reviewNotes: reviewDto.reviewNotes,
-        strengths: reviewDto.strengths ? JSON.parse(JSON.stringify(reviewDto.strengths)) : null,
-        improvements: reviewDto.improvements ? JSON.parse(JSON.stringify(reviewDto.improvements)) : null,
+        strengths: reviewDto.strengths
+          ? JSON.parse(JSON.stringify(reviewDto.strengths))
+          : null,
+        improvements: reviewDto.improvements
+          ? JSON.parse(JSON.stringify(reviewDto.improvements))
+          : null,
       },
     });
 

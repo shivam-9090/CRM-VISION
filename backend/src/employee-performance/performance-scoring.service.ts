@@ -17,11 +17,11 @@ export class PerformanceScoringService {
 
   // Weights for performance score calculation (total = 1.0)
   private readonly WEIGHTS = {
-    completionRate: 0.30,    // 30% - Tasks completed vs assigned
-    onTimeRate: 0.25,        // 25% - On-time delivery rate
-    averageSpeed: 0.20,      // 20% - Speed compared to estimates
-    taskQuality: 0.15,       // 15% - Quality score from reviews
-    workloadBalance: 0.10,   // 10% - Workload management
+    completionRate: 0.3, // 30% - Tasks completed vs assigned
+    onTimeRate: 0.25, // 25% - On-time delivery rate
+    averageSpeed: 0.2, // 20% - Speed compared to estimates
+    taskQuality: 0.15, // 15% - Quality score from reviews
+    workloadBalance: 0.1, // 10% - Workload management
   };
 
   constructor(private prisma: PrismaService) {}
@@ -137,7 +137,8 @@ export class PerformanceScoringService {
     });
 
     // Average speed ratio
-    const avgRatio = speedRatios.reduce((a, b) => a + b, 0) / speedRatios.length;
+    const avgRatio =
+      speedRatios.reduce((a, b) => a + b, 0) / speedRatios.length;
 
     // Convert to score (0-100)
     // 1.0 ratio = 75 score (completed on time)
