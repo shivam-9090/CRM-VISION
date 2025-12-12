@@ -30,6 +30,17 @@ model User {
   twoFactorSecret      String?
   twoFactorEnabled     Boolean   @default(false)
   permissions          Json?     @default("{}")
+  
+  // Employee Performance Fields
+  performanceScore       Float     @default(50.0)
+  skillTags              Json?
+  workCapacity           Int       @default(5)
+  averageCompletionTime  Float?
+  totalTasksCompleted    Int       @default(0)
+  totalTasksAssigned     Int       @default(0)
+  onTimeCompletionRate   Float     @default(0.0)
+  currentWorkload        Int       @default(0)
+  
   assignedDeals               Deal[]
   assignedActivities          Activity[] @relation("AssignedActivities")
   comments                    Comment[]
@@ -40,6 +51,11 @@ model User {
   pushSubscriptions           PushSubscription[]
   googleCalendarToken         GoogleCalendarToken?
   organizedMeetings           Meeting[] @relation("MeetingOrganizer")
+  assignedTasks               Task[] @relation("AssignedTasks")
+  assignedByTasks             Task[] @relation("AssignedByUser")
+  taskHistory                 TaskHistory[]
+  workSuggestions             WorkSuggestion[]
+  performanceReviews          PerformanceReview[]
   company                     Company?  @relation(fields: [companyId], references: [id])
 
   @@index([companyId, email]) // ✅ For finding users by company + email
@@ -76,6 +92,7 @@ model Company {
   exportTemplates ExportTemplate[]
   exportJobs  ExportJob[]
   meetings    Meeting[]
+  tasks       Task[]
 
   @@index([name]) // ✅ For company search/autocomplete
   @@map("companies")
@@ -94,6 +111,7 @@ model Contact {
   deals      Deal[]
   activities Activity[]
   meetings   Meeting[]
+  tasks      Task[]
 
   @@index([companyId])
   @@index([email])
@@ -126,6 +144,7 @@ model Deal {
   contact           Contact?       @relation(fields: [contactId], references: [id])
   activities        Activity[]
   meetings          Meeting[]
+  tasks             Task[]
 
   @@index([companyId])
   @@index([companyId, stage])
@@ -155,6 +174,7 @@ model Activity {
   contact       Contact?       @relation(fields: [contactId], references: [id])
   deal          Deal?          @relation(fields: [dealId], references: [id])
   assignedTo    User?          @relation("AssignedActivities", fields: [assignedToId], references: [id])
+  tasks         Task[]
 
   @@index([companyId])
   @@index([companyId, scheduledDate])
@@ -515,6 +535,163 @@ enum ReminderMethod {
   NOTIFICATION
   POPUP
   SMS
+}
+
+enum TaskType {
+  GENERAL
+  DEVELOPMENT
+  DESIGN
+  SALES
+  MARKETING
+  SUPPORT
+  RESEARCH
+}
+
+enum TaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  BLOCKED
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+model Task {
+  id                  String       @id @default(cuid())
+  title               String
+  description         String?
+  type                TaskType     @default(GENERAL)
+  priority            Priority     @default(MEDIUM)
+  status              TaskStatus   @default(PENDING)
+  
+  assignedToId        String?
+  assignedById        String
+  assignedAt          DateTime?
+  
+  estimatedHours      Float?
+  actualHours         Float?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  dueDate             DateTime?
+  
+  difficultyScore     Float?
+  aiSuggestedUserId   String?
+  aiConfidenceScore   Float?
+  
+  companyId           String
+  dealId              String?
+  contactId           String?
+  activityId          String?
+  
+  assignedTo          User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  assignedBy          User         @relation("AssignedByUser", fields: [assignedById], references: [id])
+  company             Company      @relation(fields: [companyId], references: [id])
+  deal                Deal?        @relation(fields: [dealId], references: [id])
+  contact             Contact?     @relation(fields: [contactId], references: [id])
+  activity            Activity?    @relation(fields: [activityId], references: [id])
+  
+  taskHistory         TaskHistory[]
+  attachments         TaskAttachment[]
+  
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  
+  @@index([assignedToId])
+  @@index([assignedById])
+  @@index([companyId])
+  @@index([status])
+  @@index([companyId, status, assignedToId])
+  @@index([dueDate])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model TaskHistory {
+  id              String       @id @default(cuid())
+  taskId          String
+  userId          String
+  action          String
+  previousStatus  TaskStatus?
+  newStatus       TaskStatus?
+  hoursSpent      Float?
+  notes           String?
+  createdAt       DateTime     @default(now())
+  
+  task            Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id])
+  
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("task_history")
+}
+
+model WorkSuggestion {
+  id                  String       @id @default(cuid())
+  taskId              String
+  suggestedUserId     String
+  confidenceScore     Float
+  reasoning           Json
+  estimatedCompletion Float
+  status              String       @default("pending")
+  
+  acceptedAt          DateTime?
+  rejectedAt          DateTime?
+  rejectedReason      String?
+  
+  suggestedUser       User         @relation(fields: [suggestedUserId], references: [id])
+  
+  createdAt           DateTime     @default(now())
+  
+  @@index([suggestedUserId])
+  @@index([taskId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("work_suggestions")
+}
+
+model PerformanceReview {
+  id                    String       @id @default(cuid())
+  userId                String
+  reviewPeriodStart     DateTime
+  reviewPeriodEnd       DateTime
+  
+  tasksCompleted        Int
+  averageCompletionTime Float
+  onTimeRate            Float
+  qualityScore          Float
+  performanceScore      Float
+  
+  reviewedById          String?
+  reviewNotes           String?
+  strengths             Json?
+  improvements          Json?
+  
+  user                  User         @relation(fields: [userId], references: [id])
+  
+  createdAt             DateTime     @default(now())
+  
+  @@index([userId])
+  @@index([reviewPeriodStart, reviewPeriodEnd])
+  @@map("performance_reviews")
+}
+
+model TaskAttachment {
+  id          String   @id @default(cuid())
+  taskId      String
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  mimeType    String
+  uploadedBy  String
+  
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([taskId])
+  @@map("task_attachments")
 }
 
 model ExportTemplate {
