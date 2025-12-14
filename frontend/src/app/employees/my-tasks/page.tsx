@@ -197,10 +197,10 @@ export default function MyTasksPage() {
                     ))}
                   {tasks.some((t: Task) => t.verificationFeedback) && (
                     <p className="text-sm text-green-600 mt-2 italic">
-                      Manager feedback: "
+                      Manager feedback: &quot;
                       {tasks.find((t: Task) => t.verificationFeedback)
                         ?.verificationFeedback || ""}
-                      "
+                      &quot;
                     </p>
                   )}
                 </div>

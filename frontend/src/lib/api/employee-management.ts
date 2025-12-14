@@ -136,8 +136,10 @@ export const workAssignmentApi = {
     api.post("/work-assignment/reject", { suggestionId, reason }),
 };
 
-export default {
+const employeeManagementApi = {
   tasks: tasksApi,
   employeePerformance: employeePerformanceApi,
   workAssignment: workAssignmentApi,
 };
+
+export default employeeManagementApi;
