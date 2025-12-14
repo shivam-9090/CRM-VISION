@@ -304,14 +304,14 @@ export class UserService {
    * @returns Created employee user
    */
   async addEmployee(addEmployeeDto: InviteUserDto, companyId: string) {
-    const { email, role, customPassword } = addEmployeeDto;
+    const { email, customPassword } = addEmployeeDto;
 
     // Validate email
     if (!email || !email.includes('@')) {
       throw new BadRequestException('Valid email is required');
     }
 
-    // Force EMPLOYEE role (managers can't create other managers via this endpoint)
+    // Force EMPLOYEE role
     const employeeRole = 'EMPLOYEE';
 
     // Check if user already exists
@@ -329,18 +329,18 @@ export class UserService {
     const plainPassword = customPassword || randomBytes(16).toString('hex');
     const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
-    // Create employee user
+    // Create employee user - AUTO VERIFIED (manager adds so trusted)
     const employee = await this.prisma.user.create({
       data: {
         email: email.toLowerCase(),
         password: hashedPassword,
-        plainPassword: plainPassword, // Store plain password for manager access
-        name: addEmployeeDto.email.split('@')[0], // Temporary name from email
+        plainPassword: plainPassword,
+        name: addEmployeeDto.email.split('@')[0],
         role: employeeRole,
         companyId,
-        isVerified: false, // Employee must verify email
-        verificationToken: randomBytes(32).toString('hex'),
-        verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+        isVerified: true, // AUTO VERIFIED - manager is trusted
+        verificationToken: null,
+        verificationExpiry: null,
       },
       select: {
         id: true,
@@ -352,24 +352,72 @@ export class UserService {
       },
     });
 
-    // Send welcome email with login credentials
+    // Send welcome email (no verification needed)
     try {
-      await this.emailService.sendInvitationEmail(
-        email,
-        `${process.env.FRONTEND_URL}/auth/login`,
-        employeeRole,
-      );
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+                .container { max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; margin: 0 auto; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center; }
+                .header h1 { margin: 0; font-size: 28px; font-weight: 300; }
+                .content { padding: 40px; color: #333; }
+                .content h2 { color: #667eea; font-size: 22px; margin-top: 0; }
+                .box { background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 25px 0; border-radius: 4px; }
+                .box p { margin: 10px 0; }
+                .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #e0e0e0; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>👋 Welcome to CRM!</h1>
+                </div>
+                <div class="content">
+                    <h2>Hi ${employee.name},</h2>
+                    <p>Your manager has added you to the CRM system. You're ready to start using it!</p>
+                    <div class="box">
+                        <p><strong>Email:</strong> ${employee.email}</p>
+                        <p><strong>Temporary Password:</strong> ${plainPassword}</p>
+                        <p><strong>Login URL:</strong> <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/login">Click here to login</a></p>
+                    </div>
+                    <p><strong>Next Steps:</strong></p>
+                    <ol>
+                        <li>Go to login page</li>
+                        <li>Enter your email and temporary password</li>
+                        <li>Change your password immediately</li>
+                        <li>Start managing your tasks!</li>
+                    </ol>
+                    <p>Best regards,<br><strong>CRM Administration Team</strong></p>
+                </div>
+                <div class="footer">
+                    <p>&copy; ${new Date().getFullYear()} CRM System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `;
+
+      const text = `Welcome to CRM!\n\nHi ${employee.name},\n\nYour manager has added you to the CRM system.\n\nEmail: ${employee.email}\nTemporary Password: ${plainPassword}\nLogin: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/login\n\nChange your password immediately after first login.\n\nBest regards,\nCRM Administration Team`;
+
+      await this.emailService.sendEmail({
+        to: employee.email,
+        subject: 'Welcome to CRM System - Login Credentials',
+        html,
+        text,
+      });
     } catch (error) {
-      console.error('Failed to send employee welcome email:', error);
-      // Don't throw - employee is still created
+      console.error('Failed to send welcome email:', error);
     }
 
     return {
       ...employee,
-      temporaryPassword: plainPassword, // Return password for manager to share
-      message: customPassword
-        ? 'Employee added successfully with custom password.'
-        : 'Employee added successfully. Please share the temporary password with them.',
+      temporaryPassword: plainPassword,
+      message: 'Employee added successfully! Welcome email sent to ' + email,
     };
   }
 
@@ -548,5 +596,51 @@ export class UserService {
     });
 
     return { message: 'Password changed successfully' };
+  }
+
+  /**
+   * Verify employee email address using token
+   * @param token - Verification token from email
+   * @returns Verified user info
+   */
+  async verifyEmail(token: string) {
+    // Find user with this verification token
+    const user = await this.prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+        verificationExpiry: {
+          gt: new Date(), // Token not expired
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'Invalid or expired verification token. Please request a new one.',
+      );
+    }
+
+    // Mark user as verified
+    const verifiedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationToken: null, // Clear token after use
+        verificationExpiry: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      ...verifiedUser,
+      message: 'Email verified successfully! You can now log in.',
+    };
   }
 }

@@ -53,9 +53,13 @@ model User {
   organizedMeetings           Meeting[] @relation("MeetingOrganizer")
   assignedTasks               Task[] @relation("AssignedTasks")
   assignedByTasks             Task[] @relation("AssignedByUser")
+  verifiedTasks               Task[] @relation("VerifiedTasks")
   taskHistory                 TaskHistory[]
   workSuggestions             WorkSuggestion[]
   performanceReviews          PerformanceReview[]
+  employeeScore               EmployeeScore?
+  scoreHistory                ScoreHistory[]
+  scoresAwardedByMe           ScoreHistory[] @relation("ScoreAwardedBy")
   company                     Company?  @relation(fields: [companyId], references: [id])
 
   @@index([companyId, email]) // ✅ For finding users by company + email
@@ -575,6 +579,15 @@ model Task {
   completedAt         DateTime?
   dueDate             DateTime?
   
+  // Verification & Scoring Fields
+  verificationStatus  VerificationStatus @default(PENDING)
+  verifiedById        String?
+  verifiedAt          DateTime?
+  verificationFeedback String?
+  pointsAwarded       Int?        @default(0)
+  qualityRating       Int?        // 1-5 star rating from manager
+  isOnTime            Boolean?
+  
   difficultyScore     Float?
   aiSuggestedUserId   String?
   aiConfidenceScore   Float?
@@ -586,6 +599,7 @@ model Task {
   
   assignedTo          User?        @relation("AssignedTasks", fields: [assignedToId], references: [id])
   assignedBy          User         @relation("AssignedByUser", fields: [assignedById], references: [id])
+  verifiedBy          User?        @relation("VerifiedTasks", fields: [verifiedById], references: [id])
   company             Company      @relation(fields: [companyId], references: [id])
   deal                Deal?        @relation(fields: [dealId], references: [id])
   contact             Contact?     @relation(fields: [contactId], references: [id])
@@ -593,6 +607,7 @@ model Task {
   
   taskHistory         TaskHistory[]
   attachments         TaskAttachment[]
+  scoreHistory        ScoreHistory[]
   
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
@@ -604,6 +619,7 @@ model Task {
   @@index([companyId, status, assignedToId])
   @@index([dueDate])
   @@index([createdAt])
+  @@index([verificationStatus])
   @@map("tasks")
 }
 
@@ -744,4 +760,56 @@ model ExportJob {
   @@index([status])
   @@index([createdAt])
   @@map("export_jobs")
+}
+
+// Employee Score & Points System
+model EmployeeScore {
+  id                    String       @id @default(cuid())
+  employeeId            String       @unique
+  totalScore            Float        @default(0.0)
+  tasksCompleted        Int          @default(0)
+  tasksVerified         Int          @default(0)
+  averageScorePerTask   Float        @default(0.0)
+  onTimeCompletionRate  Float        @default(0.0)
+  qualityAverageRating  Float        @default(0.0)
+  monthlyScoreTrend     Json?        // Stores last 12 months of scores
+  
+  employee              User         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  
+  @@index([employeeId])
+  @@index([totalScore])
+  @@map("employee_scores")
+}
+
+// Score History for tracking point awards/deductions
+model ScoreHistory {
+  id              String       @id @default(cuid())
+  employeeId      String
+  taskId          String?
+  pointsAwarded   Int
+  reason          String       // "completion", "on-time", "quality-bonus", "manual-adjustment", "rejection-penalty"
+  feedback        String?
+  awardedById     String?
+  awardedAt       DateTime     @default(now())
+  
+  employee        User         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  task            Task?        @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  awardedBy       User?        @relation("ScoreAwardedBy", fields: [awardedById], references: [id], onDelete: SetNull)
+  
+  @@index([employeeId])
+  @@index([taskId])
+  @@index([awardedById])
+  @@index([awardedAt])
+  @@map("score_history")
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  REVISION_REQUIRED
 }

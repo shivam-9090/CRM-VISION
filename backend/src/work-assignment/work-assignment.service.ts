@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TaskStatus, TaskType } from '@prisma/client';
 
-interface EmployeeSuggestion {
+export interface EmployeeSuggestion {
   employeeId: string;
   employeeName: string;
   employeeEmail: string;
@@ -238,7 +238,7 @@ export class WorkAssignmentService {
         status: TaskStatus.COMPLETED,
         OR: [
           { type: task.type },
-          { dealId: task.dealId, dealId: { not: null } },
+          { dealId: { not: null } },
           { companyId: task.companyId },
         ],
       },

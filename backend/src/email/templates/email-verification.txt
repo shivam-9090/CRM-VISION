@@ -1,0 +1,43 @@
+Verify Your Email - {{companyName}}
+
+Welcome, {{name}}!
+
+Your account has been created successfully! To complete the setup and start using CRM, please verify your email address.
+
+====================================================
+
+Account Details:
+- Email: {{email}}
+- Role: {{role}}
+- Company: {{companyName}}
+- Temporary Password: {{temporaryPassword}}
+
+====================================================
+
+Please follow these steps:
+
+1. Visit the verification link below
+2. You'll be directed to login with your temporary password
+3. Change your password immediately for security
+4. Start managing your tasks!
+
+Verification Link:
+{{verificationLink}}
+
+IMPORTANT: This verification link will expire in 24 hours. If it expires, please contact your manager to send you a new one.
+
+Security Tips:
+- Never share your temporary password with anyone
+- Change your password as soon as you log in
+- Enable 2FA for extra security
+
+If you didn't create this account, please contact your administrator immediately.
+
+Best regards,
+CRM Administration Team
+
+====================================================
+
+© {{currentYear}} {{companyName}}. All rights reserved.
+This is an automated message. Please do not reply to this email.
+If you need help, contact: support@company.com
