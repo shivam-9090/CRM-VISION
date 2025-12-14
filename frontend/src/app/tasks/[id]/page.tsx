@@ -78,10 +78,11 @@ export default function TaskDetailPage({ params }: TaskDetailProps) {
   // Complete task mutation
   const completeTaskMutation = useMutation({
     mutationFn: async () => {
-      return tasksApi.completeTask(resolvedParams.id, {
+      return tasksApi.completeTask(
+        resolvedParams.id,
         actualHours,
-        qualityScore,
-      });
+        completionNotes
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", resolvedParams.id] });
