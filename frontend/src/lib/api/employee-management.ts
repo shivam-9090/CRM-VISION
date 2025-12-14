@@ -3,13 +3,24 @@ import api from "../api";
 // Tasks API (using activities with type TASK)
 export const tasksApi = {
   // Get all tasks with filters
-  getTasks: (params?: {
+  getTasks: async (params?: {
     page?: number;
     limit?: number;
     type?: string;
     status?: string;
     assignedToId?: string;
-  }) => api.get("/activities", { params: { ...params, type: "TASK" } }),
+  }) => {
+    const response = await api.get("/activities", {
+      params: { ...params, type: "TASK" },
+    });
+    // Handle both array response and paginated response
+    const data = response.data;
+    return {
+      data: Array.isArray(data)
+        ? data
+        : data.data || data.activities || [],
+    };
+  },
 
   // Get task by ID
   getTask: (id: string) => api.get(`/activities/${id}`),
@@ -36,12 +47,25 @@ export const tasksApi = {
 // Employee Performance API
 export const employeePerformanceApi = {
   // Get all employees with performance metrics
-  getEmployees: (companyId?: string) =>
-    api.get("/employees", { params: { companyId } }),
+  getEmployees: async (companyId?: string) => {
+    const response = await api.get("/employees", { params: { companyId } });
+    // Handle both array response and paginated response
+    const data = response.data;
+    return {
+      data: Array.isArray(data) ? data : (data.data || data.employees || []),
+    };
+  },
 
   // Get leaderboard
-  getLeaderboard: (companyId?: string, limit?: number) =>
-    api.get("/employees/leaderboard", { params: { companyId, limit } }),
+  getLeaderboard: async (companyId?: string, limit?: number) => {
+    const response = await api.get("/employees/leaderboard", {
+      params: { companyId, limit },
+    });
+    const data = response.data;
+    return {
+      data: Array.isArray(data) ? data : (data.data || data.employees || []),
+    };
+  },
 
   // Get employee performance details
   getEmployeePerformance: (id: string) =>

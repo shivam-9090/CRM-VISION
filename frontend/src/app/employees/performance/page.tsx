@@ -60,11 +60,15 @@ export default function EmployeePerformancePage() {
     queryKey: ["employees"],
     queryFn: async () => {
       const response = await employeePerformanceApi.getEmployees();
-      return response.data;
+      // Handle both array and paginated response formats
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      return response.data.data || [];
     },
   });
 
-  const employees: Employee[] = employeesResponse || [];
+  const employees: Employee[] = Array.isArray(employeesResponse) ? employeesResponse : [];
 
   // Fetch leaderboard
   const { data: leaderboardResponse } = useQuery({

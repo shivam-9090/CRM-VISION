@@ -109,9 +109,7 @@ export default function MyTasksPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Tasks</h1>
-          <p className="text-gray-600">
-            Manage and track your assigned tasks
-          </p>
+          <p className="text-gray-600">Manage and track your assigned tasks</p>
         </div>
 
         {/* Stats */}
@@ -121,7 +119,9 @@ export default function MyTasksPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Tasks</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.all}</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.all}
+                  </p>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-lg">
                   <Filter className="w-6 h-6 text-blue-600" />
