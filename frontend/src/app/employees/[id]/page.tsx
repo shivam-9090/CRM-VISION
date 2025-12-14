@@ -581,7 +581,6 @@ export default function EmployeeDetailPage({ params }: EmployeeDetailProps) {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Skills Modal */}
       <Modal
