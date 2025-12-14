@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   // Use standalone for Docker/Render (enable for Docker builds)
   output: "standalone",
+  // Fix for multiple lockfiles warning
+  outputFileTracingRoot: __dirname,
   experimental: {
     disableOptimizedLoading: true,
     optimizePackageImports: [
