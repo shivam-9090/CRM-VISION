@@ -155,8 +155,7 @@ export default function TasksPage() {
     queryFn: async () => {
       if (!selectedTaskForAssignment) return [];
       const response = await workAssignmentApi.suggestEmployees(
-        selectedTaskForAssignment,
-        3
+        selectedTaskForAssignment
       );
       return (response.data as any)?.data || [];
     },
