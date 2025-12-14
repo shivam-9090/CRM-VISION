@@ -1,21 +1,20 @@
-import {
-  PrismaClient,
-  DealStage,
-  LeadSource,
-  Priority,
-  ActivityType,
-  ActivityStatus,
-} from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// Test data configuration
-const USERS_COUNT = 4;
-const DEALS_PER_USER = 1000;
-const CONTACTS_PER_USER = 50;
-const ACTIVITIES_PER_USER = 100;
-const COMPANIES_PER_USER = 20;
+async function main() {
+  console.log('🧪 Test seed - not used (removed)');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Test seed error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
 
 // Helper function to generate random data
 const getRandomElement = <T>(arr: T[]): T =>

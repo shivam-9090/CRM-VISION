@@ -129,12 +129,14 @@ export class PerformanceScoringService {
     }
 
     // Calculate speed ratio for each task
-    const speedRatios = completedTasks.map((task) => {
-      const ratio = task.estimatedHours / task.actualHours;
-      // ratio > 1 means completed faster than estimated (good)
-      // ratio < 1 means took longer than estimated (bad)
-      return Math.min(2, Math.max(0, ratio)); // Cap between 0 and 2
-    });
+    const speedRatios = completedTasks
+      .filter((task) => task.estimatedHours && task.actualHours)
+      .map((task) => {
+        const ratio = task.estimatedHours! / task.actualHours!;
+        // ratio > 1 means completed faster than estimated (good)
+        // ratio < 1 means took longer than estimated (bad)
+        return Math.min(2, Math.max(0, ratio)); // Cap between 0 and 2
+      });
 
     // Average speed ratio
     const avgRatio =

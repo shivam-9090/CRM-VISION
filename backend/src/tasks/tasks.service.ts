@@ -51,7 +51,7 @@ export class TasksService {
       userId: assignedById,
       action: 'created',
       newStatus: task.status,
-      notes: `Task created and ${task.assignedToId ? 'assigned to ' + task.assignedTo.name : 'pending assignment'}`,
+      notes: `Task created and ${task.assignedToId && task.assignedTo ? 'assigned to ' + task.assignedTo.name : 'pending assignment'}`,
     });
 
     return task;
@@ -247,7 +247,7 @@ export class TasksService {
       action: 'assigned',
       previousStatus: task.status,
       newStatus: TaskStatus.ASSIGNED,
-      notes: `Task assigned to ${updatedTask.assignedTo.name}`,
+      notes: `Task assigned to ${updatedTask.assignedTo?.name || 'unknown'}`,
     });
 
     return updatedTask;
@@ -425,6 +425,10 @@ export class TasksService {
     actualHours: number,
   ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     const newTotalCompleted = user.totalTasksCompleted + 1;
     const onTimeCount = isOnTime ? 1 : 0;

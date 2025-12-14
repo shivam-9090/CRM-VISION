@@ -1,0 +1,164 @@
+<html>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin: 0 auto;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 20px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 300;
+        letter-spacing: 1px;
+      }
+      .content {
+        padding: 40px;
+        color: #333;
+      }
+      .content h2 {
+        color: #667eea;
+        font-size: 22px;
+        margin-top: 0;
+      }
+      .content p {
+        line-height: 1.6;
+        color: #666;
+        margin: 15px 0;
+      }
+      .verification-box {
+        background-color: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 4px;
+      }
+      .verification-box p {
+        margin: 10px 0;
+      }
+      .btn {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 14px 40px;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: 600;
+        margin: 25px 0;
+        transition: all 0.3s ease;
+        text-align: center;
+      }
+      .btn:hover {
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        transform: translateY(-2px);
+      }
+      .btn-link {
+        color: #667eea;
+        word-break: break-all;
+      }
+      .footer {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+        color: #999;
+        font-size: 12px;
+        border-top: 1px solid #e0e0e0;
+      }
+      .footer p {
+        margin: 5px 0;
+      }
+      .divider {
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 30px 0;
+      }
+      .warning {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+        color: #856404;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>✉️ Verify Your Email</h1>
+      </div>
+
+      <div class='content'>
+        <h2>Welcome, {{name}}!</h2>
+
+        <p>Your account has been created successfully! To complete the setup and
+          start using CRM, please verify your email address.</p>
+
+        <div class='verification-box'>
+          <p><strong>Email:</strong> {{email}}</p>
+          <p><strong>Role:</strong> {{role}}</p>
+          <p><strong>Company:</strong> {{companyName}}</p>
+          <p><strong>Temporary Password:</strong> {{temporaryPassword}}</p>
+        </div>
+
+        <p><strong>Please follow these steps:</strong></p>
+        <ol>
+          <li>Click the "Verify Email" button below</li>
+          <li>You'll be directed to login with your temporary password</li>
+          <li>Change your password immediately for security</li>
+          <li>Start managing your tasks!</li>
+        </ol>
+
+        <center>
+          <a href='{{verificationLink}}' class='btn'>Verify Email Address</a>
+        </center>
+
+        <p>Or copy and paste this link in your browser:</p>
+        <p class='btn-link'>{{verificationLink}}</p>
+
+        <div class='warning'>
+          <strong>⏰ Important:</strong>
+          This verification link will expire in 24 hours. If it expires, please
+          contact your manager to send you a new one.
+        </div>
+
+        <div class='divider'></div>
+
+        <p><strong>Security Tips:</strong></p>
+        <ul>
+          <li>Never share your temporary password with anyone</li>
+          <li>Change your password as soon as you log in</li>
+          <li>Enable 2FA for extra security</li>
+        </ul>
+
+        <p>If you didn't create this account, please contact your administrator
+          immediately.</p>
+
+        <p>Best regards,<br /><strong>CRM Administration Team</strong></p>
+      </div>
+
+      <div class='footer'>
+        <p>&copy; {{currentYear}} {{companyName}}. All rights reserved.</p>
+        <p>This is an automated message. Please do not reply to this email.</p>
+        <p>If you need help, contact: support@company.com</p>
+      </div>
+    </div>
+  </body>
+</html>

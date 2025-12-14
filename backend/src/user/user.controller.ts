@@ -199,6 +199,28 @@ export class UserController {
     return this.userService.removeEmployee(id, req.user.companyId, req.user.id);
   }
 
+  @Post('verify-email/:token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify employee email address',
+    description: 'Employee clicks link in email to verify their email address',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired verification token',
+  })
+  @ApiParam({
+    name: 'token',
+    description: 'Verification token from email link',
+  })
+  verifyEmail(@Param('token') token: string) {
+    return this.userService.verifyEmail(token);
+  }
+
   @Patch('change-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

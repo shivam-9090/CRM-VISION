@@ -15,6 +15,8 @@ import {
   Menu,
   X,
   Activity,
+  CheckSquare,
+  TrendingUp,
 } from "lucide-react";
 import NotificationBell from "../NotificationBell";
 import { getStoredUser } from "@/lib/auth-utils";
@@ -27,6 +29,7 @@ const baseNavigation = [
   { name: "Deals", href: "/deals", icon: Briefcase },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Activities", href: "/activities", icon: Activity },
+  { name: "Tasks", href: "/tasks", icon: CheckSquare },
   { name: "Export/Import", href: "/export", icon: Download },
   { name: "Profile", href: "/profile", icon: User },
 ];
@@ -37,6 +40,12 @@ const managerNavigation = [
     name: "Employees",
     href: "/employees",
     icon: UserCog,
+    roles: ["MANAGER", "ADMIN"],
+  },
+  {
+    name: "Performance",
+    href: "/employees/performance",
+    icon: TrendingUp,
     roles: ["MANAGER", "ADMIN"],
   },
 ];
