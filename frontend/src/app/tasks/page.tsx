@@ -105,10 +105,11 @@ export default function TasksPage() {
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
+    type: "GENERAL",
     priority: "MEDIUM",
-    taskType: "FEATURE",
     estimatedHours: 8,
     dueDate: "",
+    companyId: "",
     assignedToId: "",
   });
 
@@ -165,7 +166,11 @@ export default function TasksPage() {
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (data: typeof newTask) => {
-      return tasksApi.createTask(data);
+      const taskData = {
+        ...data,
+        companyId: user?.companyId || data.companyId,
+      };
+      return tasksApi.createTask(taskData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -174,10 +179,11 @@ export default function TasksPage() {
       setNewTask({
         title: "",
         description: "",
+        type: "GENERAL",
         priority: "MEDIUM",
-        taskType: "FEATURE",
         estimatedHours: 8,
         dueDate: "",
+        companyId: "",
         assignedToId: "",
       });
     },
@@ -887,15 +893,15 @@ export default function TasksPage() {
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={newTask.taskType}
+                value={newTask.type}
                 onChange={(e) =>
-                  setNewTask({ ...newTask, taskType: e.target.value })
+                  setNewTask({ ...newTask, type: e.target.value })
                 }
               >
+                <option value="GENERAL">General</option>
                 <option value="FEATURE">Feature</option>
                 <option value="BUG">Bug</option>
                 <option value="SUPPORT">Support</option>
-                <option value="RESEARCH">Research</option>
               </select>
             </div>
           </div>
