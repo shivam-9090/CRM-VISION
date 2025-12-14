@@ -133,7 +133,7 @@ export default function AssignTasksPage() {
         sendNotification(assignedEmployee.id, "task_assigned", {
           taskTitle: variables.taskTitle,
           managerName: user?.name || "Manager",
-          taskId: response?.id,
+          taskId: response?.data?.id,
         });
       }
 
