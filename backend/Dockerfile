@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy package files first for better layer caching
-COPY package*.json ./
-COPY prisma ./prisma/
+COPY backend/package*.json ./
+COPY backend/prisma ./prisma/
 
 # Install dependencies
 RUN npm ci --prefer-offline --no-audit
@@ -21,7 +21,7 @@ RUN npm ci --prefer-offline --no-audit
 RUN npx prisma generate
 
 # Copy source code
-COPY . .
+COPY backend/ .
 
 # Build application
 RUN npm run build
@@ -41,8 +41,8 @@ RUN groupadd -g 1001 nodejs && \
     useradd -r -u 1001 -g nodejs nestjs
 
 # Copy package files
-COPY --chown=nestjs:nodejs package*.json ./
-COPY --chown=nestjs:nodejs prisma ./prisma/
+COPY --chown=nestjs:nodejs backend/package*.json ./
+COPY --chown=nestjs:nodejs backend/prisma ./prisma/
 
 # Install production dependencies only
 RUN npm ci --omit=dev --prefer-offline --no-audit && npm cache clean --force
