@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
-import { EmailJsService } from '../email/emailjs.service';
+import { SendGridService } from '../email/sendgrid.service';
 import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
@@ -23,7 +23,7 @@ import { PaymentsModule } from '../payments/payments.module';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy, EmailJsService],
+  providers: [AuthService, JwtStrategy, SendGridService],
   controllers: [AuthController],
   exports: [AuthService],
 })

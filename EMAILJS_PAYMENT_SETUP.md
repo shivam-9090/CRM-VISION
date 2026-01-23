@@ -1,7 +1,9 @@
 # 🚀 Payment & Email Service Setup Guide
 
 ## Overview
+
 Your CRM now includes:
+
 - **Razorpay Payment Integration** - Subscription plans with payment gateway
 - **EmailJS Service** - Simple SMTP-based email delivery (no AWS needed!)
 - **Welcome Email Templates** - Automated onboarding emails
@@ -49,6 +51,7 @@ FRONTEND_URL=https://your-netlify-app.netlify.app
 ## ⚡ Quick Setup (5 Minutes)
 
 ### Step 1: Get Gmail App Password
+
 ```
 1. Go to: https://myaccount.google.com/security
 2. Enable 2-Step Verification (if not done)
@@ -58,6 +61,7 @@ FRONTEND_URL=https://your-netlify-app.netlify.app
 ```
 
 ### Step 2: Get Razorpay Keys
+
 ```
 1. Go to: https://dashboard.razorpay.com
 2. Settings → API Keys
@@ -65,6 +69,7 @@ FRONTEND_URL=https://your-netlify-app.netlify.app
 ```
 
 ### Step 3: Add to Railway
+
 ```
 1. Go to Railway.app
 2. Click Backend service
@@ -91,6 +96,7 @@ curl -X POST https://your-railway-backend.app/api/auth/register \
 ```
 
 **You should get:**
+
 1. ✅ User created
 2. ✅ Free subscription created
 3. ✅ Welcome email sent to test@example.com
@@ -99,11 +105,11 @@ curl -X POST https://your-railway-backend.app/api/auth/register \
 
 ## 💰 Subscription Plans
 
-| Plan | Price | Users | Deals | Contacts | Storage |
-|------|-------|-------|-------|----------|---------|
-| Free | ₹0 | 1 | 100 | 500 | 1GB |
-| Basic | ₹999/mo | 5 | 1,000 | 5,000 | 10GB |
-| Pro | ₹2,999/mo | 20 | Unlimited | Unlimited | 100GB |
+| Plan       | Price     | Users     | Deals     | Contacts  | Storage   |
+| ---------- | --------- | --------- | --------- | --------- | --------- |
+| Free       | ₹0        | 1         | 100       | 500       | 1GB       |
+| Basic      | ₹999/mo   | 5         | 1,000     | 5,000     | 10GB      |
+| Pro        | ₹2,999/mo | 20        | Unlimited | Unlimited | 100GB     |
 | Enterprise | ₹9,999/mo | Unlimited | Unlimited | Unlimited | Unlimited |
 
 ---
@@ -111,6 +117,7 @@ curl -X POST https://your-railway-backend.app/api/auth/register \
 ## 📧 Email Service
 
 **EmailJS Service** sends emails using:
+
 - **Provider:** Gmail SMTP (simple, no setup needed)
 - **Location:** `backend/src/email/emailjs.service.ts`
 - **Features:**
@@ -120,6 +127,7 @@ curl -X POST https://your-railway-backend.app/api/auth/register \
   - All automatic, no manual sending needed
 
 ### Email Templates:
+
 - Welcome: `backend/src/email/templates/welcome.template.ts`
 - Professional HTML + Plain text versions
 - Includes dashboard link and feature list
@@ -130,16 +138,17 @@ curl -X POST https://your-railway-backend.app/api/auth/register \
 
 ### Payments API
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/payments/plans` | Get all subscription plans | No |
-| GET | `/api/payments/plans/:id` | Get specific plan | No |
-| POST | `/api/payments/create-order` | Create Razorpay order | Yes |
-| POST | `/api/payments/verify` | Verify payment signature | No |
-| GET | `/api/payments/subscription` | Get current subscription | Yes |
-| DELETE | `/api/payments/subscription/:id` | Cancel subscription | Yes |
+| Method | Endpoint                         | Description                | Auth |
+| ------ | -------------------------------- | -------------------------- | ---- |
+| GET    | `/api/payments/plans`            | Get all subscription plans | No   |
+| GET    | `/api/payments/plans/:id`        | Get specific plan          | No   |
+| POST   | `/api/payments/create-order`     | Create Razorpay order      | Yes  |
+| POST   | `/api/payments/verify`           | Verify payment signature   | No   |
+| GET    | `/api/payments/subscription`     | Get current subscription   | Yes  |
+| DELETE | `/api/payments/subscription/:id` | Cancel subscription        | Yes  |
 
 ### Example: Create Payment Order
+
 ```bash
 curl -X POST https://your-railway-backend.app/api/payments/create-order \
   -H "Authorization: Bearer <jwt_token>" \
@@ -148,6 +157,7 @@ curl -X POST https://your-railway-backend.app/api/payments/create-order \
 ```
 
 Response:
+
 ```json
 {
   "orderId": "order_xxx",
@@ -164,35 +174,38 @@ Response:
 ## 🚀 Frontend Integration
 
 ### Display Plans
+
 ```typescript
-const plans = await fetch('/api/payments/plans').then(r => r.json());
+const plans = await fetch("/api/payments/plans").then((r) => r.json());
 // Shows 4 plans with pricing
 ```
 
 ### Create Payment Order
+
 ```typescript
-const response = await fetch('/api/payments/create-order', {
-  method: 'POST',
+const response = await fetch("/api/payments/create-order", {
+  method: "POST",
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
   },
-  body: JSON.stringify({ planId: selectedPlanId })
+  body: JSON.stringify({ planId: selectedPlanId }),
 });
 
 const { orderId, amount, key } = await response.json();
 ```
 
 ### Open Razorpay Checkout
+
 ```typescript
 const razorpay = new window.Razorpay({
   key: key,
   amount: amount,
   order_id: orderId,
-  handler: function(response) {
+  handler: function (response) {
     // Verify payment on backend
     verifyPayment(response);
-  }
+  },
 });
 razorpay.open();
 ```
@@ -214,16 +227,19 @@ razorpay.open();
 ## 📞 Troubleshooting
 
 **Email not sending?**
+
 - Check SMTP credentials in Railway variables
 - Verify Gmail app password (16 chars)
 - Check Railway logs for errors
 
 **Payment not creating?**
+
 - Verify Razorpay keys are correct
 - Check order amount (in paise, not rupees)
 - Review Razorpay dashboard for logs
 
 **Free subscription not created?**
+
 - Run: `npm run db:seed:plans` on Railway
 - Check database for SubscriptionPlan records
 

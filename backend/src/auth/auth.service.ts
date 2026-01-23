@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailJsService } from '../email/emailjs.service';
+import { SendGridService } from '../email/sendgrid.service';
 import { PaymentsService } from '../payments/payments.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -32,7 +32,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private emailJsService: EmailJsService,
+    private sendGridService: SendGridService,
     private paymentsService: PaymentsService,
     private configService: ConfigService,
   ) {}
@@ -134,7 +134,7 @@ export class AuthService {
         const companyName =
           result.user.company?.name || companyName || `${name}'s Company`;
 
-        await this.emailJsService.sendWelcomeEmail({
+        await this.sendGridService.sendWelcomeEmail({
           to: email,
           name,
           companyName,

@@ -1,97 +1,74 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import * as sgMail from '@sendgrid/mail';
 
 /**
- * EmailJS Service - Simple email service using SMTP
- * No AWS required, just uses SMTP configuration
+ * SendGrid Email Service
+ * Professional email delivery with tracking, analytics, and reliability
  */
 @Injectable()
-export class EmailJsService {
-  private readonly logger = new Logger(EmailJsService.name);
-  private transporter: nodemailer.Transporter;
+export class SendGridService {
+  private readonly logger = new Logger(SendGridService.name);
 
   constructor(private readonly configService: ConfigService) {
-    this.initializeTransporter();
+    this.initializeSendGrid();
   }
 
   /**
-   * Initialize nodemailer transporter
+   * Initialize SendGrid with API key
    */
-  private initializeTransporter() {
+  private initializeSendGrid() {
     try {
-      const smtpHost = this.configService.get<string>('SMTP_HOST');
-      const smtpPort = this.configService.get<number>('SMTP_PORT', 587);
-      const smtpUser = this.configService.get<string>('SMTP_USER');
-      const smtpPass = this.configService.get<string>('SMTP_PASS');
+      const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
 
-      if (smtpHost && smtpUser && smtpPass) {
-        this.transporter = nodemailer.createTransport({
-          host: smtpHost,
-          port: smtpPort,
-          secure: smtpPort === 465,
-          auth: {
-            user: smtpUser,
-            pass: smtpPass,
-          },
-          tls: {
-            rejectUnauthorized: false,
-          },
-          pool: true,
-          maxConnections: 5,
-          maxMessages: 100,
-        });
-
-        this.logger.log(
-          `✅ EmailJS initialized (SMTP: ${smtpHost}:${smtpPort})`,
-        );
-      } else {
+      if (!apiKey) {
         this.logger.warn(
-          '⚠️ SMTP not configured. Using console logging for emails.',
+          '⚠️ SENDGRID_API_KEY not configured. Email service disabled.',
         );
-        this.transporter = nodemailer.createTransport({
-          streamTransport: true,
-          newline: 'unix',
-          buffer: true,
-        });
+        return;
       }
+
+      sgMail.setApiKey(apiKey);
+      this.logger.log('✅ SendGrid initialized successfully');
     } catch (error) {
-      this.logger.error('Failed to initialize EmailJS transporter:', error);
-      throw error;
+      this.logger.error('Failed to initialize SendGrid:', error);
     }
   }
 
   /**
-   * Send email using SMTP
+   * Send email using SendGrid
    */
   async send(options: {
-    to: string;
+    to: string | string[];
     subject: string;
     html?: string;
     text?: string;
     from?: string;
+    replyTo?: string;
   }): Promise<any> {
     try {
-      const from =
-        options.from ||
-        this.configService.get<string>('SMTP_FROM', 'noreply@crm-vision.com');
+      const from = options.from || this.configService.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@crm-vision.com';
 
-      const mailOptions = {
-        from,
+      const msg = {
         to: options.to,
+        from,
         subject: options.subject,
         html: options.html,
         text: options.text,
+        replyTo: options.replyTo,
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
+      const result = await sgMail.send(msg);
 
       this.logger.log(
-        `✅ Email sent to ${options.to} - Message ID: ${info.messageId}`,
+        `✅ Email sent to ${Array.isArray(options.to) ? options.to.join(', ') : options.to}`,
       );
-      return info;
+      return result;
     } catch (error) {
-      this.logger.error(`❌ Failed to send email to ${options.to}:`, error);
+      this.logger.error(
+        `❌ Failed to send email: ${error.message}`,
+        error,
+      );
       throw error;
     }
   }
@@ -165,5 +142,40 @@ export class EmailJsService {
       html,
       text: `Reset your password: ${data.resetUrl}`,
     });
+  }
+
+  /**
+   * Send bulk email
+   */
+  async sendBulk(emails: Array<{
+    to: string;
+    subject: string;
+    html?: string;
+    text?: string;
+  }>): Promise<any> {
+    try {
+      const from = this.configService.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@crm-vision.com';
+
+      const messages = emails.map((email) => ({
+        to: email.to,
+        from,
+        subject: email.subject,
+        html: email.html,
+        text: email.text,
+      }));
+
+      const result = await sgMail.sendMultiple(messages);
+
+      this.logger.log(
+        `✅ Bulk emails sent to ${emails.length} recipients`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to send bulk emails: ${error.message}`,
+        error,
+      );
+      throw error;
+    }
   }
 }
