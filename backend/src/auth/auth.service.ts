@@ -5,10 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../common/email.service';
+import { PaymentsService } from '../payments/payments.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { InviteDto } from './dto/invite.dto';
@@ -16,6 +18,10 @@ import { RegisterWithInviteDto } from './dto/register-with-invite.dto';
 import { randomBytes } from 'crypto';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
+import {
+  generateWelcomeEmail,
+  generateWelcomeEmailText,
+} from '../email/templates/welcome.template';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +33,8 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private paymentsService: PaymentsService,
+    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto, res: Response) {
@@ -108,27 +116,43 @@ export class AuthService {
       return { user };
     });
 
-    // Send verification email asynchronously (don't block registration)
+    // Send welcome email and create free subscription asynchronously (don't block registration)
     setImmediate(async () => {
       try {
-        const verificationUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${verificationToken}`;
+        // Create free subscription for new company
+        await this.paymentsService.createFreeSubscription(
+          result.user.companyId,
+        );
+      } catch (error) {
+        console.error('Failed to create free subscription:', error);
+      }
+
+      try {
+        const dashboardUrl =
+          this.configService.get<string>('FRONTEND_URL') ||
+          'http://localhost:3000';
+        const companyName =
+          result.user.company?.name || companyName || `${name}'s Company`;
+
         await this.emailService.sendEmail({
           to: email,
-          subject: 'Verify Your Email - CRM System',
-          text: `Please verify your email by clicking this link: ${verificationUrl}`,
-          html: `
-            <h2>Welcome to CRM System!</h2>
-            <p>Please click the link below to verify your email address:</p>
-            <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Verify Email
-            </a>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you didn't create this account, please ignore this email.</p>
-          `,
+          subject: '🎉 Welcome to CRM Vision - Your Account is Ready!',
+          text: generateWelcomeEmailText({
+            name,
+            companyName,
+            email,
+            dashboardUrl,
+          }),
+          html: generateWelcomeEmail({
+            name,
+            companyName,
+            email,
+            dashboardUrl,
+          }),
         });
       } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
-        // Email failure doesn't affect registration - user can request resend
+        console.error('Failed to send welcome email:', emailError);
+        // Email failure doesn't affect registration
       }
     });
 

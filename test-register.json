@@ -1,0 +1,6 @@
+{
+  "companyName": "Test Company Ltd",
+  "adminEmail": "testuser@example.com",
+  "adminPassword": "SecurePass123!",
+  "adminName": "John Doe"
+}

@@ -76,6 +76,7 @@ model Company {
   exportTemplates ExportTemplate[]
   exportJobs  ExportJob[]
   meetings    Meeting[]
+  subscriptions Subscription[]
 
   @@index([name]) // ✅ For company search/autocomplete
   @@map("companies")
@@ -567,4 +568,93 @@ model ExportJob {
   @@index([status])
   @@index([createdAt])
   @@map("export_jobs")
+}
+// ============================================
+// SUBSCRIPTION & PAYMENT MODELS
+// ============================================
+
+enum PlanType {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+  TRIALING
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model SubscriptionPlan {
+  id                String         @id @default(cuid())
+  name              String         @unique
+  type              PlanType       @unique
+  price             Decimal        @default(0)
+  currency          String         @default("INR")
+  billingCycle      String         @default("monthly") // monthly, yearly
+  features          Json           // List of features
+  maxUsers          Int            @default(1)
+  maxDeals          Int            @default(100)
+  maxContacts       Int            @default(500)
+  maxStorage        Int            @default(1048576) // 1GB in KB
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  subscriptions     Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                String              @id @default(cuid())
+  companyId         String
+  planId            String
+  status            SubscriptionStatus  @default(TRIALING)
+  startDate         DateTime            @default(now())
+  endDate           DateTime?
+  trialEndsAt       DateTime?
+  cancelledAt       DateTime?
+  razorpaySubscriptionId String?        @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  company           Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan              SubscriptionPlan    @relation(fields: [planId], references: [id])
+  payments          Payment[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([endDate])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                    String         @id @default(cuid())
+  subscriptionId        String
+  amount                Decimal
+  currency              String         @default("INR")
+  status                PaymentStatus  @default(PENDING)
+  razorpayOrderId       String?        @unique
+  razorpayPaymentId     String?        @unique
+  razorpaySignature     String?
+  paymentMethod         String?
+  failureReason         String?
+  paidAt                DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  subscription          Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
 }
