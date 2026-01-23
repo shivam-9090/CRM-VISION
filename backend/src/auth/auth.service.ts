@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../common/email.service';
+import { EmailJsService } from '../email/emailjs.service';
 import { PaymentsService } from '../payments/payments.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -32,7 +32,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private emailService: EmailService,
+    private emailJsService: EmailJsService,
     private paymentsService: PaymentsService,
     private configService: ConfigService,
   ) {}
@@ -134,9 +134,12 @@ export class AuthService {
         const companyName =
           result.user.company?.name || companyName || `${name}'s Company`;
 
-        await this.emailService.sendEmail({
+        await this.emailJsService.sendWelcomeEmail({
           to: email,
-          subject: '🎉 Welcome to CRM Vision - Your Account is Ready!',
+          name,
+          companyName,
+          email,
+          dashboardUrl,
           text: generateWelcomeEmailText({
             name,
             companyName,

@@ -25,51 +25,12 @@ export class EmailService {
   }
 
   /**
-   * Initialize the email transporter (SMTP, AWS SES, or development mode)
+   * Initialize the email transporter (SMTP or development mode)
    */
   private initializeTransporter() {
     try {
       const nodeEnv = this.configService.get<string>('NODE_ENV');
       const smtpHost = this.configService.get<string>('SMTP_HOST');
-      const awsSesRegion = this.configService.get<string>('AWS_SES_REGION');
-      const awsAccessKeyId =
-        this.configService.get<string>('AWS_ACCESS_KEY_ID');
-      const awsSecretAccessKey = this.configService.get<string>(
-        'AWS_SECRET_ACCESS_KEY',
-      );
-
-      // AWS SES configuration (priority if configured)
-      if (
-        nodeEnv === 'production' &&
-        awsSesRegion &&
-        awsAccessKeyId &&
-        awsSecretAccessKey
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const aws = require('@aws-sdk/client-ses');
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const nodemailerSes = require('nodemailer-ses-transport');
-
-        const ses = new aws.SES({
-          region: awsSesRegion,
-          credentials: {
-            accessKeyId: awsAccessKeyId,
-            secretAccessKey: awsSecretAccessKey,
-          },
-        });
-
-        this.transporter = nodemailer.createTransport(
-          nodemailerSes({
-            ses,
-            aws,
-          }),
-        );
-
-        this.logger.log(
-          `Email service initialized (production mode - AWS SES: ${awsSesRegion})`,
-        );
-        return;
-      }
 
       // Production SMTP configuration
       if (nodeEnv === 'production' && smtpHost) {
