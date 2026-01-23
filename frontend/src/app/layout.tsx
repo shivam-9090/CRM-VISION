@@ -1,32 +1,37 @@
-import './globals.css';
-import { Providers } from './providers';
-import { WebSocketProvider } from '@/lib/websocket-provider';
-import { Toaster } from 'react-hot-toast';
-import SkipLink from '@/components/ui/SkipLink';
-import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import "./globals.css";
+import { Providers } from "./providers";
+import { WebSocketProvider } from "@/lib/websocket-provider";
+import { Toaster } from "react-hot-toast";
+import SkipLink from "@/components/ui/SkipLink";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  display: 'swap',
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: 'CRM System',
-  description: 'Modern CRM application for managing customers and deals',
-}
+  title: "CRM System",
+  description: "Modern CRM application for managing customers and deals",
+  icons: {
+    icon: "/vision_final_logo.svg",
+    shortcut: "/vision_final_logo.svg",
+    apple: "/vision_final_logo.svg",
+  },
+};
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  themeColor: '#3b82f6',
-}
+  themeColor: "#3b82f6",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
@@ -34,16 +39,14 @@ export default function RootLayout({
         <SkipLink href="#main-content">Skip to main content</SkipLink>
         <Providers>
           <WebSocketProvider>
-            <div id="main-content">
-              {children}
-            </div>
-            <Toaster 
+            <div id="main-content">{children}</div>
+            <Toaster
               position="top-right"
               toastOptions={{
                 duration: 4000,
                 ariaProps: {
-                  role: 'status',
-                  'aria-live': 'polite',
+                  role: "status",
+                  "aria-live": "polite",
                 },
               }}
             />
@@ -51,5 +54,5 @@ export default function RootLayout({
         </Providers>
       </body>
     </html>
-  )
+  );
 }
