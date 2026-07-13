@@ -1,4 +1,5 @@
 import './globals.css';
+import './marketing.css';
 import { AuthProvider } from '@/lib/auth-provider';
 import { Manrope } from 'next/font/google';
 
